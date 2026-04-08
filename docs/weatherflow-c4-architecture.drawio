@@ -1,0 +1,206 @@
+<mxfile host="app.diagrams.net" agent="Codex" version="26.0.11" type="device" compressed="false">
+  <diagram id="weatherflow-context" name="01 System Context">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="API Client&#xa;Consumes WeatherFlow over REST" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="70" y="300" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="WeatherFlow" style="swimlane;rounded=1;html=1;whiteSpace=wrap;startSize=34;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="140" width="560" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Meteorological Services Platform&#xa;NestJS 11 monolith&#xa;REST API + DDD + Hexagonal Architecture" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1a1a1a;" vertex="1" parent="3">
+          <mxGeometry x="70" y="70" width="420" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Issues JWT tokens for authenticated requests&#xa;Emits alert events and coordinates Telegram notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1a1a1a;" vertex="1" parent="3">
+          <mxGeometry x="70" y="320" width="420" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="MongoDB Atlas&#xa;Persists users, stations, and measurements" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="190" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Telegram Bot API&#xa;Receives outbound alert messages" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="360" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="Uses REST/JSON" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d4d4d;fontColor=#1a1a1a;" edge="1" parent="1" source="2" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="Stores platform data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d4d4d;fontColor=#1a1a1a;" edge="1" parent="1" source="4" target="6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="Sends weather alerts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4d4d4d;fontColor=#1a1a1a;" edge="1" parent="1" source="4" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="weatherflow-containers" name="02 Container Diagram">
+    <mxGraphModel dx="1800" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1000" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="API Client&#xa;Calls HTTP endpoints and presents data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="40" y="290" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="WeatherFlow / NestJS Application" style="swimlane;rounded=1;html=1;whiteSpace=wrap;startSize=34;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="90" width="930" height="590" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Auth Module&#xa;register/login&#xa;issues JWT access tokens" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="3">
+          <mxGeometry x="40" y="60" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Users Module&#xa;CRUD users and subscriptions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="3">
+          <mxGeometry x="310" y="60" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Stations Module&#xa;Manage weather stations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="3">
+          <mxGeometry x="580" y="60" width="260" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Measurements Module&#xa;Create and query measurements&#xa;evaluates alert rules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="3">
+          <mxGeometry x="170" y="240" width="290" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="Notifications Module&#xa;Handles alert events&#xa;sends Telegram messages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="3">
+          <mxGeometry x="540" y="240" width="270" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="EventEmitter2&#xa;measurement.alert.detected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="3">
+          <mxGeometry x="470" y="405" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Shared&#xa;config, exceptions, injection tokens" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="3">
+          <mxGeometry x="150" y="515" width="650" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="MongoDB Atlas&#xa;users, stations, measurements collections" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="250" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="Telegram Bot API&#xa;delivers alert notifications" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="430" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="login / register" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="protected CRUD" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="protected CRUD" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="protected queries / writes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="credential lookup" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="3" source="4" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="emits alert event" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="3" source="7" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="dispatches alert handling" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="3" source="9" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="stores users" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="5" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="stores stations" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="6" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="stores measurements" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="7" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="sends outbound alerts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="8" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="weatherflow-hexagonal" name="03 Hexagonal Detail">
+    <mxGraphModel dx="1900" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1000" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="API Client" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Interface Layer" style="swimlane;rounded=1;html=1;whiteSpace=wrap;startSize=34;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="140" width="230" height="450" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Controllers&#xa;AuthController&#xa;UsersController&#xa;StationsController&#xa;MeasurementsController" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="3">
+          <mxGeometry x="30" y="60" width="170" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="JwtAuthGuard&#xa;class-validator DTOs&#xa;Swagger decorators" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="3">
+          <mxGeometry x="30" y="260" width="170" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Application Layer" style="swimlane;rounded=1;html=1;whiteSpace=wrap;startSize=34;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="110" width="310" height="510" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Use Cases / Services&#xa;CreateUserService&#xa;CreateStationService&#xa;CreateMeasurementService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="6">
+          <mxGeometry x="40" y="60" width="230" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="NotificationService&#xa;reacts to alert events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="6">
+          <mxGeometry x="40" y="250" width="230" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="Port Interfaces&#xa;IUserRepository&#xa;IStationRepository&#xa;IMeasurementRepository&#xa;INotificationPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="6">
+          <mxGeometry x="40" y="370" width="230" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Domain Layer" style="swimlane;rounded=1;html=1;whiteSpace=wrap;startSize=34;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="930" y="150" width="300" height="430" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="Aggregates&#xa;User&#xa;WeatherStation&#xa;Measurement" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="10">
+          <mxGeometry x="40" y="60" width="220" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="Value Objects&#xa;Email, Location, Temperature, Humidity, Pressure, AlertType" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="10">
+          <mxGeometry x="40" y="230" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="Domain Events and Rules&#xa;Measurement.evaluateAlerts()&#xa;measurement.alert.detected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="10">
+          <mxGeometry x="40" y="350" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="Infrastructure Layer" style="swimlane;rounded=1;html=1;whiteSpace=wrap;startSize=34;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="100" width="340" height="530" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="Mongo Repositories&#xa;MongoUserRepository&#xa;MongoStationRepository&#xa;MongoMeasurementRepository" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="14">
+          <mxGeometry x="40" y="60" width="260" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="TelegramAdapter&#xa;implements INotificationPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="14">
+          <mxGeometry x="40" y="250" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="Mappers and framework glue&#xa;Mongoose documents&#xa;JWT strategy and module wiring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="14">
+          <mxGeometry x="40" y="380" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="MongoDB Atlas" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1710" y="220" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="Telegram Bot API" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1710" y="390" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="HTTP request" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="invokes use cases" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="4" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="32" value="validates and secures" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="3" source="5" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="33" value="orchestrates domain logic" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="7" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="applies business rules" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="10" source="11" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="uses abstractions" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="6" source="7" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="alert event" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="6" source="13" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="37" value="implemented by" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="1" source="9" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="implemented by" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="1" source="9" target="16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="39" value="persists state" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="15" target="18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="40" value="sends messages" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="16" target="19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

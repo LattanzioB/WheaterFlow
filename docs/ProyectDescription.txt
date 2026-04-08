@@ -1,0 +1,70 @@
+Introducción
+El presente trabajo práctico tiene como objetivo modelar e implementar la arquitectura
+de una plataforma de servicios meteorológicos (WeatherFlow). El sistema permitirá
+gestionar estaciones de medición y procesar datos climáticos para su posterior consulta
+por parte de terceros.
+Ver en el Apéndice I más información del dominio a implementar.
+Entrega I
+Requerimientos
+Implementar solución utilizando arquitectura hexagonal:
+● Utilizando DDD implementar el “domain model”
+● Definir entidades, agregados, agregados raíz y objetos de valor
+● Implementar lógica de negocios (Validación de umbrales climáticos)
+● Implementar capa de servicios, puertos y adaptadores
+● Persistir datos en MongoAtlas
+● Solamente debe existir un componente (monolito)
+Exponer una API (por ejemplo: REST, grpc, JSON-RPC, pero pueden elegir la que
+quieran) con las siguientes funcionalidades:
+● Crear, eliminar y modificar usuarios/as
+● Crear, eliminar y modificar estaciones meteorológicas (asociadas a un dueño)
+● Crear, eliminar y modificar mediciones climáticas
+● Suscribir un usuario a las alertas de una estación específica
+● Consultar el historial de mediciones con filtros
+Tipo de entregable:
+● Solución funcionando en ambiente local
+● Código en un repositorio de internet (accesible por el equipo docente):
+○ Utilizacion de feature-branch workflow
+● README con instrucciones de cómo ejecutar el servicio (requerimientos,
+comandos, etc.)
+● Tests unitarios para el dominio
+● Diagrama de clases (UML) diferenciando: Dominio, Adaptadores, Puertos
+● Identificar y documentar los casos de uso mediante diagramas de secuencia
+● Documentar la arquitectura utilizando el Modelo C4
+● Diagrama de base de datos
+● APIs documentadas (Swagger o similar)
+Apéndice I
+El dominio va a contener estaciones meteorológicas, mediciones y usuarios/as. Cada
+medición es reportada por una estación y una estación puede reportar múltiples
+mediciones en el tiempo.
+Estación meteorológica:
+● ID (Generado automáticamente)
+● Nombre (ej. "Estación Central")
+● Ubicación (latitud y longitud)
+● Modelo del sensor
+● Estado (Activa/Inactiva)
+● ID_Dueño (referencia a un Usuario)
+Medición climática:
+● ID Estación (Referencia a la estación que reporta)
+● Temperatura
+● Humedad (porcentaje 0-100)
+● Presión atmosférica (en hPa)
+● Fecha y hora del reporte
+● Estado de alerta (Booleano: indica si la medición es anómala)
+● Tipo de alerta (Texto: "Ninguna", "Calor Extremo", "Helada", "Tormenta", etc.)
+Usuarios/as:
+● Nombre
+● Apellido
+● Mail
+● Lista de suscripciones: IDs de estaciones de las cuales desea recibir alertas
+Funcionalidades y lógica de negocio:
+1. CRUD completo de Usuarios, Estaciones y Mediciones.
+2. Búsqueda y filtrado:
+○ Buscar mediciones por nombre de estación.
+○ Filtrar mediciones por rango de temperatura o por si son alertas activas.
+3. Procesamiento de medición (lógica principal): Al registrar una medición, el
+sistema debe evaluar automáticamente los datos. Se considera una Alerta si se
+cumple alguna de estas condiciones (reglas de dominio):
+○ Temperatura > 40°C (Alerta: calor extremo)
+○ Temperatura < 0°C (Alerta: helada)
+○ Presión < 980 hPa (Alerta: tormenta/baja presión)
+○ Humedad > 90% (Alerta: humedad crítica)

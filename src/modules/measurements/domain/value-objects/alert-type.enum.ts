@@ -1,0 +1,7 @@
+export enum AlertType {
+  NONE = 'NONE',
+  EXTREME_HEAT = 'EXTREME_HEAT',
+  FROST = 'FROST',
+  STORM = 'STORM',
+  CRITICAL_HUMIDITY = 'CRITICAL_HUMIDITY',
+}

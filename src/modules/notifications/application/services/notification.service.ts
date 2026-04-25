@@ -51,6 +51,9 @@ export class NotificationService {
     );
 
     const notifications = subscribers
+      .filter((subscriber) =>
+        subscriber.isSubscribedToAlert(event.stationId, event.alertType),
+      )
       .map((subscriber) => ({
         subscriber,
         deliveryTargets: this.resolveDeliveryTargets(subscriber),

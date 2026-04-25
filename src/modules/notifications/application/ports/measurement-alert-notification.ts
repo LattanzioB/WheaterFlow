@@ -1,8 +1,13 @@
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 
+export interface NotificationDeliveryTarget {
+  channel: string;
+  destination: string;
+}
+
 export interface MeasurementAlertNotification {
   userId: string;
-  telegramChatId: string;
+  deliveryTargets: NotificationDeliveryTarget[];
   measurementId: string;
   stationId: string;
   stationName: string;

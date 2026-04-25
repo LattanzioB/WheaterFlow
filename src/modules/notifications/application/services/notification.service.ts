@@ -1,11 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { AlertNotifier } from '../ports/alert-notifier.port';
-import { MeasurementAlertNotification } from '../ports/measurement-alert-notification';
+import {
+  MeasurementAlertNotification,
+  NotificationDeliveryTarget,
+} from '../ports/measurement-alert-notification';
 import { IMeasurementRepository } from '../../../measurements/application/ports/measurement-repository.port';
 import { MeasurementAlertDetectedEvent } from '../../../measurements/domain/events/measurement-alert-detected.event';
 import { IStationRepository } from '../../../stations/application/ports/station-repository.port';
 import { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import { User } from '../../../users/domain/entities/user.entity';
 import {
   ALERT_NOTIFIER_TOKEN,
   MEASUREMENT_REPOSITORY_TOKEN,
@@ -47,10 +51,14 @@ export class NotificationService {
     );
 
     const notifications = subscribers
-      .filter((subscriber) => subscriber.getTelegramChatId() !== null)
-      .map<MeasurementAlertNotification>((subscriber) => ({
+      .map((subscriber) => ({
+        subscriber,
+        deliveryTargets: this.resolveDeliveryTargets(subscriber),
+      }))
+      .filter(({ deliveryTargets }) => deliveryTargets.length > 0)
+      .map<MeasurementAlertNotification>(({ subscriber, deliveryTargets }) => ({
         userId: subscriber.getId(),
-        telegramChatId: subscriber.getTelegramChatId() as string,
+        deliveryTargets,
         measurementId: measurement.getId(),
         stationId: station.getId(),
         stationName: station.getName(),
@@ -64,5 +72,19 @@ export class NotificationService {
     for (const notification of notifications) {
       await this.alertNotifier.sendMeasurementAlert(notification);
     }
+  }
+
+  private resolveDeliveryTargets(user: User): NotificationDeliveryTarget[] {
+    const deliveryChannels = user.getDeliveryChannels();
+    const deliveryTargets: NotificationDeliveryTarget[] = [];
+
+    if (deliveryChannels.telegram.chatId !== null) {
+      deliveryTargets.push({
+        channel: 'telegram',
+        destination: deliveryChannels.telegram.chatId,
+      });
+    }
+
+    return deliveryTargets;
   }
 }

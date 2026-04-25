@@ -70,7 +70,7 @@ describe('NotificationService', () => {
     ownerId: 'owner-1',
   });
 
-  it('notifies subscribers with telegram chat ids', async () => {
+  it('notifies subscribers with configured delivery targets', async () => {
     const alertNotifier = buildAlertNotifier();
     const measurementRepository = buildMeasurementRepository();
     const stationRepository = buildStationRepository();
@@ -108,7 +108,12 @@ describe('NotificationService', () => {
       [
         {
           userId: 'user-1',
-          telegramChatId: '12345',
+          deliveryTargets: [
+            {
+              channel: 'telegram',
+              destination: '12345',
+            },
+          ],
           measurementId: 'measurement-1',
           stationId: 'station-1',
           stationName: 'Central',

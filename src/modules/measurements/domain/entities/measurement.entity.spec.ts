@@ -3,6 +3,7 @@ import { AlertType } from '../value-objects/alert-type.enum';
 import { Humidity } from '../value-objects/humidity.value-object';
 import { Pressure } from '../value-objects/pressure.value-object';
 import { Temperature } from '../value-objects/temperature.value-object';
+import { AlertEvaluator } from '../services/alert-evaluator.service';
 
 describe('Measurement', () => {
   const buildMeasurement = () =>
@@ -13,13 +14,25 @@ describe('Measurement', () => {
       pressure: Pressure.create(1005),
     });
 
-  it('creates a measurement without alerts by default', () => {
+  it('creates a measurement and evaluates alerts automatically by default', () => {
     const measurement = buildMeasurement();
 
     expect(measurement.getId()).toBeTruthy();
     expect(measurement.getStationId()).toBe('station-1');
     expect(measurement.hasAlert()).toBe(false);
     expect(measurement.getAlertType()).toBe(AlertType.NONE);
+  });
+
+  it('flags heat alerts during creation when thresholds are breached', () => {
+    const measurement = Measurement.create({
+      stationId: 'station-1',
+      temperature: Temperature.create(41),
+      humidity: Humidity.create(55),
+      pressure: Pressure.create(1005),
+    });
+
+    expect(measurement.hasAlert()).toBe(true);
+    expect(measurement.getAlertType()).toBe(AlertType.EXTREME_HEAT);
   });
 
   it('accepts reconstituted alert state when it is consistent', () => {
@@ -51,6 +64,15 @@ describe('Measurement', () => {
     expect(measurement.getAlertType()).toBe(AlertType.STORM);
 
     measurement.applyAlert(AlertType.NONE);
+
+    expect(measurement.hasAlert()).toBe(false);
+    expect(measurement.getAlertType()).toBe(AlertType.NONE);
+  });
+
+  it('supports re-evaluating alerts with an evaluator', () => {
+    const measurement = buildMeasurement();
+
+    measurement.evaluateAlerts(new AlertEvaluator());
 
     expect(measurement.hasAlert()).toBe(false);
     expect(measurement.getAlertType()).toBe(AlertType.NONE);

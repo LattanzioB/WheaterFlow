@@ -1,6 +1,18 @@
 import { randomUUID } from 'node:crypto';
+import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { Email } from '../value-objects/email.value-object';
 import { UserRole } from '../value-objects/user-role.enum';
+
+export interface UserAlertPreference {
+  stationId: string;
+  alertTypes: AlertType[];
+}
+
+export interface UserDeliveryChannels {
+  telegram: {
+    chatId: string | null;
+  };
+}
 
 export interface CreateUserProps {
   id?: string;
@@ -8,6 +20,8 @@ export interface CreateUserProps {
   lastName: string;
   email: Email;
   passwordHash: string;
+  notificationPreferences?: UserAlertPreference[];
+  deliveryChannels?: Partial<UserDeliveryChannels>;
   telegramChatId?: string | null;
   role?: UserRole;
   subscriptions?: string[];
@@ -21,9 +35,9 @@ export class User {
     private lastName: string,
     private email: Email,
     private passwordHash: string,
-    private telegramChatId: string | null,
+    private notificationPreferences: UserAlertPreference[],
+    private deliveryChannels: UserDeliveryChannels,
     private role: UserRole,
-    private subscriptions: string[],
     private readonly createdAt: Date,
   ) {}
 
@@ -37,12 +51,13 @@ export class User {
     const normalizedId = props.id
       ? User.normalizeReference(props.id, 'User id')
       : randomUUID();
-    const normalizedChatId =
-      props.telegramChatId === undefined || props.telegramChatId === null
-        ? null
-        : User.normalizeReference(props.telegramChatId, 'Telegram chat id');
-    const subscriptions = User.normalizeSubscriptions(
-      props.subscriptions ?? [],
+    const notificationPreferences = User.normalizeAlertPreferences(
+      props.notificationPreferences,
+      props.subscriptions,
+    );
+    const deliveryChannels = User.normalizeDeliveryChannels(
+      props.deliveryChannels,
+      props.telegramChatId,
     );
     const createdAt = props.createdAt ?? new Date();
 
@@ -56,9 +71,9 @@ export class User {
       normalizedLastName,
       props.email,
       normalizedPasswordHash,
-      normalizedChatId,
+      notificationPreferences,
+      deliveryChannels,
       props.role ?? UserRole.USER,
-      subscriptions,
       createdAt,
     );
   }
@@ -84,15 +99,32 @@ export class User {
   }
 
   getTelegramChatId(): string | null {
-    return this.telegramChatId;
+    return this.deliveryChannels.telegram.chatId;
   }
 
   getRole(): UserRole {
     return this.role;
   }
 
+  getNotificationPreferences(): UserAlertPreference[] {
+    return this.notificationPreferences.map((preference) => ({
+      stationId: preference.stationId,
+      alertTypes: [...preference.alertTypes],
+    }));
+  }
+
+  getDeliveryChannels(): UserDeliveryChannels {
+    return {
+      telegram: {
+        chatId: this.deliveryChannels.telegram.chatId,
+      },
+    };
+  }
+
   getSubscriptions(): string[] {
-    return [...this.subscriptions];
+    return this.notificationPreferences.map(
+      (preference) => preference.stationId,
+    );
   }
 
   getCreatedAt(): Date {
@@ -113,33 +145,71 @@ export class User {
   }
 
   setTelegramChatId(telegramChatId: string | null): void {
-    this.telegramChatId =
+    this.configureTelegramDelivery(telegramChatId);
+  }
+
+  addSubscription(stationId: string): void {
+    this.subscribeToAlerts(stationId);
+  }
+
+  removeSubscription(stationId: string): void {
+    this.unsubscribeFromAlerts(stationId);
+  }
+
+  configureTelegramDelivery(telegramChatId: string | null): void {
+    this.deliveryChannels.telegram.chatId =
       telegramChatId === null
         ? null
         : User.normalizeReference(telegramChatId, 'Telegram chat id');
   }
 
-  addSubscription(stationId: string): void {
+  subscribeToAlerts(
+    stationId: string,
+    alertTypes: AlertType[] = User.getSupportedAlertTypes(),
+  ): void {
     const normalizedStationId = User.normalizeReference(
       stationId,
       'Station id',
     );
 
-    if (this.subscriptions.includes(normalizedStationId)) {
+    if (
+      this.notificationPreferences.some(
+        (preference) => preference.stationId === normalizedStationId,
+      )
+    ) {
       throw new Error('User is already subscribed to the station');
     }
 
-    this.subscriptions.push(normalizedStationId);
+    this.notificationPreferences.push({
+      stationId: normalizedStationId,
+      alertTypes: User.normalizeAlertTypes(alertTypes),
+    });
   }
 
-  removeSubscription(stationId: string): void {
+  updateAlertTypesForStation(stationId: string, alertTypes: AlertType[]): void {
+    const normalizedStationId = User.normalizeReference(
+      stationId,
+      'Station id',
+    );
+    const preference = this.notificationPreferences.find(
+      (candidate) => candidate.stationId === normalizedStationId,
+    );
+
+    if (!preference) {
+      throw new Error('User is not subscribed to the station');
+    }
+
+    preference.alertTypes = User.normalizeAlertTypes(alertTypes);
+  }
+
+  unsubscribeFromAlerts(stationId: string): void {
     const normalizedStationId = User.normalizeReference(
       stationId,
       'Station id',
     );
 
-    this.subscriptions = this.subscriptions.filter(
-      (subscription) => subscription !== normalizedStationId,
+    this.notificationPreferences = this.notificationPreferences.filter(
+      (preference) => preference.stationId !== normalizedStationId,
     );
   }
 
@@ -149,7 +219,39 @@ export class User {
       'Station id',
     );
 
-    return this.subscriptions.includes(normalizedStationId);
+    return this.notificationPreferences.some(
+      (preference) => preference.stationId === normalizedStationId,
+    );
+  }
+
+  isSubscribedToAlert(stationId: string, alertType: AlertType): boolean {
+    const normalizedStationId = User.normalizeReference(
+      stationId,
+      'Station id',
+    );
+    const normalizedAlertType = User.normalizeAlertType(alertType);
+
+    return this.notificationPreferences.some(
+      (preference) =>
+        preference.stationId === normalizedStationId &&
+        preference.alertTypes.includes(normalizedAlertType),
+    );
+  }
+
+  getSubscribedAlertTypesForStation(stationId: string): AlertType[] {
+    const normalizedStationId = User.normalizeReference(
+      stationId,
+      'Station id',
+    );
+    const preference = this.notificationPreferences.find(
+      (candidate) => candidate.stationId === normalizedStationId,
+    );
+
+    return preference ? [...preference.alertTypes] : [];
+  }
+
+  hasDeliveryChannelConfigured(): boolean {
+    return this.deliveryChannels.telegram.chatId !== null;
   }
 
   private static normalizeText(value: string, field: string): string {
@@ -172,16 +274,81 @@ export class User {
     return normalized;
   }
 
-  private static normalizeSubscriptions(subscriptions: string[]): string[] {
-    const normalizedSubscriptions = subscriptions.map((subscription) =>
-      User.normalizeReference(subscription, 'Station id'),
-    );
-    const uniqueSubscriptions = new Set(normalizedSubscriptions);
+  private static normalizeAlertPreferences(
+    notificationPreferences?: UserAlertPreference[],
+    legacySubscriptions?: string[],
+  ): UserAlertPreference[] {
+    const sourcePreferences =
+      notificationPreferences ??
+      (legacySubscriptions ?? []).map((stationId) => ({
+        stationId,
+        alertTypes: User.getSupportedAlertTypes(),
+      }));
 
-    if (uniqueSubscriptions.size !== normalizedSubscriptions.length) {
-      throw new Error('Subscriptions cannot contain duplicates');
+    const normalizedPreferences = sourcePreferences.map((preference) => ({
+      stationId: User.normalizeReference(preference.stationId, 'Station id'),
+      alertTypes: User.normalizeAlertTypes(preference.alertTypes),
+    }));
+    const uniqueStationIds = new Set(
+      normalizedPreferences.map((preference) => preference.stationId),
+    );
+
+    if (uniqueStationIds.size !== normalizedPreferences.length) {
+      throw new Error(
+        'Notification preferences cannot contain duplicate stations',
+      );
     }
 
-    return normalizedSubscriptions;
+    return normalizedPreferences;
+  }
+
+  private static normalizeDeliveryChannels(
+    deliveryChannels?: Partial<UserDeliveryChannels>,
+    legacyTelegramChatId?: string | null,
+  ): UserDeliveryChannels {
+    const telegramChatId =
+      deliveryChannels?.telegram?.chatId ?? legacyTelegramChatId;
+
+    return {
+      telegram: {
+        chatId:
+          telegramChatId === undefined || telegramChatId === null
+            ? null
+            : User.normalizeReference(telegramChatId, 'Telegram chat id'),
+      },
+    };
+  }
+
+  private static normalizeAlertTypes(alertTypes?: AlertType[]): AlertType[] {
+    const resolvedAlertTypes = alertTypes ?? User.getSupportedAlertTypes();
+
+    if (resolvedAlertTypes.length === 0) {
+      throw new Error('Alert types cannot be empty');
+    }
+
+    const normalizedAlertTypes = resolvedAlertTypes.map((alertType) =>
+      User.normalizeAlertType(alertType),
+    );
+    const uniqueAlertTypes = new Set(normalizedAlertTypes);
+
+    if (uniqueAlertTypes.size !== normalizedAlertTypes.length) {
+      throw new Error('Alert types cannot contain duplicates');
+    }
+
+    return normalizedAlertTypes;
+  }
+
+  private static normalizeAlertType(alertType: AlertType): AlertType {
+    if (!User.getSupportedAlertTypes().includes(alertType)) {
+      throw new Error('Alert type is not supported for subscriptions');
+    }
+
+    return alertType;
+  }
+
+  private static getSupportedAlertTypes(): AlertType[] {
+    return Object.values(AlertType).filter(
+      (alertType) => alertType !== AlertType.NONE,
+    );
   }
 }

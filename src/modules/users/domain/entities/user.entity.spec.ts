@@ -1,3 +1,4 @@
+import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { User } from './user.entity';
 import { Email } from '../value-objects/email.value-object';
 import { UserRole } from '../value-objects/user-role.enum';
@@ -22,9 +23,14 @@ describe('User', () => {
     expect(user.getTelegramChatId()).toBe('12345');
     expect(user.getRole()).toBe(UserRole.USER);
     expect(user.getSubscriptions()).toEqual([]);
+    expect(user.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: '12345',
+      },
+    });
   });
 
-  it('supports explicit roles and initial subscriptions', () => {
+  it('supports explicit roles and notification preferences', () => {
     const user = User.create({
       id: 'user-1',
       name: 'Ana',
@@ -32,12 +38,41 @@ describe('User', () => {
       email: Email.create('ana@example.com'),
       passwordHash: 'hash',
       role: UserRole.ADMIN,
-      subscriptions: ['station-1', 'station-2'],
+      notificationPreferences: [
+        {
+          stationId: 'station-1',
+          alertTypes: [AlertType.STORM, AlertType.FROST],
+        },
+        {
+          stationId: 'station-2',
+          alertTypes: [AlertType.EXTREME_HEAT],
+        },
+      ],
+      deliveryChannels: {
+        telegram: {
+          chatId: 'channel-1',
+        },
+      },
       createdAt: new Date('2026-04-25T10:00:00.000Z'),
     });
 
     expect(user.getRole()).toBe(UserRole.ADMIN);
     expect(user.getSubscriptions()).toEqual(['station-1', 'station-2']);
+    expect(user.getNotificationPreferences()).toEqual([
+      {
+        stationId: 'station-1',
+        alertTypes: [AlertType.STORM, AlertType.FROST],
+      },
+      {
+        stationId: 'station-2',
+        alertTypes: [AlertType.EXTREME_HEAT],
+      },
+    ]);
+    expect(user.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: 'channel-1',
+      },
+    });
     expect(user.getCreatedAt().toISOString()).toBe('2026-04-25T10:00:00.000Z');
   });
 
@@ -57,6 +92,26 @@ describe('User', () => {
     expect(user.isSubscribedTo('station-1')).toBe(false);
   });
 
+  it('supports station preferences with selected alert types', () => {
+    const user = buildUser();
+
+    user.subscribeToAlerts('station-1', [AlertType.STORM, AlertType.FROST]);
+
+    expect(user.isSubscribedTo('station-1')).toBe(true);
+    expect(user.isSubscribedToAlert('station-1', AlertType.STORM)).toBe(true);
+    expect(user.isSubscribedToAlert('station-1', AlertType.FROST)).toBe(true);
+    expect(user.isSubscribedToAlert('station-1', AlertType.EXTREME_HEAT)).toBe(
+      false,
+    );
+
+    user.updateAlertTypesForStation('station-1', [AlertType.EXTREME_HEAT]);
+
+    expect(user.getSubscribedAlertTypesForStation('station-1')).toEqual([
+      AlertType.EXTREME_HEAT,
+    ]);
+    expect(user.isSubscribedToAlert('station-1', AlertType.STORM)).toBe(false);
+  });
+
   it('rejects duplicate subscriptions on create and on later updates', () => {
     expect(() =>
       User.create({
@@ -64,15 +119,62 @@ describe('User', () => {
         lastName: 'Owner',
         email: Email.create('ana@example.com'),
         passwordHash: 'hash',
-        subscriptions: ['station-1', 'station-1'],
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.STORM],
+          },
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.FROST],
+          },
+        ],
       }),
-    ).toThrow('Subscriptions cannot contain duplicates');
+    ).toThrow('Notification preferences cannot contain duplicate stations');
 
     const user = buildUser();
     user.addSubscription('station-1');
 
     expect(() => user.addSubscription('station-1')).toThrow(
       'User is already subscribed to the station',
+    );
+  });
+
+  it('rejects invalid alert type selections', () => {
+    expect(() =>
+      User.create({
+        name: 'Ana',
+        lastName: 'Owner',
+        email: Email.create('ana@example.com'),
+        passwordHash: 'hash',
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [],
+          },
+        ],
+      }),
+    ).toThrow('Alert types cannot be empty');
+
+    expect(() =>
+      User.create({
+        name: 'Ana',
+        lastName: 'Owner',
+        email: Email.create('ana@example.com'),
+        passwordHash: 'hash',
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.STORM, AlertType.STORM],
+          },
+        ],
+      }),
+    ).toThrow('Alert types cannot contain duplicates');
+
+    const user = buildUser();
+
+    expect(() => user.subscribeToAlerts('station-1', [AlertType.NONE])).toThrow(
+      'Alert type is not supported for subscriptions',
     );
   });
 
@@ -105,7 +207,7 @@ describe('User', () => {
     ).toThrow('Password hash cannot be empty');
   });
 
-  it('allows updating credentials, names, roles, and telegram chat id', () => {
+  it('allows updating credentials, names, roles, and telegram delivery settings', () => {
     const user = buildUser();
 
     user.changeName('Ana', 'Admin');
@@ -126,5 +228,27 @@ describe('User', () => {
     user.setTelegramChatId(' 98765 ');
 
     expect(user.getTelegramChatId()).toBe('98765');
+  });
+
+  it('derives full alert coverage from legacy subscriptions for backward compatibility', () => {
+    const user = User.create({
+      name: 'Legacy',
+      lastName: 'User',
+      email: Email.create('legacy@example.com'),
+      passwordHash: 'hash',
+      subscriptions: ['station-1'],
+    });
+
+    expect(user.getNotificationPreferences()).toEqual([
+      {
+        stationId: 'station-1',
+        alertTypes: [
+          AlertType.EXTREME_HEAT,
+          AlertType.FROST,
+          AlertType.STORM,
+          AlertType.CRITICAL_HUMIDITY,
+        ],
+      },
+    ]);
   });
 });

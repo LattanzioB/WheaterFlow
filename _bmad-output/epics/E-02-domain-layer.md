@@ -41,6 +41,11 @@ E-01 (project scaffolded)
 - Clarified the story ambiguity around station alert configuration and implemented simple per-alert enable/disable flags.
 - Domain-only coverage is above the target: 96.49% statements/lines, 95.83% branches, and 96.66% functions.
 
+## Alignment Notes
+
+- The current `User` aggregate stores station subscriptions and a `telegramChatId`, which is sufficient for the first domain pass but does not fully separate notification intent from delivery-channel configuration.
+- `E-03B: Notification Preferences & Channel Separation` will refine this model by introducing per-user alert preferences alongside channel-specific delivery settings before infrastructure and API contracts are finalized.
+
 ## Branches and PRs
 
 | Story | Branch | PR |

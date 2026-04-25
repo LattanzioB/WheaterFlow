@@ -40,6 +40,11 @@ E-02 (domain layer complete)
 - Enabled `EventEmitterModule` in `AppModule` so the application alert workflow matches the documented architecture.
 - Application-layer coverage is above the target: 98.74% statements/lines, 80.85% branches, and 100% functions.
 
+## Alignment Notes
+
+- The current notification payloads still expose Telegram delivery details at the application boundary, and subscriber selection is based on station membership only.
+- `E-03B: Notification Preferences & Channel Separation` is the planned corrective pass to separate alert subscriptions/preferences from channel configuration and to make the notifier contract channel-agnostic before E-04 infrastructure is implemented.
+
 ## Branches and PRs
 
 | Story | Branch | PR |

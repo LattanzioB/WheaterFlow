@@ -119,4 +119,12 @@ describe('User', () => {
     expect(user.getRole()).toBe(UserRole.ADMIN);
     expect(user.getTelegramChatId()).toBeNull();
   });
+
+  it('trims telegram chat ids when they are reassigned', () => {
+    const user = buildUser();
+
+    user.setTelegramChatId(' 98765 ');
+
+    expect(user.getTelegramChatId()).toBe('98765');
+  });
 });

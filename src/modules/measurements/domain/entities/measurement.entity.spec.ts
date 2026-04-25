@@ -1,4 +1,5 @@
 import { Measurement } from './measurement.entity';
+import { StationAlertSettings } from '../../../stations/domain/value-objects/station-alert-settings.value-object';
 import { AlertType } from '../value-objects/alert-type.enum';
 import { Humidity } from '../value-objects/humidity.value-object';
 import { Pressure } from '../value-objects/pressure.value-object';
@@ -73,6 +74,21 @@ describe('Measurement', () => {
     const measurement = buildMeasurement();
 
     measurement.evaluateAlerts(new AlertEvaluator());
+
+    expect(measurement.hasAlert()).toBe(false);
+    expect(measurement.getAlertType()).toBe(AlertType.NONE);
+  });
+
+  it('respects disabled station alert settings during creation', () => {
+    const measurement = Measurement.create({
+      stationId: 'station-1',
+      temperature: Temperature.create(41),
+      humidity: Humidity.create(55),
+      pressure: Pressure.create(1005),
+      alertSettings: StationAlertSettings.create({
+        extremeHeat: false,
+      }),
+    });
 
     expect(measurement.hasAlert()).toBe(false);
     expect(measurement.getAlertType()).toBe(AlertType.NONE);

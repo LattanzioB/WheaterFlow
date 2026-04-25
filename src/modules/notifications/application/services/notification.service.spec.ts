@@ -70,7 +70,7 @@ describe('NotificationService', () => {
     ownerId: 'owner-1',
   });
 
-  it('notifies subscribers with configured delivery targets', async () => {
+  it('filters recipients by alert preference and configured delivery targets', async () => {
     const alertNotifier = buildAlertNotifier();
     const measurementRepository = buildMeasurementRepository();
     const stationRepository = buildStationRepository();
@@ -91,6 +91,12 @@ describe('NotificationService', () => {
         lastName: 'Lattanzio',
         email: Email.create('bruno@example.com'),
         passwordHash: 'hash',
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.STORM],
+          },
+        ],
         telegramChatId: '12345',
       }),
       User.create({
@@ -99,11 +105,34 @@ describe('NotificationService', () => {
         lastName: 'Observer',
         email: Email.create('ana@example.com'),
         passwordHash: 'hash',
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.STORM],
+          },
+        ],
+      }),
+      User.create({
+        id: 'user-3',
+        name: 'Nico',
+        lastName: 'OtherAlert',
+        email: Email.create('nico@example.com'),
+        passwordHash: 'hash',
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.FROST],
+          },
+        ],
+        telegramChatId: '67890',
       }),
     ]);
 
     await service.handleAlert(event);
 
+    expect(userRepository.findSubscribersByStationId.mock.calls).toEqual([
+      ['station-1'],
+    ]);
     expect(alertNotifier.sendMeasurementAlert.mock.calls).toEqual([
       [
         {

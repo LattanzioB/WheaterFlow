@@ -49,7 +49,7 @@ E-02 (domain layer complete)
 | S-03.3 | `feature/s-03-3-auth-use-cases` | [#11](https://github.com/LattanzioB/WheaterFlow/pull/11) |
 | S-03.4 | `feature/s-03-4-station-use-cases` | [#12](https://github.com/LattanzioB/WheaterFlow/pull/12) |
 | S-03.5 | `feature/s-03-5-measurement-use-cases` | [#13](https://github.com/LattanzioB/WheaterFlow/pull/13) |
-| S-03.6 | `feature/s-03-6-application-test-coverage` | Pending |
+| S-03.6 | `feature/s-03-6-application-test-coverage` | [#14](https://github.com/LattanzioB/WheaterFlow/pull/14) |
 
 ## Deliverables Covered
 

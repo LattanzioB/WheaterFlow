@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type { StringValue } from 'ms';
 import { AuthTokenPayload } from '../../application/ports/auth-token-payload';
 import { TokenService } from '../../application/ports/token-service.port';
 
@@ -14,7 +15,9 @@ export class JwtTokenService implements TokenService {
   async generateToken(payload: AuthTokenPayload): Promise<string> {
     return this.jwtService.signAsync(payload, {
       secret: this.configService.getOrThrow<string>('jwt.secret'),
-      expiresIn: this.configService.getOrThrow<string>('jwt.expiresIn'),
+      expiresIn: this.configService.getOrThrow<string>(
+        'jwt.expiresIn',
+      ) as StringValue,
     });
   }
 }

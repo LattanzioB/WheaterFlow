@@ -4,7 +4,7 @@ import { PasswordHasher } from '../../application/ports/password-hasher.port';
 
 @Injectable()
 export class BcryptPasswordHasher implements PasswordHasher {
-  constructor(private readonly saltRounds = 10) {}
+  private readonly saltRounds = 10;
 
   async hash(password: string): Promise<string> {
     return hash(password, this.saltRounds);

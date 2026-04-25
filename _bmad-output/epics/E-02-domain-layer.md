@@ -50,7 +50,7 @@ E-01 (project scaffolded)
 | S-02.3 | `feature/s-02-3-weather-station` | [#5](https://github.com/LattanzioB/WheaterFlow/pull/5) |
 | S-02.4 | `feature/s-02-4-measurement-aggregate` | [#6](https://github.com/LattanzioB/WheaterFlow/pull/6) |
 | S-02.5 | `feature/s-02-5-alert-evaluator` | [#7](https://github.com/LattanzioB/WheaterFlow/pull/7) |
-| S-02.6 | `feature/s-02-6-domain-test-coverage` | Pending creation |
+| S-02.6 | `feature/s-02-6-domain-test-coverage` | [#8](https://github.com/LattanzioB/WheaterFlow/pull/8) |
 
 ## Deliverables Covered
 

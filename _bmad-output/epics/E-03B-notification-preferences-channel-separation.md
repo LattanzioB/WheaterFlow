@@ -44,7 +44,7 @@ E-03 (ports and current use cases exist, but require alignment before infrastruc
 | S-03B.1 | `feature/s-03b-1-domain-preference-model` | [#16](https://github.com/LattanzioB/WheaterFlow/pull/16) |
 | S-03B.2 | `feature/s-03b-2-application-port-realignment` | [#17](https://github.com/LattanzioB/WheaterFlow/pull/17) |
 | S-03B.3 | `feature/s-03b-3-preference-aware-use-cases` | [#18](https://github.com/LattanzioB/WheaterFlow/pull/18) |
-| S-03B.4 | `feature/s-03b-4-alignment-tests-and-docs` | Pending |
+| S-03B.4 | `feature/s-03b-4-alignment-tests-and-docs` | [#19](https://github.com/LattanzioB/WheaterFlow/pull/19) |
 
 ## Deliverables Covered
 

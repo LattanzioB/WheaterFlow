@@ -1,0 +1,21 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: weatherflow-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    environment:
+      - MONGO_INITDB_DATABASE=weatherflow
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+    name: weatherflow-mongodb-data

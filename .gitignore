@@ -2,6 +2,10 @@ _bmad/
 _bmad-output/
 .agents/
 .claude/
+.env
+node_modules/
+dist/
+coverage/
 
 docs
 claude.md

@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { StationAlertSettings } from '../../../stations/domain/value-objects/station-alert-settings.value-object';
+import { AlertEvaluator } from '../services/alert-evaluator.service';
 import { AlertType } from '../value-objects/alert-type.enum';
 import { Humidity } from '../value-objects/humidity.value-object';
 import { Pressure } from '../value-objects/pressure.value-object';
@@ -13,6 +15,8 @@ export interface CreateMeasurementProps {
   reportedAt?: Date;
   alertStatus?: boolean;
   alertType?: AlertType;
+  alertSettings?: StationAlertSettings;
+  alertEvaluator?: AlertEvaluator;
 }
 
 export class Measurement {
@@ -48,7 +52,7 @@ export class Measurement {
       throw new Error('Alert type must be NONE when alert status is false');
     }
 
-    return new Measurement(
+    const measurement = new Measurement(
       id,
       stationId,
       props.temperature,
@@ -58,6 +62,15 @@ export class Measurement {
       alertStatus,
       alertType,
     );
+
+    if (props.alertStatus === undefined && props.alertType === undefined) {
+      measurement.evaluateAlerts(
+        props.alertEvaluator ?? new AlertEvaluator(),
+        props.alertSettings,
+      );
+    }
+
+    return measurement;
   }
 
   getId(): string {
@@ -105,6 +118,16 @@ export class Measurement {
   clearAlert(): void {
     this.alertStatus = false;
     this.alertType = AlertType.NONE;
+  }
+
+  evaluateAlerts(
+    evaluator: AlertEvaluator,
+    alertSettings?: StationAlertSettings,
+  ): AlertType {
+    const alertType = evaluator.evaluate(this, alertSettings);
+    this.applyAlert(alertType);
+
+    return this.alertType;
   }
 
   private static normalizeReference(value: string, field: string): string {

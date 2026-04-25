@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PasswordHasher } from '../ports/password-hasher.port';
-import { TokenService } from '../ports/token-service.port';
-import { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import type { PasswordHasher } from '../ports/password-hasher.port';
+import type { TokenService } from '../ports/token-service.port';
+import type { IUserRepository } from '../../../users/application/ports/user-repository.port';
 import { User } from '../../../users/domain/entities/user.entity';
 import { Email } from '../../../users/domain/value-objects/email.value-object';
 import {

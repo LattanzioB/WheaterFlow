@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
+import type {
   IMeasurementRepository,
   MeasurementFilters,
 } from '../ports/measurement-repository.port';

@@ -16,7 +16,7 @@ using **Hexagonal Architecture (Ports & Adapters)** and **Domain-Driven Design (
 | Database | MongoDB Atlas via Mongoose ODM |
 | Auth | JWT (`@nestjs/jwt` + Passport) |
 | API | REST + Swagger (`@nestjs/swagger`) |
-| Notifications | Telegram Bot API |
+| Notifications | Channel-agnostic alert port + Telegram delivery target |
 | Events | `@nestjs/event-emitter` (EventEmitter2) |
 | Testing | Jest (co-located `.spec.ts`) |
 
@@ -83,7 +83,7 @@ using **Hexagonal Architecture (Ports & Adapters)** and **Domain-Driven Design (
 
 | Aggregate | Root Entity | Key Value Objects | Business Rules |
 |---|---|---|---|
-| User | `User` | `Email` | Unique email, valid subscriptions |
+| User | `User` | `Email` | Unique email, station alert preferences, separate delivery settings |
 | WeatherStation | `WeatherStation` | `Location`, `StationStatus` | Valid coordinates, owner exists |
 | Measurement | `Measurement` | `Temperature`, `Humidity`, `Pressure`, `AlertType` | Alert threshold evaluation |
 
@@ -110,7 +110,7 @@ Evaluated inside `Measurement.evaluateAlerts()` — runs on every measurement cr
 | Framework | NestJS 11 | TypeScript-first, DI, maps well to DDD modules |
 | Database | MongoDB Atlas | Assignment requirement |
 | Auth | JWT (no refresh) | Sufficient for Delivery I scope |
-| Notifications | Telegram Bot API | Free, simple HTTP, no approval process |
+| Notifications | Channel-agnostic application port with Telegram as the first delivery target | Keeps the notification boundary ready for more channels without leaking Telegram-specific fields into use cases |
 | Events | EventEmitter2 | Decouples domain from notification side-effects |
 | Value Objects | Full (per aggregate) | Assignment explicitly requires them |
 | API style | REST | Standard, well-supported by Swagger |

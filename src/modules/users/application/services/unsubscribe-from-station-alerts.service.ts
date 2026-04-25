@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { USER_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
-import { IUserRepository } from '../ports/user-repository.port';
-import { User } from '../../domain/entities/user.entity';
+import type { IUserRepository } from '../ports/user-repository.port';
+import type { User } from '../../domain/entities/user.entity';
 
 export interface UnsubscribeFromStationAlertsCommand {
   userId: string;

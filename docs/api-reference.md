@@ -80,7 +80,7 @@ Authenticate and receive a JWT.
 ### `PATCH /users/:id` — Update user
 **Auth required.**
 
-**Body:** Any subset of: `name`, `lastName`, `email`, `telegramChatId`
+**Body:** Any subset of: `name`, `lastName`, `email`, `deliveryChannels`
 
 **Response `200`:** Updated User object.
 
@@ -92,14 +92,53 @@ Authenticate and receive a JWT.
 ---
 
 ### `POST /users/:id/subscriptions/:stationId` — Subscribe to station
-**Auth required.** Adds `stationId` to user's subscriptions list.
+**Auth required.** Subscribes the user to the station and selected alert types.
+
+**Body (optional):**
+```json
+{
+  "alertTypes": ["Tormenta", "Humedad Crítica"]
+}
+```
 
 **Response `200`:** Updated User object.
 
 ---
 
 ### `DELETE /users/:id/subscriptions/:stationId` — Unsubscribe from station
-**Auth required.** Removes `stationId` from user's subscriptions list.
+**Auth required.** Removes the station preference from the user's alert routing.
+
+**Response `200`:** Updated User object.
+
+---
+
+### `PATCH /users/:id/subscriptions/:stationId` â€” Update station alert preferences
+**Auth required.** Replaces the selected alert types for an existing station subscription.
+
+**Body:**
+```json
+{
+  "alertTypes": ["Calor Extremo"]
+}
+```
+
+**Response `200`:** Updated User object.
+
+---
+
+### `PATCH /users/:id/delivery-channels` â€” Update delivery settings
+**Auth required.** Updates channel-specific delivery configuration separately from alert preferences.
+
+**Body:**
+```json
+{
+  "deliveryChannels": {
+    "telegram": {
+      "chatId": "987654321"
+    }
+  }
+}
+```
 
 **Response `200`:** Updated User object.
 
@@ -112,8 +151,21 @@ Authenticate and receive a JWT.
   "name": "Ana",
   "lastName": "García",
   "email": "ana@example.com",
-  "telegramChatId": "987654321",
-  "subscriptions": ["station-uuid-1", "station-uuid-2"],
+  "notificationPreferences": [
+    {
+      "stationId": "station-uuid-1",
+      "alertTypes": ["Tormenta", "Humedad Crítica"]
+    },
+    {
+      "stationId": "station-uuid-2",
+      "alertTypes": ["Calor Extremo"]
+    }
+  ],
+  "deliveryChannels": {
+    "telegram": {
+      "chatId": "987654321"
+    }
+  },
   "createdAt": "2026-03-29T00:00:00.000Z"
 }
 ```
@@ -253,7 +305,7 @@ Alert fields (`alertStatus`, `alertType`) are **set automatically** by domain lo
 | humidity > 90% | `"Humedad Crítica"` |
 | none | `"Ninguna"` |
 
-When an alert is detected, all users subscribed to the station receive a Telegram notification.
+When an alert is detected, the application first filters users by station subscription and selected alert type, then forwards the alert to the configured delivery targets. Telegram is the current delivery mechanism.
 
 ---
 

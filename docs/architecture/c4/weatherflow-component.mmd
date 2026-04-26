@@ -1,0 +1,72 @@
+flowchart LR
+  classDef actor fill:#e8f0fe,stroke:#1a73e8,color:#0b57d0,stroke-width:1.5px;
+  classDef module fill:#e6f4ea,stroke:#188038,color:#0d652d,stroke-width:1.5px;
+  classDef adapter fill:#fef7e0,stroke:#f29900,color:#7c4a03,stroke-width:1.5px;
+  classDef external fill:#fce8e6,stroke:#d93025,color:#a50e0e,stroke-width:1.5px;
+
+  client["User and API clients"]:::actor
+  telegram["Telegram Bot API"]:::external
+  mongo["MongoDB Atlas"]:::external
+  events["EventEmitter2"]:::adapter
+
+  subgraph auth["Auth module"]
+    authController["AuthController"]:::module
+    authServices["RegisterUserService\nLoginUserService"]:::module
+    authPorts["PasswordHasher + TokenService ports"]:::adapter
+    authController --> authServices --> authPorts
+  end
+
+  subgraph users["Users module"]
+    prefsController["UserNotificationPreferencesController"]:::module
+    prefsServices["Subscribe, unsubscribe,\nupdate alert preferences,\nupdate delivery channels"]:::module
+    userAggregate["User aggregate\nnotification preferences +\ndelivery channels"]:::module
+    userRepository["IUserRepository -> MongoUserRepository"]:::adapter
+    prefsController --> prefsServices --> userAggregate
+    prefsServices --> userRepository
+  end
+
+  subgraph stations["Stations module"]
+    stationsController["WeatherStationsController"]:::module
+    stationServices["Create, list, get,\nupdate, delete station services"]:::module
+    stationAggregate["WeatherStation aggregate\nlocation + alert settings"]:::module
+    stationRepository["IStationRepository -> MongoWeatherStationRepository"]:::adapter
+    stationsController --> stationServices --> stationAggregate
+    stationServices --> stationRepository
+  end
+
+  subgraph measurements["Measurements module"]
+    measurementsController["MeasurementsController"]:::module
+    recordService["RecordMeasurementService"]:::module
+    queryService["QueryMeasurementsService"]:::module
+    measurementAggregate["Measurement aggregate\nvalue objects + alert evaluation"]:::module
+    measurementRepository["IMeasurementRepository -> MongoMeasurementRepository"]:::adapter
+    alertEvent["MeasurementAlertDetectedEvent"]:::adapter
+    measurementsController --> recordService
+    measurementsController --> queryService
+    recordService --> measurementAggregate
+    recordService --> measurementRepository
+    recordService --> stationRepository
+    queryService --> measurementRepository
+    recordService --> alertEvent --> events
+  end
+
+  subgraph notifications["Notifications module"]
+    notificationService["NotificationService\nOnEvent(MeasurementAlertDetectedEvent)"]:::module
+    preferenceResolution["Preference resolution flow\n1. load measurement + station\n2. load subscribers\n3. filter by station + alert type\n4. resolve delivery targets"]:::module
+    alertNotifier["AlertNotifier port"]:::adapter
+    telegramAdapter["TelegramAlertNotifierAdapter"]:::adapter
+    events --> notificationService --> preferenceResolution --> alertNotifier --> telegramAdapter --> telegram
+    preferenceResolution --> measurementRepository
+    preferenceResolution --> stationRepository
+    preferenceResolution --> userRepository
+  end
+
+  client --> authController
+  client --> prefsController
+  client --> stationsController
+  client --> measurementsController
+
+  authServices --> userRepository
+  userRepository --> mongo
+  stationRepository --> mongo
+  measurementRepository --> mongo

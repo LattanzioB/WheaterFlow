@@ -13,6 +13,7 @@ import {
 import { Request } from 'express';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -23,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
+import { SWAGGER_BEARER_AUTH_NAME } from '../../../../setup-app';
 import { GetStationByIdService } from '../../../stations/application/services/get-station-by-id.service';
 import { AlertType } from '../../domain/value-objects/alert-type.enum';
 import { QueryMeasurementsService } from '../../application/services/query-measurements.service';
@@ -38,6 +40,7 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 @Controller('measurements')
 @UseGuards(JwtAuthGuard)
 @ApiTags('Measurements')
+@ApiBearerAuth(SWAGGER_BEARER_AUTH_NAME)
 export class MeasurementsController {
   constructor(
     private readonly recordMeasurementService: RecordMeasurementService,

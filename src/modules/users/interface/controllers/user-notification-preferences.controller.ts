@@ -15,6 +15,7 @@ import {
 import { Request } from 'express';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -26,6 +27,7 @@ import {
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
+import { SWAGGER_BEARER_AUTH_NAME } from '../../../../setup-app';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from '../../application/services/update-delivery-channels.service';
@@ -42,6 +44,7 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 @ApiTags('Users')
+@ApiBearerAuth(SWAGGER_BEARER_AUTH_NAME)
 export class UserNotificationPreferencesController {
   constructor(
     private readonly subscribeToStationAlertsService: SubscribeToStationAlertsService,

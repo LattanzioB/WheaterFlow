@@ -16,6 +16,7 @@ import {
 import { Request } from 'express';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiCreatedResponse,
@@ -28,6 +29,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
+import { SWAGGER_BEARER_AUTH_NAME } from '../../../../setup-app';
 import { CreateStationService } from '../../application/services/create-station.service';
 import { DeleteStationService } from '../../application/services/delete-station.service';
 import { GetStationByIdService } from '../../application/services/get-station-by-id.service';
@@ -42,6 +44,7 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 @Controller('weather-stations')
 @UseGuards(JwtAuthGuard)
 @ApiTags('Weather Stations')
+@ApiBearerAuth(SWAGGER_BEARER_AUTH_NAME)
 export class WeatherStationsController {
   constructor(
     private readonly createStationService: CreateStationService,

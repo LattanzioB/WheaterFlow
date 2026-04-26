@@ -1,0 +1,22 @@
+flowchart LR
+  classDef person fill:#e8f0fe,stroke:#1a73e8,color:#0b57d0,stroke-width:1.5px;
+  classDef container fill:#e6f4ea,stroke:#188038,color:#0d652d,stroke-width:1.5px;
+  classDef database fill:#fce8e6,stroke:#d93025,color:#a50e0e,stroke-width:1.5px;
+  classDef external fill:#fef7e0,stroke:#f29900,color:#7c4a03,stroke-width:1.5px;
+
+  user["User and API clients"]:::person
+
+  subgraph boundary["WeatherFlow"]
+    api["NestJS Monolith\nREST controllers, application services,\ndomain model, Mongoose adapters,\nand EventEmitter-driven notifications"]:::container
+    modules["Core modules\nAuth, Users, Stations, Measurements, Notifications"]:::container
+    config["Shared infrastructure\nConfig, injection tokens, exception mapping"]:::container
+  end
+
+  mongo[("MongoDB Atlas\nPrimary operational data store")]:::database
+  telegram["Telegram Bot API\nExternal delivery integration"]:::external
+
+  user -->|"HTTPS/JSON"| api
+  api -->|"Organizes behavior through"| modules
+  api -->|"Relies on"| config
+  api -->|"Mongoose ODM read/write"| mongo
+  api -->|"HTTPS notifications"| telegram

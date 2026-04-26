@@ -50,7 +50,7 @@ email.equals(other: Email): boolean
 - Delivery-channel settings are stored separately from alert intent
 
 ### Compatibility Note
-- The aggregate still exposes legacy `subscriptions` and `telegramChatId` helpers as wrappers so the E-03 application services can migrate incrementally during E-03B.
+- The aggregate still exposes legacy `subscriptions` helpers as wrappers while older application flows are aligned with `notificationPreferences`.
 
 ### Repository Port
 ```typescript

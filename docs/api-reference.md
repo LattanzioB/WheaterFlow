@@ -19,7 +19,11 @@ Register a new user and receive a JWT.
   "lastName": "Pérez",
   "email": "juan@example.com",
   "password": "securepassword",
-  "telegramChatId": "123456789"
+  "deliveryChannels": {
+    "telegram": {
+      "chatId": "123456789"
+    }
+  }
 }
 ```
 
@@ -65,7 +69,11 @@ Authenticate and receive a JWT.
   "lastName": "García",
   "email": "ana@example.com",
   "password": "securepassword",
-  "telegramChatId": "987654321"
+  "deliveryChannels": {
+    "telegram": {
+      "chatId": "987654321"
+    }
+  }
 }
 ```
 **Response `201`:** User object.

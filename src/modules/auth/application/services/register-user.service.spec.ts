@@ -14,7 +14,11 @@ describe('RegisterUserService', () => {
     lastName: 'Lattanzio',
     email: 'Bruno@Example.com',
     password: 'super-secret',
-    telegramChatId: '12345',
+    deliveryChannels: {
+      telegram: {
+        chatId: '12345',
+      },
+    },
   };
 
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
@@ -62,7 +66,11 @@ describe('RegisterUserService', () => {
     expect(savedUser.getLastName()).toBe('Lattanzio');
     expect(savedUser.getEmail().getValue()).toBe('bruno@example.com');
     expect(savedUser.getPasswordHash()).toBe('hashed-password');
-    expect(savedUser.getTelegramChatId()).toBe('12345');
+    expect(savedUser.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: '12345',
+      },
+    });
 
     expect(tokenService.generateToken.mock.calls).toEqual([
       [

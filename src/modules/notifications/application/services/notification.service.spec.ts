@@ -97,7 +97,11 @@ describe('NotificationService', () => {
             alertTypes: [AlertType.STORM],
           },
         ],
-        telegramChatId: '12345',
+        deliveryChannels: {
+          telegram: {
+            chatId: '12345',
+          },
+        },
       }),
       User.create({
         id: 'user-2',
@@ -124,7 +128,11 @@ describe('NotificationService', () => {
             alertTypes: [AlertType.FROST],
           },
         ],
-        telegramChatId: '67890',
+        deliveryChannels: {
+          telegram: {
+            chatId: '67890',
+          },
+        },
       }),
     ]);
 

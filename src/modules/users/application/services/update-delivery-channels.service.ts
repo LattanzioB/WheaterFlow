@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { USER_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
 import type { IUserRepository } from '../ports/user-repository.port';
-import type { User } from '../../domain/entities/user.entity';
+import type { User, UserDeliveryChannelsInput } from '../../domain/entities/user.entity';
 
 export interface UpdateDeliveryChannelsCommand {
   userId: string;
-  telegramChatId?: string | null;
+  deliveryChannels: UserDeliveryChannelsInput;
 }
 
 @Injectable()
@@ -22,8 +22,8 @@ export class UpdateDeliveryChannelsService {
       throw new Error('User not found');
     }
 
-    if (command.telegramChatId !== undefined) {
-      user.configureTelegramDelivery(command.telegramChatId);
+    if (command.deliveryChannels.telegram?.chatId !== undefined) {
+      user.configureTelegramDelivery(command.deliveryChannels.telegram.chatId);
     }
 
     await this.userRepository.save(user);

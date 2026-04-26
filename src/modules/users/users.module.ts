@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { USER_REPOSITORY_TOKEN } from '../../shared/tokens/injection-tokens';
 import { StationsModule } from '../stations/stations.module';
+import { CreateTelegramLinkCodeService } from './application/services/create-telegram-link-code.service';
 import { SubscribeToStationAlertsService } from './application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from './application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from './application/services/update-delivery-channels.service';
@@ -25,6 +26,7 @@ import { UserNotificationPreferencesController } from './interface/controllers/u
   ],
   controllers: [UserNotificationPreferencesController],
   providers: [
+    CreateTelegramLinkCodeService,
     SubscribeToStationAlertsService,
     UnsubscribeFromStationAlertsService,
     UpdateStationAlertPreferencesService,

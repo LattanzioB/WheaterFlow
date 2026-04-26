@@ -26,7 +26,6 @@ export class AuthController {
         lastName: dto.lastName,
         email: dto.email,
         password: dto.password,
-        deliveryChannels: dto.deliveryChannels,
       });
 
       return {

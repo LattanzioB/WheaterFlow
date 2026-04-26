@@ -33,6 +33,15 @@ export class UserDeliveryChannelsDocument {
   telegram!: TelegramDeliveryChannelDocument;
 }
 
+@Schema({ _id: false, id: false })
+export class UserTelegramLinkingDocument {
+  @Prop({ type: String, default: null, trim: true })
+  code!: string | null;
+
+  @Prop({ type: Date, default: null })
+  expiresAt!: Date | null;
+}
+
 @Schema({
   collection: 'users',
   timestamps: false,
@@ -73,6 +82,16 @@ export class UserPersistenceModel {
   deliveryChannels!: UserDeliveryChannelsDocument;
 
   @Prop({
+    type: UserTelegramLinkingDocument,
+    required: true,
+    default: () => ({
+      code: null,
+      expiresAt: null,
+    }),
+  })
+  telegramLinking!: UserTelegramLinkingDocument;
+
+  @Prop({
     type: String,
     required: true,
     enum: Object.values(UserRole),
@@ -99,6 +118,10 @@ export interface UserPersistence {
       chatId: string | null;
     };
   };
+  telegramLinking: {
+    code: string | null;
+    expiresAt: Date | null;
+  };
   role: UserRole;
   createdAt: Date;
 }
@@ -108,3 +131,4 @@ export type UserModelDocument = HydratedDocument<UserPersistenceModel>;
 export const UserSchema = SchemaFactory.createForClass(UserPersistenceModel);
 
 UserSchema.index({ 'notificationPreferences.stationId': 1 });
+UserSchema.index({ 'telegramLinking.code': 1 });

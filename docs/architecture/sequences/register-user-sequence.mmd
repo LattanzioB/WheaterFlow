@@ -18,6 +18,7 @@ RegisterUserService->>UserAggregate: User.create(props)
 UserAggregate-->>RegisterUserService: user
 RegisterUserService->>UserRepository: save(user)
 UserRepository-->>RegisterUserService: void
+Note over User,AuthController: Telegram delivery is linked later via /users/:id/delivery-channels/telegram/link-code
 RegisterUserService->>TokenService: generateToken({ sub, email })
 TokenService-->>RegisterUserService: accessToken
 RegisterUserService-->>AuthController: AuthenticationResult

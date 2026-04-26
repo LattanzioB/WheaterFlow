@@ -6,6 +6,8 @@ type EnvShape = {
   MONGODB_URI: string;
   PORT?: number | string;
   TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_BOT_USERNAME?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
 };
 
 type EnvValidationResult = {
@@ -23,6 +25,8 @@ describe('envValidationSchema', () => {
     JWT_SECRET: 'super-secret-key-12345',
     JWT_EXPIRES_IN: '7d',
     TELEGRAM_BOT_TOKEN: 'bot123:ABC-DEF',
+    TELEGRAM_BOT_USERNAME: 'weatherflow_bot',
+    TELEGRAM_WEBHOOK_SECRET: 'secret-token',
   };
 
   const omitEnvKeys = (
@@ -95,6 +99,16 @@ describe('envValidationSchema', () => {
   // EC-25
   it('should pass when TELEGRAM_BOT_TOKEN is empty string', () => {
     const env = { ...validEnv, TELEGRAM_BOT_TOKEN: '' };
+    const { error } = validateEnv(env);
+    expect(error).toBeUndefined();
+  });
+
+  it('should pass when Telegram webhook metadata is omitted', () => {
+    const env = omitEnvKeys(
+      validEnv,
+      'TELEGRAM_BOT_USERNAME',
+      'TELEGRAM_WEBHOOK_SECRET',
+    );
     const { error } = validateEnv(env);
     expect(error).toBeUndefined();
   });

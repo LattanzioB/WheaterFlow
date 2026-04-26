@@ -26,6 +26,9 @@ describe('S-06.5 sequence diagram documentation', () => {
   it('covers registration and login authentication flows', () => {
     expect(read('register-user-sequence.mmd')).toContain('POST /auth/register');
     expect(read('register-user-sequence.mmd')).toContain('generateToken');
+    expect(read('register-user-sequence.mmd')).toContain(
+      '/users/:id/delivery-channels/telegram/link-code',
+    );
     expect(read('login-user-sequence.mmd')).toContain('POST /auth/login');
     expect(read('login-user-sequence.mmd')).toContain('compare(password, user.passwordHash)');
   });
@@ -47,6 +50,12 @@ describe('S-06.5 sequence diagram documentation', () => {
     );
     expect(read('manage-notification-preferences-sequence.mmd')).toContain(
       'configureTelegramDelivery',
+    );
+    expect(read('manage-notification-preferences-sequence.mmd')).toContain(
+      'startTelegramLinking(code, expiresAt)',
+    );
+    expect(read('manage-notification-preferences-sequence.mmd')).toContain(
+      'findByTelegramLinkCode(code)',
     );
     expect(read('query-measurements-sequence.mmd')).toContain(
       'findWithFilters(normalizedFilters)',

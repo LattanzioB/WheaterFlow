@@ -28,6 +28,15 @@ export class MongoUserRepository implements IUserRepository {
     return document ? UserDocumentMapper.toDomain(document) : null;
   }
 
+  async findByTelegramLinkCode(code: string): Promise<User | null> {
+    const document = await this.userModel
+      .findOne({ 'telegramLinking.code': code })
+      .lean()
+      .exec();
+
+    return document ? UserDocumentMapper.toDomain(document) : null;
+  }
+
   async save(user: User): Promise<void> {
     const document = UserDocumentMapper.toPersistence(user);
 

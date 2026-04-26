@@ -11,9 +11,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
+import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from '../../application/services/update-delivery-channels.service';
@@ -22,6 +25,7 @@ import {
   SubscribeToStationAlertsDto,
   UpdateStationAlertPreferencesDto,
 } from '../dtos/station-alert-subscription.dto';
+import { TelegramLinkCodeResponseDto } from '../dtos/telegram-link-code-response.dto';
 import { UpdateDeliveryChannelsDto } from '../dtos/update-delivery-channels.dto';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
@@ -30,6 +34,8 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 @UseGuards(JwtAuthGuard)
 export class UserNotificationPreferencesController {
   constructor(
+    private readonly configService: ConfigService,
+    private readonly createTelegramLinkCodeService: CreateTelegramLinkCodeService,
     private readonly subscribeToStationAlertsService: SubscribeToStationAlertsService,
     private readonly unsubscribeFromStationAlertsService: UnsubscribeFromStationAlertsService,
     private readonly updateStationAlertPreferencesService: UpdateStationAlertPreferencesService,
@@ -115,6 +121,38 @@ export class UserNotificationPreferencesController {
       });
 
       return this.toResponse(user);
+    } catch (error) {
+      throw this.mapDomainError(error);
+    }
+  }
+
+  @Post(':id/delivery-channels/telegram/link-code')
+  @ApiOperation({
+    summary: 'Create a short-lived Telegram link code for the authenticated user',
+  })
+  @ApiOkResponse({
+    type: TelegramLinkCodeResponseDto,
+  })
+  async createTelegramLinkCode(
+    @Param('id') userId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<TelegramLinkCodeResponseDto> {
+    this.ensureOwnUserAccess(req.user, userId);
+
+    try {
+      const result = await this.createTelegramLinkCodeService.execute({
+        userId,
+      });
+      const botUsername =
+        this.configService.get<string>('telegram.botUsername')?.trim() || undefined;
+
+      return {
+        code: result.code,
+        expiresAt: result.expiresAt.toISOString(),
+        instructions: `Send /link ${result.code} to the WeatherFlow Telegram bot.`,
+        botUsername,
+        botUrl: botUsername ? `https://t.me/${botUsername}` : undefined,
+      };
     } catch (error) {
       throw this.mapDomainError(error);
     }

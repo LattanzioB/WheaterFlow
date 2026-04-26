@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { PasswordHasher } from '../ports/password-hasher.port';
 import type { TokenService } from '../ports/token-service.port';
 import type { IUserRepository } from '../../../users/application/ports/user-repository.port';
-import {
-  User,
-  type UserDeliveryChannelsInput,
-} from '../../../users/domain/entities/user.entity';
+import { User } from '../../../users/domain/entities/user.entity';
 import { Email } from '../../../users/domain/value-objects/email.value-object';
 import {
   PASSWORD_HASHER_TOKEN,
@@ -18,7 +15,6 @@ export interface RegisterUserCommand {
   lastName: string;
   email: string;
   password: string;
-  deliveryChannels?: UserDeliveryChannelsInput;
 }
 
 export interface AuthenticationResult {
@@ -52,7 +48,6 @@ export class RegisterUserService {
       lastName: command.lastName,
       email,
       passwordHash,
-      deliveryChannels: command.deliveryChannels,
     });
 
     await this.userRepository.save(user);

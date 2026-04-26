@@ -1,9 +1,9 @@
-# API Reference — WeatherFlow
+# API Reference - WeatherFlow
 
 Base URL: `http://localhost:3000`
 Swagger UI: `http://localhost:3000/api/docs`
 
-All protected endpoints require `Authorization: Bearer <token>` header.
+All protected endpoints require `Authorization: Bearer <token>`.
 
 ---
 
@@ -16,14 +16,9 @@ Register a new user and receive a JWT.
 ```json
 {
   "name": "Juan",
-  "lastName": "Pérez",
+  "lastName": "Perez",
   "email": "juan@example.com",
-  "password": "securepassword",
-  "deliveryChannels": {
-    "telegram": {
-      "chatId": "123456789"
-    }
-  }
+  "password": "securepassword"
 }
 ```
 
@@ -54,58 +49,13 @@ Authenticate and receive a JWT.
 
 ## Users
 
-### `GET /users` — List all users
-**Auth required.** Response `200`: array of User objects.
-
----
-
-### `POST /users` — Create user
-**Auth required.**
-
-**Body:**
-```json
-{
-  "name": "Ana",
-  "lastName": "García",
-  "email": "ana@example.com",
-  "password": "securepassword",
-  "deliveryChannels": {
-    "telegram": {
-      "chatId": "987654321"
-    }
-  }
-}
-```
-**Response `201`:** User object.
-
----
-
-### `GET /users/:id` — Get user by ID
-**Auth required.** Response `200`: User object. `404` if not found.
-
----
-
-### `PATCH /users/:id` — Update user
-**Auth required.**
-
-**Body:** Any subset of: `name`, `lastName`, `email`, `deliveryChannels`
-
-**Response `200`:** Updated User object.
-
----
-
-### `DELETE /users/:id` — Delete user
-**Auth required.** Response `204` (no body).
-
----
-
-### `POST /users/:id/subscriptions/:stationId` — Subscribe to station
+### `POST /users/:id/subscriptions/:stationId`
 **Auth required.** Subscribes the user to the station and selected alert types.
 
 **Body (optional):**
 ```json
 {
-  "alertTypes": ["Tormenta", "Humedad Crítica"]
+  "alertTypes": ["Tormenta", "Humedad Critica"]
 }
 ```
 
@@ -113,14 +63,14 @@ Authenticate and receive a JWT.
 
 ---
 
-### `DELETE /users/:id/subscriptions/:stationId` — Unsubscribe from station
+### `DELETE /users/:id/subscriptions/:stationId`
 **Auth required.** Removes the station preference from the user's alert routing.
 
 **Response `200`:** Updated User object.
 
 ---
 
-### `PATCH /users/:id/subscriptions/:stationId` â€” Update station alert preferences
+### `PATCH /users/:id/subscriptions/:stationId`
 **Auth required.** Replaces the selected alert types for an existing station subscription.
 
 **Body:**
@@ -134,7 +84,7 @@ Authenticate and receive a JWT.
 
 ---
 
-### `PATCH /users/:id/delivery-channels` â€” Update delivery settings
+### `PATCH /users/:id/delivery-channels`
 **Auth required.** Updates channel-specific delivery configuration separately from alert preferences.
 
 **Body:**
@@ -152,17 +102,41 @@ Authenticate and receive a JWT.
 
 ---
 
+### `POST /users/:id/delivery-channels/telegram/link-code`
+**Auth required.** Creates a short-lived code the user can send to the Telegram bot so the backend can store the Telegram `chatId` automatically.
+
+**Body:** none
+
+**Response `200`:**
+```json
+{
+  "code": "WF-A1B2C3D4",
+  "expiresAt": "2026-04-26T18:45:00.000Z",
+  "instructions": "Send /link WF-A1B2C3D4 to the WeatherFlow Telegram bot.",
+  "botUsername": "weatherflow_bot",
+  "botUrl": "https://t.me/weatherflow_bot"
+}
+```
+
+**Linking flow:**
+1. Register with `POST /auth/register`.
+2. Call `POST /users/:id/delivery-channels/telegram/link-code`.
+3. Send `/link <code>` to the WeatherFlow Telegram bot.
+4. The backend receives the Telegram webhook and stores the sender chat automatically.
+
+---
+
 ### User Object
 ```json
 {
   "id": "uuid",
   "name": "Ana",
-  "lastName": "García",
+  "lastName": "Garcia",
   "email": "ana@example.com",
   "notificationPreferences": [
     {
       "stationId": "station-uuid-1",
-      "alertTypes": ["Tormenta", "Humedad Crítica"]
+      "alertTypes": ["Tormenta", "Humedad Critica"]
     },
     {
       "stationId": "station-uuid-2",
@@ -182,33 +156,34 @@ Authenticate and receive a JWT.
 
 ## Weather Stations
 
-### `GET /weather-stations` — List all stations
+### `GET /weather-stations`
 **Auth required.** Response `200`: array of Station objects.
 
 ---
 
-### `POST /weather-stations` — Create station
+### `POST /weather-stations`
 **Auth required.**
 
 **Body:**
 ```json
 {
-  "name": "Estación Central",
+  "name": "Estacion Central",
   "location": { "latitude": -34.6037, "longitude": -58.3816 },
   "sensorModel": "Davis Vantage Pro2",
   "ownerId": "user-uuid"
 }
 ```
+
 **Response `201`:** Station object.
 
 ---
 
-### `GET /weather-stations/:id` — Get station by ID
+### `GET /weather-stations/:id`
 **Auth required.** Response `200`: Station object. `404` if not found.
 
 ---
 
-### `PATCH /weather-stations/:id` — Update station
+### `PATCH /weather-stations/:id`
 **Auth required.**
 
 **Body:** Any subset of: `name`, `location`, `sensorModel`, `status`
@@ -217,7 +192,7 @@ Authenticate and receive a JWT.
 
 ---
 
-### `DELETE /weather-stations/:id` — Delete station
+### `DELETE /weather-stations/:id`
 **Auth required.** Response `204`.
 
 ---
@@ -226,7 +201,7 @@ Authenticate and receive a JWT.
 ```json
 {
   "id": "uuid",
-  "name": "Estación Central",
+  "name": "Estacion Central",
   "location": { "latitude": -34.6037, "longitude": -58.3816 },
   "sensorModel": "Davis Vantage Pro2",
   "status": "Activa",
@@ -241,22 +216,22 @@ Authenticate and receive a JWT.
 
 ## Measurements
 
-### `GET /measurements` — List / filter measurements
+### `GET /measurements`
 **Auth required.**
 
 **Query params (all optional):**
 | Param | Type | Description |
 |---|---|---|
 | `stationName` | string | Filter by station name (partial match) |
-| `tempMin` | number | Minimum temperature (°C) |
-| `tempMax` | number | Maximum temperature (°C) |
+| `tempMin` | number | Minimum temperature (C) |
+| `tempMax` | number | Maximum temperature (C) |
 | `alertOnly` | boolean | If `true`, return only alert measurements |
 
 **Response `200`:** Array of Measurement objects.
 
 ---
 
-### `POST /measurements` — Create measurement
+### `POST /measurements`
 **Auth required.**
 
 **Body:**
@@ -271,16 +246,16 @@ Authenticate and receive a JWT.
 ```
 
 **Response `201`:** Measurement object.
-Alert fields (`alertStatus`, `alertType`) are **set automatically** by domain logic — do not include them in the request.
+Alert fields (`alertStatus`, `alertType`) are set automatically by domain logic and must not be included in the request.
 
 ---
 
-### `GET /measurements/:id` — Get measurement by ID
+### `GET /measurements/:id`
 **Auth required.** Response `200`: Measurement object. `404` if not found.
 
 ---
 
-### `DELETE /measurements/:id` — Delete measurement
+### `DELETE /measurements/:id`
 **Auth required.** Response `204`.
 
 ---
@@ -299,27 +274,27 @@ Alert fields (`alertStatus`, `alertType`) are **set automatically** by domain lo
 }
 ```
 
-**Alert type values:** `"Ninguna"` | `"Calor Extremo"` | `"Helada"` | `"Tormenta"` | `"Humedad Crítica"`
+**Alert type values:** `"Ninguna"` | `"Calor Extremo"` | `"Helada"` | `"Tormenta"` | `"Humedad Critica"`
 
 ---
 
-## Alert Rules (Domain Logic)
+## Alert Rules
 
 | Condition | Alert Type |
 |---|---|
-| temperature > 40°C | `"Calor Extremo"` |
-| temperature < 0°C | `"Helada"` |
+| temperature > 40 C | `"Calor Extremo"` |
+| temperature < 0 C | `"Helada"` |
 | pressure < 980 hPa | `"Tormenta"` |
-| humidity > 90% | `"Humedad Crítica"` |
+| humidity > 90% | `"Humedad Critica"` |
 | none | `"Ninguna"` |
 
-When an alert is detected, the application first filters users by station subscription and selected alert type, then forwards the alert to the configured delivery targets. Telegram is the current delivery mechanism.
+When an alert is detected, the application filters users by station subscription and selected alert type, then forwards the alert to the configured delivery targets. Telegram is the current delivery mechanism.
 
 ---
 
 ## Error Responses
 
-All errors follow NestJS standard format:
+All errors follow the NestJS standard shape:
 
 ```json
 {
@@ -331,8 +306,8 @@ All errors follow NestJS standard format:
 
 | Status | Meaning |
 |---|---|
-| `400` | Validation error (bad request body) |
+| `400` | Validation error |
 | `401` | Missing or invalid JWT |
 | `403` | Forbidden |
 | `404` | Resource not found |
-| `409` | Conflict (e.g. email already registered) |
+| `409` | Conflict, for example an already registered email |

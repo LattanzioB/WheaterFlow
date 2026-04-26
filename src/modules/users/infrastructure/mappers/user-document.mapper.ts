@@ -15,6 +15,7 @@ export class UserDocumentMapper {
       passwordHash: user.getPasswordHash(),
       notificationPreferences: user.getNotificationPreferences(),
       deliveryChannels: user.getDeliveryChannels(),
+      telegramLinking: user.getTelegramLinking(),
       role: user.getRole(),
       createdAt: user.getCreatedAt(),
     };
@@ -37,6 +38,10 @@ export class UserDocumentMapper {
         telegram: {
           chatId: document.deliveryChannels.telegram.chatId,
         },
+      },
+      telegramLinking: {
+        code: document.telegramLinking?.code ?? null,
+        expiresAt: document.telegramLinking?.expiresAt ?? null,
       },
       role: document.role,
       createdAt: document.createdAt,

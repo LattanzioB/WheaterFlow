@@ -1,35 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MinLength,
-  ValidateNested,
-} from 'class-validator';
-
-export class RegisterTelegramDeliveryChannelDto {
-  @ApiPropertyOptional({
-    example: '123456789',
-    description: 'Telegram chat id for alert delivery',
-  })
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  chatId?: string;
-}
-
-export class RegisterDeliveryChannelsDto {
-  @ApiPropertyOptional({
-    type: () => RegisterTelegramDeliveryChannelDto,
-    description: 'Telegram delivery configuration',
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => RegisterTelegramDeliveryChannelDto)
-  telegram?: RegisterTelegramDeliveryChannelDto;
-}
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({
@@ -64,13 +34,4 @@ export class RegisterDto {
   @IsNotEmpty()
   @MinLength(8)
   password!: string;
-
-  @ApiPropertyOptional({
-    type: () => RegisterDeliveryChannelsDto,
-    description: 'Notification delivery channels to configure at registration',
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => RegisterDeliveryChannelsDto)
-  deliveryChannels?: RegisterDeliveryChannelsDto;
 }

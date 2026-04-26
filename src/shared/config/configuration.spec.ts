@@ -19,6 +19,8 @@ describe('configuration factory', () => {
     process.env.JWT_SECRET = 'test-secret-key';
     process.env.JWT_EXPIRES_IN = '1d';
     process.env.TELEGRAM_BOT_TOKEN = 'test-token';
+    process.env.TELEGRAM_BOT_USERNAME = 'weatherflow_bot';
+    process.env.TELEGRAM_WEBHOOK_SECRET = 'secret-token';
 
     const config = configuration();
     expect(typeof config).toBe('object');
@@ -74,6 +76,16 @@ describe('configuration factory', () => {
     expect(config.jwt.expiresIn).toBe('7d');
   });
 
+  it('should map Telegram bot metadata when provided', () => {
+    process.env.TELEGRAM_BOT_USERNAME = 'weatherflow_bot';
+    process.env.TELEGRAM_WEBHOOK_SECRET = 'secret-token';
+
+    const config = configuration();
+
+    expect(config.telegram.botUsername).toBe('weatherflow_bot');
+    expect(config.telegram.webhookSecret).toBe('secret-token');
+  });
+
   // EC-19
   it('should use camelCase keys (not SCREAMING_SNAKE)', () => {
     process.env.PORT = '3000';
@@ -91,5 +103,7 @@ describe('configuration factory', () => {
     expect(config.jwt).toHaveProperty('secret');
     expect(config.jwt).toHaveProperty('expiresIn');
     expect(config.telegram).toHaveProperty('botToken');
+    expect(config.telegram).toHaveProperty('botUsername');
+    expect(config.telegram).toHaveProperty('webhookSecret');
   });
 });

@@ -35,6 +35,10 @@ describe('MongoUserRepository', () => {
         chatId: '12345',
       },
     },
+    telegramLinking: {
+      code: 'WF-AB12CD34',
+      expiresAt: new Date('2026-04-25T18:10:00.000Z'),
+    },
     role: UserRole.USER,
     createdAt: new Date('2026-04-25T18:00:00.000Z'),
   };
@@ -57,6 +61,21 @@ describe('MongoUserRepository', () => {
     });
   });
 
+  it('loads a user by telegram link code', async () => {
+    const model = buildModel();
+    const query = buildQuery(userDocument);
+    const repository = new MongoUserRepository(model);
+
+    model.findOne.mockReturnValue(query);
+
+    const user = await repository.findByTelegramLinkCode('WF-AB12CD34');
+
+    expect(model.findOne).toHaveBeenCalledWith({
+      'telegramLinking.code': 'WF-AB12CD34',
+    });
+    expect(user?.getId()).toBe('user-1');
+  });
+
   it('upserts the mapped persistence document when saving', async () => {
     const model = buildModel();
     const repository = new MongoUserRepository(model);
@@ -71,6 +90,10 @@ describe('MongoUserRepository', () => {
         telegram: {
           chatId: null,
         },
+      }),
+      getTelegramLinking: () => ({
+        code: 'WF-NEWCODE',
+        expiresAt: new Date('2026-04-25T19:10:00.000Z'),
       }),
       getRole: () => UserRole.ADMIN,
       getCreatedAt: () => new Date('2026-04-25T19:00:00.000Z'),
@@ -93,6 +116,10 @@ describe('MongoUserRepository', () => {
           telegram: {
             chatId: null,
           },
+        },
+        telegramLinking: {
+          code: 'WF-NEWCODE',
+          expiresAt: new Date('2026-04-25T19:10:00.000Z'),
         },
         role: UserRole.ADMIN,
         createdAt: new Date('2026-04-25T19:00:00.000Z'),

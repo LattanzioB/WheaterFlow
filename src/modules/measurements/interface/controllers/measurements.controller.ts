@@ -11,17 +11,33 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { GetStationByIdService } from '../../../stations/application/services/get-station-by-id.service';
+import { AlertType } from '../../domain/value-objects/alert-type.enum';
 import { QueryMeasurementsService } from '../../application/services/query-measurements.service';
 import { RecordMeasurementService } from '../../application/services/record-measurement.service';
-import { CreateMeasurementDto, QueryMeasurementsDto } from '../dtos/measurement.dto';
+import {
+  CreateMeasurementDto,
+  MeasurementResponseDto,
+  QueryMeasurementsDto,
+} from '../dtos/measurement.dto';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 @Controller('measurements')
 @UseGuards(JwtAuthGuard)
+@ApiTags('Measurements')
 export class MeasurementsController {
   constructor(
     private readonly recordMeasurementService: RecordMeasurementService,
@@ -30,10 +46,21 @@ export class MeasurementsController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Record a new measurement for a weather station' })
+  @ApiCreatedResponse({
+    description: 'The measurement was recorded successfully.',
+    type: MeasurementResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'The measurement payload is invalid.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required to access this route.' })
+  @ApiForbiddenResponse({
+    description: 'Users can only record measurements for their own stations.',
+  })
+  @ApiNotFoundResponse({ description: 'The weather station could not be found.' })
   async create(
     @Body() dto: CreateMeasurementDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<MeasurementResponse> {
+  ): Promise<MeasurementResponseDto> {
     try {
       const station = await this.getStationByIdService.execute({
         stationId: dto.stationId,
@@ -58,9 +85,15 @@ export class MeasurementsController {
   }
 
   @Get()
-  async query(
-    @Query() dto: QueryMeasurementsDto,
-  ): Promise<MeasurementResponse[]> {
+  @ApiOperation({ summary: 'Query measurements using optional filter criteria' })
+  @ApiOkResponse({
+    description: 'Measurements were retrieved successfully.',
+    type: MeasurementResponseDto,
+    isArray: true,
+  })
+  @ApiBadRequestResponse({ description: 'The measurement query parameters are invalid.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required to access this route.' })
+  async query(@Query() dto: QueryMeasurementsDto): Promise<MeasurementResponseDto[]> {
     try {
       const measurements = await this.queryMeasurementsService.execute({
         stationName: dto.stationName,
@@ -89,7 +122,7 @@ export class MeasurementsController {
     );
   }
 
-  private toResponse(measurement: MeasurementResponseSource): MeasurementResponse {
+  private toResponse(measurement: MeasurementResponseSource): MeasurementResponseDto {
     return {
       id: measurement.getId(),
       stationId: measurement.getStationId(),
@@ -117,16 +150,5 @@ interface MeasurementResponseSource {
   };
   getReportedAt(): Date;
   hasAlert(): boolean;
-  getAlertType(): string;
-}
-
-interface MeasurementResponse {
-  id: string;
-  stationId: string;
-  temperature: number;
-  humidity: number;
-  pressure: number;
-  reportedAt: string;
-  alertStatus: boolean;
-  alertType: string;
+  getAlertType(): AlertType;
 }

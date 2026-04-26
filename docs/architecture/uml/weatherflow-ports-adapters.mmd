@@ -1,0 +1,129 @@
+classDiagram
+direction LR
+
+%% Auth ports and adapters
+class PasswordHasher["PasswordHasher (Port)"] {
+  +hash(password)
+  +compare(password, passwordHash)
+}
+
+class TokenService["TokenService (Port)"] {
+  +generateToken(payload)
+}
+
+class AuthTokenPayload["AuthTokenPayload (Payload)"] {
+  +sub
+  +email
+  +role
+}
+
+class BcryptPasswordHasher["BcryptPasswordHasher (Adapter)"] {
+  +hash(password)
+  +compare(password, passwordHash)
+}
+
+class JwtTokenService["JwtTokenService (Adapter)"] {
+  +generateToken(payload)
+}
+
+%% Persistence ports and adapters
+class IUserRepository["IUserRepository (Port)"] {
+  +findById(id)
+  +findByEmail(email)
+  +save(user)
+  +findSubscribersByStationId(stationId)
+}
+
+class IStationRepository["IStationRepository (Port)"] {
+  +findById(id)
+  +findByOwnerId(ownerId)
+  +save(station)
+}
+
+class IMeasurementRepository["IMeasurementRepository (Port)"] {
+  +findById(id)
+  +findByStationId(stationId)
+  +save(measurement)
+  +findWithFilters(filters)
+}
+
+class MeasurementFilters["MeasurementFilters (QueryModel)"] {
+  +stationName
+  +tempMin
+  +tempMax
+  +alertOnly
+}
+
+class MongoUserRepository["MongoUserRepository (Adapter)"] {
+  +findById(id)
+  +findByEmail(email)
+  +save(user)
+}
+
+class MongoWeatherStationRepository["MongoWeatherStationRepository (Adapter)"] {
+  +findById(id)
+  +findByOwnerId(ownerId)
+  +save(station)
+}
+
+class MongoMeasurementRepository["MongoMeasurementRepository (Adapter)"] {
+  +findById(id)
+  +findByStationId(stationId)
+  +save(measurement)
+  +findWithFilters(filters)
+}
+
+class UserDocumentMapper["UserDocumentMapper (Mapper)"]
+class WeatherStationDocumentMapper["WeatherStationDocumentMapper (Mapper)"]
+class MeasurementDocumentMapper["MeasurementDocumentMapper (Mapper)"]
+class UserPersistenceModel["UserPersistenceModel (PersistenceModel)"]
+class WeatherStationPersistenceModel["WeatherStationPersistenceModel (PersistenceModel)"]
+class MeasurementPersistenceModel["MeasurementPersistenceModel (PersistenceModel)"]
+
+%% Notifications port and adapter
+class AlertNotifier["AlertNotifier (Port)"] {
+  +sendMeasurementAlert(notification)
+}
+
+class MeasurementAlertNotification["MeasurementAlertNotification (RequestModel)"] {
+  +userId
+  +deliveryTargets
+  +measurementId
+  +stationId
+  +stationName
+  +alertType
+  +reportedAt
+}
+
+class NotificationDeliveryTarget["NotificationDeliveryTarget (RequestModel)"] {
+  +channel
+  +destination
+}
+
+class AlertType["AlertType (DomainEnum)"]
+
+class TelegramAlertNotifierAdapter["TelegramAlertNotifierAdapter (TelegramAdapter)"] {
+  +sendMeasurementAlert(notification)
+}
+
+PasswordHasher <|.. BcryptPasswordHasher
+TokenService <|.. JwtTokenService
+JwtTokenService ..> AuthTokenPayload : signs
+
+IUserRepository <|.. MongoUserRepository
+IStationRepository <|.. MongoWeatherStationRepository
+IMeasurementRepository <|.. MongoMeasurementRepository
+IMeasurementRepository ..> MeasurementFilters : query contract
+
+MongoUserRepository ..> UserDocumentMapper : maps
+MongoWeatherStationRepository ..> WeatherStationDocumentMapper : maps
+MongoMeasurementRepository ..> MeasurementDocumentMapper : maps
+UserDocumentMapper ..> UserPersistenceModel : reads and writes
+WeatherStationDocumentMapper ..> WeatherStationPersistenceModel : reads and writes
+MeasurementDocumentMapper ..> MeasurementPersistenceModel : reads and writes
+MongoMeasurementRepository ..> WeatherStationPersistenceModel : resolves station name filters
+
+AlertNotifier <|.. TelegramAlertNotifierAdapter
+TelegramAlertNotifierAdapter ..> MeasurementAlertNotification : formats
+MeasurementAlertNotification *-- NotificationDeliveryTarget : delivery targets
+MeasurementAlertNotification --> AlertType : alert type

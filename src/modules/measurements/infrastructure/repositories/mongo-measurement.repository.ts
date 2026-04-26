@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import { Model } from 'mongoose';
 import {
   IMeasurementRepository,
   MeasurementFilters,
@@ -48,7 +48,7 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
   }
 
   async findWithFilters(filters: MeasurementFilters): Promise<Measurement[]> {
-    const query: FilterQuery<MeasurementPersistenceModel> = {};
+    const query: Record<string, any> = {};
 
     if (filters.stationName) {
       const stationIds = await this.findStationIdsByName(filters.stationName);

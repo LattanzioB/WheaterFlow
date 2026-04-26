@@ -2,7 +2,7 @@ import { BcryptPasswordHasher } from './bcrypt-password-hasher';
 
 describe('BcryptPasswordHasher', () => {
   it('hashes passwords and validates matches', async () => {
-    const hasher = new BcryptPasswordHasher(4);
+    const hasher = new BcryptPasswordHasher();
 
     const passwordHash = await hasher.hash('secure-password');
 

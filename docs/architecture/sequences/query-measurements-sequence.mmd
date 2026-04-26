@@ -1,0 +1,19 @@
+sequenceDiagram
+autonumber
+actor User
+participant MeasurementsController
+participant QueryMeasurementsService
+participant MeasurementRepository as IMeasurementRepository / MongoMeasurementRepository
+
+User->>MeasurementsController: GET /measurements?stationName&tempMin&tempMax&alertOnly
+MeasurementsController->>QueryMeasurementsService: execute(filters)
+QueryMeasurementsService->>QueryMeasurementsService: validate tempMin <= tempMax
+QueryMeasurementsService->>MeasurementRepository: findWithFilters(normalizedFilters)
+
+alt stationName filter present
+  Note over MeasurementRepository: Resolve matching station IDs from station names\nbefore loading measurements
+end
+
+MeasurementRepository-->>QueryMeasurementsService: measurements
+QueryMeasurementsService-->>MeasurementsController: measurements
+MeasurementsController-->>User: 200 MeasurementResponse[]

@@ -1,0 +1,19 @@
+sequenceDiagram
+autonumber
+actor User
+participant AuthController
+participant LoginUserService
+participant UserRepository as IUserRepository / MongoUserRepository
+participant PasswordHasher as PasswordHasher / BcryptPasswordHasher
+participant TokenService as TokenService / JwtTokenService
+
+User->>AuthController: POST /auth/login
+AuthController->>LoginUserService: execute(command)
+LoginUserService->>UserRepository: findByEmail(Email.create(email))
+UserRepository-->>LoginUserService: user
+LoginUserService->>PasswordHasher: compare(password, user.passwordHash)
+PasswordHasher-->>LoginUserService: passwordsMatch
+LoginUserService->>TokenService: generateToken({ sub, email })
+TokenService-->>LoginUserService: accessToken
+LoginUserService-->>AuthController: AuthenticationResult
+AuthController-->>User: 200 { access_token }

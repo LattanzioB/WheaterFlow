@@ -1,0 +1,36 @@
+sequenceDiagram
+autonumber
+actor User
+participant PreferencesController as UserNotificationPreferencesController
+participant UpdatePrefsService as UpdateStationAlertPreferencesService
+participant UpdateDeliveryService as UpdateDeliveryChannelsService
+participant UserRepository as IUserRepository / MongoUserRepository
+participant StationRepository as IStationRepository / MongoWeatherStationRepository
+participant UserAggregate as User aggregate
+
+User->>PreferencesController: PATCH /users/:id/subscriptions/:stationId or /delivery-channels
+PreferencesController->>PreferencesController: ensureOwnUserAccess()
+
+alt update station alert preferences
+  PreferencesController->>UpdatePrefsService: execute({ userId, stationId, alertTypes })
+  UpdatePrefsService->>UserRepository: findById(userId)
+  UserRepository-->>UpdatePrefsService: user
+  UpdatePrefsService->>StationRepository: findById(stationId)
+  StationRepository-->>UpdatePrefsService: station
+  UpdatePrefsService->>UserAggregate: updateAlertTypesForStation(stationId, alertTypes)
+  UserAggregate-->>UpdatePrefsService: updated user
+  UpdatePrefsService->>UserRepository: save(user)
+  UserRepository-->>UpdatePrefsService: void
+  UpdatePrefsService-->>PreferencesController: user
+else update delivery channels
+  PreferencesController->>UpdateDeliveryService: execute({ userId, telegramChatId })
+  UpdateDeliveryService->>UserRepository: findById(userId)
+  UserRepository-->>UpdateDeliveryService: user
+  UpdateDeliveryService->>UserAggregate: configureTelegramDelivery(chatId)
+  UserAggregate-->>UpdateDeliveryService: updated user
+  UpdateDeliveryService->>UserRepository: save(user)
+  UserRepository-->>UpdateDeliveryService: void
+  UpdateDeliveryService-->>PreferencesController: user
+end
+
+PreferencesController-->>User: 200 UserResponse

@@ -1,0 +1,17 @@
+flowchart LR
+  classDef person fill:#e8f0fe,stroke:#1a73e8,color:#0b57d0,stroke-width:1.5px;
+  classDef system fill:#e6f4ea,stroke:#188038,color:#0d652d,stroke-width:1.5px;
+  classDef external fill:#fef7e0,stroke:#f29900,color:#7c4a03,stroke-width:1.5px;
+
+  user["User\nRegisters, manages stations, records measurements,\nconfigures alert preferences, and queries data"]:::person
+
+  subgraph weatherflow["WeatherFlow System Boundary"]
+    system["WeatherFlow\nNestJS monolith that authenticates users,\nmanages stations and measurements, evaluates alerts,\nand resolves notification preferences before delivery"]:::system
+  end
+
+  telegram["Telegram Bot API\nDelivers alert notifications to user chat IDs"]:::external
+  mongo["MongoDB Atlas\nPersists users, stations, measurements,\nand notification preference data"]:::external
+
+  user -->|"HTTPS/JSON REST"| system
+  system -->|"Writes and reads application data"| mongo
+  system -->|"Sends alert notifications"| telegram

@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
-import { IStationRepository } from '../../../stations/application/ports/station-repository.port';
+import type { IStationRepository } from '../../../stations/application/ports/station-repository.port';
 import {
   STATION_REPOSITORY_TOKEN,
   USER_REPOSITORY_TOKEN,
 } from '../../../../shared/tokens/injection-tokens';
-import { IUserRepository } from '../ports/user-repository.port';
-import { User } from '../../domain/entities/user.entity';
+import type { IUserRepository } from '../ports/user-repository.port';
+import type { User } from '../../domain/entities/user.entity';
 
 export interface SubscribeToStationAlertsCommand {
   userId: string;

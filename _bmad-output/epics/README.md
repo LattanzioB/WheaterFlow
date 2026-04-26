@@ -7,7 +7,7 @@
 | [E-01](E-01-project-foundation.md) | Project Foundation | 5 | Critical | None | Done |
 | [E-02](E-02-domain-layer.md) | Domain Layer | 6 | High | E-01 | In Review |
 | [E-03](E-03-ports-application-layer.md) | Ports & Application Layer | 6 | High | E-02 | In Review |
-| [E-03B](E-03B-notification-preferences-channel-separation.md) | Notification Preferences & Channel Separation | 4 | High | E-03 | Not Started |
+| [E-03B](E-03B-notification-preferences-channel-separation.md) | Notification Preferences & Channel Separation | 4 | High | E-03 | In Review |
 | [E-04](E-04-adapters-infrastructure.md) | Adapters & Infrastructure | 8 | High | E-03B | Not Started |
 | [E-05](E-05-api-docs-database.md) | API Documentation & Database | 4 | Medium | E-04 | Not Started |
 | [E-06](E-06-architecture-documentation.md) | Architecture Documentation | 5 | Medium | E-04, E-02, E-03, E-03B | Not Started |

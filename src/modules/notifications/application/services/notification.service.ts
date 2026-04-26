@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { AlertNotifier } from '../ports/alert-notifier.port';
-import {
+import type { AlertNotifier } from '../ports/alert-notifier.port';
+import type {
   MeasurementAlertNotification,
   NotificationDeliveryTarget,
 } from '../ports/measurement-alert-notification';
-import { IMeasurementRepository } from '../../../measurements/application/ports/measurement-repository.port';
+import type { IMeasurementRepository } from '../../../measurements/application/ports/measurement-repository.port';
 import { MeasurementAlertDetectedEvent } from '../../../measurements/domain/events/measurement-alert-detected.event';
-import { IStationRepository } from '../../../stations/application/ports/station-repository.port';
-import { IUserRepository } from '../../../users/application/ports/user-repository.port';
-import { User } from '../../../users/domain/entities/user.entity';
+import type { IStationRepository } from '../../../stations/application/ports/station-repository.port';
+import type { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import type { User } from '../../../users/domain/entities/user.entity';
 import {
   ALERT_NOTIFIER_TOKEN,
   MEASUREMENT_REPOSITORY_TOKEN,

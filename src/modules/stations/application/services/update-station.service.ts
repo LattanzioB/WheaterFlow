@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IStationRepository } from '../ports/station-repository.port';
+import type { IStationRepository } from '../ports/station-repository.port';
 import { StationAlertSettingsProps } from '../../domain/value-objects/station-alert-settings.value-object';
 import { Location } from '../../domain/value-objects/location.value-object';
 import { StationStatus } from '../../domain/value-objects/station-status.enum';

@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PasswordHasher } from '../ports/password-hasher.port';
-import { TokenService } from '../ports/token-service.port';
-import { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import type { PasswordHasher } from '../ports/password-hasher.port';
+import type { TokenService } from '../ports/token-service.port';
+import type { IUserRepository } from '../../../users/application/ports/user-repository.port';
 import { Email } from '../../../users/domain/value-objects/email.value-object';
 import {
   PASSWORD_HASHER_TOKEN,
   TOKEN_SERVICE_TOKEN,
   USER_REPOSITORY_TOKEN,
 } from '../../../../shared/tokens/injection-tokens';
-import { AuthenticationResult } from './register-user.service';
+import type { AuthenticationResult } from './register-user.service';
 
 export interface LoginUserCommand {
   email: string;

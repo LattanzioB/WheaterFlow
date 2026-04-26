@@ -20,8 +20,15 @@ User {
   lastName: string
   email: Email                // value object
   passwordHash: string
-  telegramChatId: string | null
-  subscriptions: string[]     // array of WeatherStation IDs
+  notificationPreferences: Array<{
+    stationId: string
+    alertTypes: AlertType[]
+  }>
+  deliveryChannels: {
+    telegram: {
+      chatId: string | null
+    }
+  }
   createdAt: Date
 }
 ```
@@ -38,13 +45,18 @@ email.equals(other: Email): boolean
 
 ### Invariants
 - `email` must be unique across all users
-- `subscriptions` contains only valid WeatherStation IDs
+- `notificationPreferences` contains unique WeatherStation IDs
+- Each station preference contains one or more supported alert types
+- Delivery-channel settings are stored separately from alert intent
+
+### Compatibility Note
+- The aggregate still exposes legacy `subscriptions` and `telegramChatId` helpers as wrappers so the E-03 application services can migrate incrementally during E-03B.
 
 ### Repository Port
 ```typescript
 interface IUserRepository {
   findById(id: string): Promise<User | null>
-  findByEmail(email: string): Promise<User | null>
+  findByEmail(email: Email): Promise<User | null>
   save(user: User): Promise<void>
   delete(id: string): Promise<void>
   findAll(): Promise<User[]>

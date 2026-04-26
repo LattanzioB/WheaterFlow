@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   ForbiddenException,
+  HttpCode,
   NotFoundException,
   Param,
   Patch,
@@ -12,8 +13,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import {
+  ApiBadRequestResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
+import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from '../../application/services/update-delivery-channels.service';
@@ -23,11 +35,13 @@ import {
   UpdateStationAlertPreferencesDto,
 } from '../dtos/station-alert-subscription.dto';
 import { UpdateDeliveryChannelsDto } from '../dtos/update-delivery-channels.dto';
+import { UserResponseDto } from '../dtos/user-response.dto';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
+@ApiTags('Users')
 export class UserNotificationPreferencesController {
   constructor(
     private readonly subscribeToStationAlertsService: SubscribeToStationAlertsService,
@@ -37,12 +51,32 @@ export class UserNotificationPreferencesController {
   ) {}
 
   @Post(':id/subscriptions/:stationId')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Subscribe a user to alerts for a weather station' })
+  @ApiParam({ name: 'id', description: 'User identifier.', example: 'user-1' })
+  @ApiParam({
+    name: 'stationId',
+    description: 'Weather station identifier.',
+    example: 'station-1',
+  })
+  @ApiOkResponse({
+    description: 'The user subscription preferences were updated successfully.',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'The subscription payload is invalid.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required to access this route.' })
+  @ApiForbiddenResponse({
+    description: 'Users can only manage their own notification settings.',
+  })
+  @ApiNotFoundResponse({
+    description: 'The user or station could not be found.',
+  })
   async subscribe(
     @Param('id') userId: string,
     @Param('stationId') stationId: string,
     @Body() dto: SubscribeToStationAlertsDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -59,11 +93,30 @@ export class UserNotificationPreferencesController {
   }
 
   @Delete(':id/subscriptions/:stationId')
+  @ApiOperation({ summary: 'Remove a station alert subscription from a user' })
+  @ApiParam({ name: 'id', description: 'User identifier.', example: 'user-1' })
+  @ApiParam({
+    name: 'stationId',
+    description: 'Weather station identifier.',
+    example: 'station-1',
+  })
+  @ApiOkResponse({
+    description: 'The user subscription was removed successfully.',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'The unsubscribe request could not be processed.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required to access this route.' })
+  @ApiForbiddenResponse({
+    description: 'Users can only manage their own notification settings.',
+  })
+  @ApiNotFoundResponse({
+    description: 'The user, station, or subscription could not be found.',
+  })
   async unsubscribe(
     @Param('id') userId: string,
     @Param('stationId') stationId: string,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -79,12 +132,31 @@ export class UserNotificationPreferencesController {
   }
 
   @Patch(':id/subscriptions/:stationId')
+  @ApiOperation({ summary: 'Replace the alert types selected for a station subscription' })
+  @ApiParam({ name: 'id', description: 'User identifier.', example: 'user-1' })
+  @ApiParam({
+    name: 'stationId',
+    description: 'Weather station identifier.',
+    example: 'station-1',
+  })
+  @ApiOkResponse({
+    description: 'The station alert preferences were updated successfully.',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'The alert preferences payload is invalid.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required to access this route.' })
+  @ApiForbiddenResponse({
+    description: 'Users can only manage their own notification settings.',
+  })
+  @ApiNotFoundResponse({
+    description: 'The user, station, or subscription could not be found.',
+  })
   async updateAlertPreferences(
     @Param('id') userId: string,
     @Param('stationId') stationId: string,
     @Body() dto: UpdateStationAlertPreferencesDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -101,11 +173,23 @@ export class UserNotificationPreferencesController {
   }
 
   @Patch(':id/delivery-channels')
+  @ApiOperation({ summary: 'Update the delivery channels configured for a user' })
+  @ApiParam({ name: 'id', description: 'User identifier.', example: 'user-1' })
+  @ApiOkResponse({
+    description: 'The user delivery channels were updated successfully.',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'The delivery channel payload is invalid.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required to access this route.' })
+  @ApiForbiddenResponse({
+    description: 'Users can only manage their own notification settings.',
+  })
+  @ApiNotFoundResponse({ description: 'The user could not be found.' })
   async updateDeliveryChannels(
     @Param('id') userId: string,
     @Body() dto: UpdateDeliveryChannelsDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -142,7 +226,7 @@ export class UserNotificationPreferencesController {
     return new BadRequestException(error.message);
   }
 
-  private toResponse(user: UserResponseSource): UserResponse {
+  private toResponse(user: UserResponseSource): UserResponseDto {
     return {
       id: user.getId(),
       name: user.getName(),
@@ -162,7 +246,7 @@ interface UserResponseSource {
   getEmail(): { getValue(): string };
   getNotificationPreferences(): Array<{
     stationId: string;
-    alertTypes: string[];
+    alertTypes: AlertType[];
   }>;
   getDeliveryChannels(): {
     telegram: {
@@ -170,21 +254,4 @@ interface UserResponseSource {
     };
   };
   getCreatedAt(): Date;
-}
-
-interface UserResponse {
-  id: string;
-  name: string;
-  lastName: string;
-  email: string;
-  notificationPreferences: Array<{
-    stationId: string;
-    alertTypes: string[];
-  }>;
-  deliveryChannels: {
-    telegram: {
-      chatId: string | null;
-    };
-  };
-  createdAt: string;
 }

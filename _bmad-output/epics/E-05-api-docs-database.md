@@ -36,6 +36,15 @@ E-04 (adapters and controllers implemented)
 - Added schema-focused tests to keep the database diagram aligned with collection names, nested fields, and declared indexes.
 - Refreshed the graph snapshot with `graphify update .` using the project-pinned Python runtime in `graphify-out/.graphify_python`.
 
+## Branches and PRs
+
+| Story | Branch | PR |
+|---|---|---|
+| S-05.1 | `feature/s-05-1-swagger-setup` | [#30](https://github.com/LattanzioB/WheaterFlow/pull/30) |
+| S-05.2 | `feature/s-05-2-dto-endpoint-documentation` | [#31](https://github.com/LattanzioB/WheaterFlow/pull/31) |
+| S-05.3 | `feature/s-05-3-swagger-authentication` | [#32](https://github.com/LattanzioB/WheaterFlow/pull/32) |
+| S-05.4 | `feature/s-05-4-database-diagram` | [#33](https://github.com/LattanzioB/WheaterFlow/pull/33) |
+
 ## Deliverables Covered
 
 - APIs documented (Swagger)

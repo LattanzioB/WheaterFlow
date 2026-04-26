@@ -138,6 +138,7 @@ AppModule
 ## Further Reading
 
 - [Domain Model](./domain-model.md) — entities, value objects, aggregates
+- [Database Diagram](./database-diagram.md) — MongoDB collections, indexes, and references
 - [Hexagonal Architecture](./hexagonal-architecture.md) — layers, ports, adapters, data flow
 - [API Reference](./api-reference.md) — all endpoints with request/response examples
 - [Setup Guide](./setup.md) — how to run the project locally

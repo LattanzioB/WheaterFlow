@@ -1,29 +1,10 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { setupApp } from './setup-app';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('WeatherFlow API')
-    .setDescription(
-      'Weather monitoring API for stations, measurements, and alerts.',
-    )
-    .setVersion('1.0.0')
-    .build();
-  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-
-  SwaggerModule.setup('api/docs', app, swaggerDocument, {
-    jsonDocumentUrl: 'api/docs-json',
-  });
+  setupApp(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }

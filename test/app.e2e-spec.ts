@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppController } from './../src/app.controller';
 import { AppService } from './../src/app.service';
+import { setupApp } from './../src/setup-app';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -15,6 +16,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    setupApp(app);
     await app.init();
   });
 
@@ -23,6 +25,26 @@ describe('AppController (e2e)', () => {
       .get('/')
       .expect(200)
       .expect('Hello World!');
+  });
+
+  it('/api/docs (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/api/docs')
+      .redirects(1)
+      .expect(200)
+      .expect('Content-Type', /html/);
+  });
+
+  it('/api/docs-json (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/docs-json')
+      .expect(200);
+
+    expect(response.body.info).toMatchObject({
+      title: 'WeatherFlow API',
+      version: '1.0.0',
+    });
+    expect(response.body.paths).toHaveProperty('/');
   });
 
   afterEach(async () => {

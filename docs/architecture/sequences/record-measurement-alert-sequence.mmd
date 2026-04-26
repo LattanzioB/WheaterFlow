@@ -1,0 +1,47 @@
+sequenceDiagram
+autonumber
+actor StationOwner as User / Station owner
+participant MeasurementsController
+participant GetStationByIdService
+participant StationRepository as IStationRepository / MongoWeatherStationRepository
+participant RecordMeasurementService
+participant MeasurementAggregate as Measurement aggregate
+participant MeasurementRepository as IMeasurementRepository / MongoMeasurementRepository
+participant EventBus as EventEmitter2
+participant NotificationService
+participant UserRepository as IUserRepository / MongoUserRepository
+participant AlertNotifier as AlertNotifier
+participant TelegramAdapter as TelegramAlertNotifierAdapter
+
+StationOwner->>MeasurementsController: POST /measurements
+MeasurementsController->>GetStationByIdService: execute({ stationId })
+GetStationByIdService->>StationRepository: findById(stationId)
+StationRepository-->>GetStationByIdService: station
+GetStationByIdService-->>MeasurementsController: station
+MeasurementsController->>RecordMeasurementService: execute(command)
+RecordMeasurementService->>StationRepository: findById(stationId)
+StationRepository-->>RecordMeasurementService: station
+RecordMeasurementService->>MeasurementAggregate: Measurement.create(..., alertSettings)
+MeasurementAggregate-->>RecordMeasurementService: measurement with evaluated alert
+RecordMeasurementService->>MeasurementRepository: save(measurement)
+MeasurementRepository-->>RecordMeasurementService: void
+
+alt measurement has alert
+  RecordMeasurementService->>EventBus: emit(MeasurementAlertDetectedEvent)
+  EventBus->>NotificationService: handleAlert(event)
+  NotificationService->>MeasurementRepository: findById(measurementId)
+  MeasurementRepository-->>NotificationService: measurement
+  NotificationService->>StationRepository: findById(stationId)
+  StationRepository-->>NotificationService: station
+  NotificationService->>UserRepository: findSubscribersByStationId(stationId)
+  UserRepository-->>NotificationService: subscribers
+  Note over NotificationService: Filter subscribers by station and alert type\nthen resolve delivery targets before any channel call
+  loop each resolved notification
+    NotificationService->>AlertNotifier: sendMeasurementAlert(notification)
+    AlertNotifier->>TelegramAdapter: sendMeasurementAlert(notification)
+    TelegramAdapter-->>AlertNotifier: Telegram Bot API request(s)
+  end
+end
+
+RecordMeasurementService-->>MeasurementsController: measurement
+MeasurementsController-->>StationOwner: 201 MeasurementResponse

@@ -1,0 +1,24 @@
+sequenceDiagram
+autonumber
+actor User
+participant AuthController
+participant RegisterUserService
+participant UserRepository as IUserRepository / MongoUserRepository
+participant PasswordHasher as PasswordHasher / BcryptPasswordHasher
+participant UserAggregate as User aggregate
+participant TokenService as TokenService / JwtTokenService
+
+User->>AuthController: POST /auth/register
+AuthController->>RegisterUserService: execute(command)
+RegisterUserService->>UserRepository: findByEmail(Email.create(email))
+UserRepository-->>RegisterUserService: null
+RegisterUserService->>PasswordHasher: hash(password)
+PasswordHasher-->>RegisterUserService: passwordHash
+RegisterUserService->>UserAggregate: User.create(props)
+UserAggregate-->>RegisterUserService: user
+RegisterUserService->>UserRepository: save(user)
+UserRepository-->>RegisterUserService: void
+RegisterUserService->>TokenService: generateToken({ sub, email })
+TokenService-->>RegisterUserService: accessToken
+RegisterUserService-->>AuthController: AuthenticationResult
+AuthController-->>User: 201 { access_token }

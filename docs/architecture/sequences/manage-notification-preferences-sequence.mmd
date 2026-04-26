@@ -23,7 +23,7 @@ alt update station alert preferences
   UserRepository-->>UpdatePrefsService: void
   UpdatePrefsService-->>PreferencesController: user
 else update delivery channels
-  PreferencesController->>UpdateDeliveryService: execute({ userId, telegramChatId })
+  PreferencesController->>UpdateDeliveryService: execute({ userId, deliveryChannels })
   UpdateDeliveryService->>UserRepository: findById(userId)
   UserRepository-->>UpdateDeliveryService: user
   UpdateDeliveryService->>UserAggregate: configureTelegramDelivery(chatId)

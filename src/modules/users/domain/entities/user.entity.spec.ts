@@ -10,7 +10,11 @@ describe('User', () => {
       lastName: ' Lattanzio ',
       email: Email.create('bruno@example.com'),
       passwordHash: ' hashed-password ',
-      telegramChatId: ' 12345 ',
+      deliveryChannels: {
+        telegram: {
+          chatId: ' 12345 ',
+        },
+      },
     });
 
   it('creates a user with normalized values and a default role', () => {
@@ -20,7 +24,6 @@ describe('User', () => {
     expect(user.getName()).toBe('Bruno');
     expect(user.getLastName()).toBe('Lattanzio');
     expect(user.getPasswordHash()).toBe('hashed-password');
-    expect(user.getTelegramChatId()).toBe('12345');
     expect(user.getRole()).toBe(UserRole.USER);
     expect(user.getSubscriptions()).toEqual([]);
     expect(user.getDeliveryChannels()).toEqual({
@@ -213,21 +216,29 @@ describe('User', () => {
     user.changeName('Ana', 'Admin');
     user.changePasswordHash('new-hash');
     user.assignRole(UserRole.ADMIN);
-    user.setTelegramChatId(null);
+    user.configureTelegramDelivery(null);
 
     expect(user.getName()).toBe('Ana');
     expect(user.getLastName()).toBe('Admin');
     expect(user.getPasswordHash()).toBe('new-hash');
     expect(user.getRole()).toBe(UserRole.ADMIN);
-    expect(user.getTelegramChatId()).toBeNull();
+    expect(user.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: null,
+      },
+    });
   });
 
   it('trims telegram chat ids when they are reassigned', () => {
     const user = buildUser();
 
-    user.setTelegramChatId(' 98765 ');
+    user.configureTelegramDelivery(' 98765 ');
 
-    expect(user.getTelegramChatId()).toBe('98765');
+    expect(user.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: '98765',
+      },
+    });
   });
 
   it('derives full alert coverage from legacy subscriptions for backward compatibility', () => {

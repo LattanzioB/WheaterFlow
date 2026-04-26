@@ -50,7 +50,11 @@ describe('MongoUserRepository', () => {
 
     expect(model.findOne).toHaveBeenCalledWith({ email: 'bruno@example.com' });
     expect(user?.getId()).toBe('user-1');
-    expect(user?.getTelegramChatId()).toBe('12345');
+    expect(user?.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: '12345',
+      },
+    });
   });
 
   it('upserts the mapped persistence document when saving', async () => {

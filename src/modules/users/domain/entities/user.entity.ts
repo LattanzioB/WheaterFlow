@@ -14,6 +14,12 @@ export interface UserDeliveryChannels {
   };
 }
 
+export interface UserDeliveryChannelsInput {
+  telegram?: {
+    chatId?: string | null;
+  };
+}
+
 export interface CreateUserProps {
   id?: string;
   name: string;
@@ -21,8 +27,7 @@ export interface CreateUserProps {
   email: Email;
   passwordHash: string;
   notificationPreferences?: UserAlertPreference[];
-  deliveryChannels?: Partial<UserDeliveryChannels>;
-  telegramChatId?: string | null;
+  deliveryChannels?: UserDeliveryChannelsInput;
   role?: UserRole;
   subscriptions?: string[];
   createdAt?: Date;
@@ -55,10 +60,7 @@ export class User {
       props.notificationPreferences,
       props.subscriptions,
     );
-    const deliveryChannels = User.normalizeDeliveryChannels(
-      props.deliveryChannels,
-      props.telegramChatId,
-    );
+    const deliveryChannels = User.normalizeDeliveryChannels(props.deliveryChannels);
     const createdAt = props.createdAt ?? new Date();
 
     if (Number.isNaN(createdAt.getTime())) {
@@ -96,10 +98,6 @@ export class User {
 
   getPasswordHash(): string {
     return this.passwordHash;
-  }
-
-  getTelegramChatId(): string | null {
-    return this.deliveryChannels.telegram.chatId;
   }
 
   getRole(): UserRole {
@@ -144,10 +142,6 @@ export class User {
     this.role = role;
   }
 
-  setTelegramChatId(telegramChatId: string | null): void {
-    this.configureTelegramDelivery(telegramChatId);
-  }
-
   addSubscription(stationId: string): void {
     this.subscribeToAlerts(stationId);
   }
@@ -156,11 +150,11 @@ export class User {
     this.unsubscribeFromAlerts(stationId);
   }
 
-  configureTelegramDelivery(telegramChatId: string | null): void {
+  configureTelegramDelivery(chatId: string | null): void {
     this.deliveryChannels.telegram.chatId =
-      telegramChatId === null
+      chatId === null
         ? null
-        : User.normalizeReference(telegramChatId, 'Telegram chat id');
+        : User.normalizeReference(chatId, 'Telegram chat id');
   }
 
   subscribeToAlerts(
@@ -303,18 +297,16 @@ export class User {
   }
 
   private static normalizeDeliveryChannels(
-    deliveryChannels?: Partial<UserDeliveryChannels>,
-    legacyTelegramChatId?: string | null,
+    deliveryChannels?: UserDeliveryChannelsInput,
   ): UserDeliveryChannels {
-    const telegramChatId =
-      deliveryChannels?.telegram?.chatId ?? legacyTelegramChatId;
+    const chatId = deliveryChannels?.telegram?.chatId;
 
     return {
       telegram: {
         chatId:
-          telegramChatId === undefined || telegramChatId === null
+          chatId === undefined || chatId === null
             ? null
-            : User.normalizeReference(telegramChatId, 'Telegram chat id'),
+            : User.normalizeReference(chatId, 'Telegram chat id'),
       },
     };
   }

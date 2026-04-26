@@ -111,7 +111,7 @@ export class UserNotificationPreferencesController {
     try {
       const user = await this.updateDeliveryChannelsService.execute({
         userId,
-        telegramChatId: dto.deliveryChannels.telegram?.chatId,
+        deliveryChannels: dto.deliveryChannels,
       });
 
       return this.toResponse(user);

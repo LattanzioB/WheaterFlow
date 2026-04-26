@@ -45,7 +45,11 @@ describe('AuthController', () => {
       lastName: 'Lattanzio',
       email: 'bruno@example.com',
       password: 'secure123',
-      telegramChatId: '12345',
+      deliveryChannels: {
+        telegram: {
+          chatId: '12345',
+        },
+      },
     });
   });
 

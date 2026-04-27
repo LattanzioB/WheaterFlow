@@ -6,6 +6,7 @@ import { GetStationByIdService } from './get-station-by-id.service';
 describe('GetStationByIdService', () => {
   const buildStationRepository = (): jest.Mocked<IStationRepository> => ({
     findById: jest.fn(),
+    findByIds: jest.fn(),
     findByOwnerId: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),

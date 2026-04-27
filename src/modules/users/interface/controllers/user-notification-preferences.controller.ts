@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -20,10 +21,15 @@ import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.s
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
 import { GetUserByIdService } from '../../application/services/get-user-by-id.service';
+import {
+  ListSubscribedStationsService,
+  SubscribedStationSummary,
+} from '../../application/services/list-subscribed-stations.service';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from '../../application/services/update-delivery-channels.service';
 import { UpdateStationAlertPreferencesService } from '../../application/services/update-station-alert-preferences.service';
+import { QuerySubscribedStationsDto } from '../dtos/query-subscribed-stations.dto';
 import {
   SubscribeToStationAlertsDto,
   UpdateStationAlertPreferencesDto,
@@ -42,6 +48,7 @@ export class UserNotificationPreferencesController {
     private readonly configService: ConfigService,
     private readonly createTelegramLinkCodeService: CreateTelegramLinkCodeService,
     private readonly getUserByIdService: GetUserByIdService,
+    private readonly listSubscribedStationsService: ListSubscribedStationsService,
     private readonly subscribeToStationAlertsService: SubscribeToStationAlertsService,
     private readonly unsubscribeFromStationAlertsService: UnsubscribeFromStationAlertsService,
     private readonly updateStationAlertPreferencesService: UpdateStationAlertPreferencesService,
@@ -59,6 +66,28 @@ export class UserNotificationPreferencesController {
     try {
       const user = await this.getUserByIdService.execute(req.user.userId);
       return this.toResponse(user);
+    } catch (error) {
+      throw this.mapDomainError(error);
+    }
+  }
+
+  @Get(':id/subscriptions')
+  async listSubscriptions(
+    @Param('id') userId: string,
+    @Query() query: QuerySubscribedStationsDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<SubscribedStationResponse[]> {
+    this.ensureOwnUserAccess(req.user, userId);
+
+    try {
+      const subscriptions = await this.listSubscribedStationsService.execute({
+        userId,
+        activeAlertOnly: query.activeAlertOnly,
+      });
+
+      return subscriptions.map((subscription) =>
+        this.toSubscribedStationResponse(subscription),
+      );
     } catch (error) {
       throw this.mapDomainError(error);
     }
@@ -225,6 +254,45 @@ export class UserNotificationPreferencesController {
       createdAt: user.getCreatedAt().toISOString(),
     };
   }
+
+  private toSubscribedStationResponse(
+    subscription: SubscribedStationSummary,
+  ): SubscribedStationResponse {
+    return {
+      stationId: subscription.stationId,
+      alertTypes: [...subscription.alertTypes],
+      hasActiveAlert: subscription.hasActiveAlert,
+      station: subscription.station
+        ? {
+            id: subscription.station.getId(),
+            name: subscription.station.getName(),
+            location: {
+              latitude: subscription.station.getLocation().getLatitude(),
+              longitude: subscription.station.getLocation().getLongitude(),
+            },
+            sensorModel: subscription.station.getSensorModel(),
+            status: subscription.station.getStatus(),
+            ownerId: subscription.station.getOwnerId(),
+            alertSettings: subscription.station.getAlertSettings().toPrimitives(),
+            createdAt: subscription.station.getCreatedAt().toISOString(),
+          }
+        : null,
+      latestMeasurement: subscription.latestMeasurement
+        ? {
+            id: subscription.latestMeasurement.getId(),
+            stationId: subscription.latestMeasurement.getStationId(),
+            temperature: subscription.latestMeasurement
+              .getTemperature()
+              .getValue(),
+            humidity: subscription.latestMeasurement.getHumidity().getValue(),
+            pressure: subscription.latestMeasurement.getPressure().getValue(),
+            reportedAt: subscription.latestMeasurement.getReportedAt().toISOString(),
+            alertStatus: subscription.latestMeasurement.hasAlert(),
+            alertType: subscription.latestMeasurement.getAlertType(),
+          }
+        : null,
+    };
+  }
 }
 
 interface UserResponseSource {
@@ -242,4 +310,38 @@ interface UserResponseSource {
     };
   };
   getCreatedAt(): Date;
+}
+
+interface SubscribedStationResponse {
+  stationId: string;
+  alertTypes: AlertType[];
+  hasActiveAlert: boolean;
+  station: {
+    id: string;
+    name: string;
+    location: {
+      latitude: number;
+      longitude: number;
+    };
+    sensorModel: string;
+    status: string;
+    ownerId: string;
+    alertSettings: {
+      extremeHeat: boolean;
+      frost: boolean;
+      storm: boolean;
+      criticalHumidity: boolean;
+    };
+    createdAt: string;
+  } | null;
+  latestMeasurement: {
+    id: string;
+    stationId: string;
+    temperature: number;
+    humidity: number;
+    pressure: number;
+    reportedAt: string;
+    alertStatus: boolean;
+    alertType: AlertType;
+  } | null;
 }

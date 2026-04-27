@@ -35,6 +35,48 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
     );
   }
 
+  async findLatestByStationIds(stationIds: string[]): Promise<Measurement[]> {
+    if (stationIds.length === 0) {
+      return [];
+    }
+
+    const documents = await this.measurementModel
+      .aggregate<MeasurementPersistenceModel>([
+        {
+          $match: {
+            stationId: {
+              $in: stationIds,
+            },
+          },
+        },
+        {
+          $sort: {
+            stationId: 1,
+            reportedAt: -1,
+            _id: -1,
+          },
+        },
+        {
+          $group: {
+            _id: '$stationId',
+            latestMeasurement: {
+              $first: '$$ROOT',
+            },
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: '$latestMeasurement',
+          },
+        },
+      ])
+      .exec();
+
+    return documents.map((document) =>
+      MeasurementDocumentMapper.toDomain(document),
+    );
+  }
+
   async save(measurement: Measurement): Promise<void> {
     const document = MeasurementDocumentMapper.toPersistence(measurement);
 

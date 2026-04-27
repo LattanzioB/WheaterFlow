@@ -24,6 +24,7 @@ describe('RecordMeasurementService', () => {
     (): jest.Mocked<IMeasurementRepository> => ({
       findById: jest.fn(),
       findByStationId: jest.fn(),
+      findLatestByStationIds: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
       findWithFilters: jest.fn(),
@@ -31,6 +32,7 @@ describe('RecordMeasurementService', () => {
 
   const buildStationRepository = (): jest.Mocked<IStationRepository> => ({
     findById: jest.fn(),
+    findByIds: jest.fn(),
     findByOwnerId: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),

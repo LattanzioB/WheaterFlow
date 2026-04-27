@@ -18,6 +18,15 @@ async function bootstrap() {
       'Weather monitoring API for stations, measurements, and alerts.',
     )
     .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Paste the access_token returned by the authentication endpoints.',
+      },
+      'bearer',
+    )
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
 

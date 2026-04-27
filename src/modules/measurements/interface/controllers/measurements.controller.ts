@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { GetStationByIdService } from '../../../stations/application/services/get-station-by-id.service';
@@ -20,6 +21,7 @@ import { CreateMeasurementDto, QueryMeasurementsDto } from '../dtos/measurement.
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
+@ApiBearerAuth('bearer')
 @Controller('measurements')
 @UseGuards(JwtAuthGuard)
 export class MeasurementsController {

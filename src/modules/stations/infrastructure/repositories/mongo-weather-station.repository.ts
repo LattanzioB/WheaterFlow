@@ -18,6 +18,21 @@ export class MongoWeatherStationRepository implements IStationRepository {
     return document ? WeatherStationDocumentMapper.toDomain(document) : null;
   }
 
+  async findByIds(ids: string[]): Promise<WeatherStation[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const documents = await this.stationModel
+      .find({ _id: { $in: ids } })
+      .lean()
+      .exec();
+
+    return documents.map((document) =>
+      WeatherStationDocumentMapper.toDomain(document),
+    );
+  }
+
   async findByOwnerId(ownerId: string): Promise<WeatherStation[]> {
     const documents = await this.stationModel
       .find({ ownerId })

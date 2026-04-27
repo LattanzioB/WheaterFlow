@@ -14,12 +14,12 @@ describe('RegisterUserService', () => {
     lastName: 'Lattanzio',
     email: 'Bruno@Example.com',
     password: 'super-secret',
-    telegramChatId: '12345',
   };
 
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
+    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
@@ -62,7 +62,11 @@ describe('RegisterUserService', () => {
     expect(savedUser.getLastName()).toBe('Lattanzio');
     expect(savedUser.getEmail().getValue()).toBe('bruno@example.com');
     expect(savedUser.getPasswordHash()).toBe('hashed-password');
-    expect(savedUser.getTelegramChatId()).toBe('12345');
+    expect(savedUser.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: null,
+      },
+    });
 
     expect(tokenService.generateToken.mock.calls).toEqual([
       [

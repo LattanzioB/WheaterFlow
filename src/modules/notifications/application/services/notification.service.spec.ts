@@ -39,6 +39,7 @@ describe('NotificationService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
+    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
@@ -97,7 +98,11 @@ describe('NotificationService', () => {
             alertTypes: [AlertType.STORM],
           },
         ],
-        telegramChatId: '12345',
+        deliveryChannels: {
+          telegram: {
+            chatId: '12345',
+          },
+        },
       }),
       User.create({
         id: 'user-2',
@@ -124,7 +129,11 @@ describe('NotificationService', () => {
             alertTypes: [AlertType.FROST],
           },
         ],
-        telegramChatId: '67890',
+        deliveryChannels: {
+          telegram: {
+            chatId: '67890',
+          },
+        },
       }),
     ]);
 

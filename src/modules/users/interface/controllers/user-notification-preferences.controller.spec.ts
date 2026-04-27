@@ -2,7 +2,9 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
+import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from '../../application/services/update-delivery-channels.service';
@@ -10,6 +12,16 @@ import { UpdateStationAlertPreferencesService } from '../../application/services
 import { UserNotificationPreferencesController } from './user-notification-preferences.controller';
 
 describe('UserNotificationPreferencesController', () => {
+  const buildConfigService = () =>
+    ({
+      get: jest.fn().mockReturnValue('weatherflow_bot'),
+    }) as unknown as jest.Mocked<ConfigService>;
+
+  const buildLinkCodeService = () =>
+    ({
+      execute: jest.fn(),
+    }) as unknown as jest.Mocked<CreateTelegramLinkCodeService>;
+
   const buildSubscribeService = () =>
     ({
       execute: jest.fn(),
@@ -59,6 +71,8 @@ describe('UserNotificationPreferencesController', () => {
   it('subscribes the authenticated user to station alerts', async () => {
     const subscribeService = buildSubscribeService();
     const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      buildLinkCodeService(),
       subscribeService,
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -87,6 +101,8 @@ describe('UserNotificationPreferencesController', () => {
 
   it('rejects attempts to manage another user settings', async () => {
     const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      buildLinkCodeService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -101,6 +117,8 @@ describe('UserNotificationPreferencesController', () => {
   it('updates station alert preferences', async () => {
     const updatePreferencesService = buildUpdatePreferencesService();
     const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      buildLinkCodeService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
       updatePreferencesService,
@@ -124,6 +142,8 @@ describe('UserNotificationPreferencesController', () => {
   it('updates delivery channels', async () => {
     const updateDeliveryService = buildUpdateDeliveryService();
     const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      buildLinkCodeService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -156,6 +176,8 @@ describe('UserNotificationPreferencesController', () => {
   it('maps missing domain resources to not found responses', async () => {
     const subscribeService = buildSubscribeService();
     const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      buildLinkCodeService(),
       subscribeService,
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -167,5 +189,32 @@ describe('UserNotificationPreferencesController', () => {
     await expect(
       controller.subscribe('user-1', 'missing', {}, request),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('creates a Telegram link code for the authenticated user', async () => {
+    const linkCodeService = buildLinkCodeService();
+    const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      linkCodeService,
+      buildSubscribeService(),
+      buildUnsubscribeService(),
+      buildUpdatePreferencesService(),
+      buildUpdateDeliveryService(),
+    );
+
+    linkCodeService.execute.mockResolvedValue({
+      code: 'WF-A1B2C3D4',
+      expiresAt: new Date('2026-04-25T12:10:00.000Z'),
+    });
+
+    await expect(
+      controller.createTelegramLinkCode('user-1', request),
+    ).resolves.toEqual({
+      code: 'WF-A1B2C3D4',
+      expiresAt: '2026-04-25T12:10:00.000Z',
+      instructions: 'Send /link WF-A1B2C3D4 to the WeatherFlow Telegram bot.',
+      botUsername: 'weatherflow_bot',
+      botUrl: 'https://t.me/weatherflow_bot',
+    });
   });
 });

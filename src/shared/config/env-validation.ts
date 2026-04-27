@@ -11,4 +11,6 @@ export const envValidationSchema = Joi.object({
   }),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   TELEGRAM_BOT_TOKEN: Joi.string().optional().allow(''),
+  TELEGRAM_BOT_USERNAME: Joi.string().optional().allow(''),
+  TELEGRAM_WEBHOOK_SECRET: Joi.string().optional().allow(''),
 });

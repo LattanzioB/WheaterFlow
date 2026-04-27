@@ -9,6 +9,7 @@ describe('User persistence mapping', () => {
   it('defines the user schema with the expected indexes and nested paths', () => {
     expect(UserSchema.path('email')).toBeDefined();
     expect(UserSchema.path('deliveryChannels.telegram.chatId')).toBeDefined();
+    expect(UserSchema.path('telegramLinking.code')).toBeDefined();
     expect(UserSchema.path('notificationPreferences')).toBeDefined();
 
     expect(UserSchema.indexes()).toContainEqual([{ email: 1 }, { unique: true }]);
@@ -16,6 +17,7 @@ describe('User persistence mapping', () => {
       { 'notificationPreferences.stationId': 1 },
       {},
     ]);
+    expect(UserSchema.indexes()).toContainEqual([{ 'telegramLinking.code': 1 }, {}]);
   });
 
   it('maps a user aggregate to a persistence document', () => {
@@ -35,6 +37,10 @@ describe('User persistence mapping', () => {
         telegram: {
           chatId: '12345',
         },
+      },
+      telegramLinking: {
+        code: 'WF-AB12CD34',
+        expiresAt: new Date('2026-04-25T12:10:00.000Z'),
       },
       role: UserRole.ADMIN,
       createdAt: new Date('2026-04-25T12:00:00.000Z'),
@@ -56,6 +62,10 @@ describe('User persistence mapping', () => {
         telegram: {
           chatId: '12345',
         },
+      },
+      telegramLinking: {
+        code: 'WF-AB12CD34',
+        expiresAt: new Date('2026-04-25T12:10:00.000Z'),
       },
       role: UserRole.ADMIN,
       createdAt: new Date('2026-04-25T12:00:00.000Z'),
@@ -80,6 +90,10 @@ describe('User persistence mapping', () => {
           chatId: null,
         },
       },
+      telegramLinking: {
+        code: 'WF-AB12CD34',
+        expiresAt: new Date('2026-04-25T13:10:00.000Z'),
+      },
       role: UserRole.USER,
       createdAt: new Date('2026-04-25T13:00:00.000Z'),
     });
@@ -96,6 +110,10 @@ describe('User persistence mapping', () => {
       telegram: {
         chatId: null,
       },
+    });
+    expect(user.getTelegramLinking()).toEqual({
+      code: 'WF-AB12CD34',
+      expiresAt: new Date('2026-04-25T13:10:00.000Z'),
     });
     expect(user.getCreatedAt().toISOString()).toBe('2026-04-25T13:00:00.000Z');
   });

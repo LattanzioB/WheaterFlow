@@ -9,5 +9,7 @@ export default () => ({
   },
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
+    botUsername: process.env.TELEGRAM_BOT_USERNAME,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
   },
 });

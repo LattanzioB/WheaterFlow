@@ -8,6 +8,7 @@ describe('UpdateDeliveryChannelsService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
+    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
@@ -27,7 +28,11 @@ describe('UpdateDeliveryChannelsService', () => {
           alertTypes: [AlertType.STORM],
         },
       ],
-      telegramChatId: '12345',
+      deliveryChannels: {
+        telegram: {
+          chatId: '12345',
+        },
+      },
     });
 
   it('updates the telegram delivery channel when present', async () => {
@@ -39,7 +44,11 @@ describe('UpdateDeliveryChannelsService', () => {
 
     const result = await service.execute({
       userId: 'user-1',
-      telegramChatId: '98765',
+      deliveryChannels: {
+        telegram: {
+          chatId: '98765',
+        },
+      },
     });
 
     expect(result.getDeliveryChannels()).toEqual({
@@ -59,7 +68,11 @@ describe('UpdateDeliveryChannelsService', () => {
     await expect(
       service.execute({
         userId: 'missing',
-        telegramChatId: '98765',
+        deliveryChannels: {
+          telegram: {
+            chatId: '98765',
+          },
+        },
       }),
     ).rejects.toThrow('User not found');
   });

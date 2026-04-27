@@ -10,7 +10,11 @@ describe('User', () => {
       lastName: ' Lattanzio ',
       email: Email.create('bruno@example.com'),
       passwordHash: ' hashed-password ',
-      telegramChatId: ' 12345 ',
+      deliveryChannels: {
+        telegram: {
+          chatId: ' 12345 ',
+        },
+      },
     });
 
   it('creates a user with normalized values and a default role', () => {
@@ -20,13 +24,16 @@ describe('User', () => {
     expect(user.getName()).toBe('Bruno');
     expect(user.getLastName()).toBe('Lattanzio');
     expect(user.getPasswordHash()).toBe('hashed-password');
-    expect(user.getTelegramChatId()).toBe('12345');
     expect(user.getRole()).toBe(UserRole.USER);
     expect(user.getSubscriptions()).toEqual([]);
     expect(user.getDeliveryChannels()).toEqual({
       telegram: {
         chatId: '12345',
       },
+    });
+    expect(user.getTelegramLinking()).toEqual({
+      code: null,
+      expiresAt: null,
     });
   });
 
@@ -213,21 +220,74 @@ describe('User', () => {
     user.changeName('Ana', 'Admin');
     user.changePasswordHash('new-hash');
     user.assignRole(UserRole.ADMIN);
-    user.setTelegramChatId(null);
+    user.configureTelegramDelivery(null);
 
     expect(user.getName()).toBe('Ana');
     expect(user.getLastName()).toBe('Admin');
     expect(user.getPasswordHash()).toBe('new-hash');
     expect(user.getRole()).toBe(UserRole.ADMIN);
-    expect(user.getTelegramChatId()).toBeNull();
+    expect(user.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: null,
+      },
+    });
   });
 
   it('trims telegram chat ids when they are reassigned', () => {
     const user = buildUser();
 
-    user.setTelegramChatId(' 98765 ');
+    user.configureTelegramDelivery(' 98765 ');
 
-    expect(user.getTelegramChatId()).toBe('98765');
+    expect(user.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: '98765',
+      },
+    });
+  });
+
+  it('creates and clears Telegram link codes as part of the linking lifecycle', () => {
+    const user = buildUser();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    user.startTelegramLinking(' WF-AB12CD34 ', expiresAt);
+
+    expect(user.hasActiveTelegramLinkCode('WF-AB12CD34')).toBe(true);
+    expect(user.getTelegramLinking()).toEqual({
+      code: 'WF-AB12CD34',
+      expiresAt,
+    });
+
+    user.completeTelegramLinking('98765');
+
+    expect(user.getDeliveryChannels()).toEqual({
+      telegram: {
+        chatId: '98765',
+      },
+    });
+    expect(user.getTelegramLinking()).toEqual({
+      code: null,
+      expiresAt: null,
+    });
+  });
+
+  it('recognizes expired Telegram link codes as inactive', () => {
+    const user = User.create({
+      name: 'Ana',
+      lastName: 'Owner',
+      email: Email.create('ana@example.com'),
+      passwordHash: 'hash',
+      telegramLinking: {
+        code: 'WF-EXPIRED',
+        expiresAt: new Date('2026-04-25T10:00:00.000Z'),
+      },
+    });
+
+    expect(
+      user.hasActiveTelegramLinkCode(
+        'WF-EXPIRED',
+        new Date('2026-04-25T10:05:00.000Z'),
+      ),
+    ).toBe(false);
   });
 
   it('derives full alert coverage from legacy subscriptions for backward compatibility', () => {

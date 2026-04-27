@@ -1,0 +1,59 @@
+sequenceDiagram
+autonumber
+actor User
+participant PreferencesController as UserNotificationPreferencesController
+participant UpdatePrefsService as UpdateStationAlertPreferencesService
+participant UpdateDeliveryService as UpdateDeliveryChannelsService
+participant LinkCodeService as CreateTelegramLinkCodeService
+participant TelegramWebhook as TelegramWebhookController
+participant UserRepository as IUserRepository / MongoUserRepository
+participant StationRepository as IStationRepository / MongoWeatherStationRepository
+participant UserAggregate as User aggregate
+
+alt update station alert preferences
+  User->>PreferencesController: PATCH /users/:id/subscriptions/:stationId
+  PreferencesController->>PreferencesController: ensureOwnUserAccess()
+  PreferencesController->>UpdatePrefsService: execute({ userId, stationId, alertTypes })
+  UpdatePrefsService->>UserRepository: findById(userId)
+  UserRepository-->>UpdatePrefsService: user
+  UpdatePrefsService->>StationRepository: findById(stationId)
+  StationRepository-->>UpdatePrefsService: station
+  UpdatePrefsService->>UserAggregate: updateAlertTypesForStation(stationId, alertTypes)
+  UserAggregate-->>UpdatePrefsService: updated user
+  UpdatePrefsService->>UserRepository: save(user)
+  UserRepository-->>UpdatePrefsService: void
+  UpdatePrefsService-->>PreferencesController: user
+  PreferencesController-->>User: 200 UserResponse
+else update delivery channels directly
+  User->>PreferencesController: PATCH /users/:id/delivery-channels
+  PreferencesController->>PreferencesController: ensureOwnUserAccess()
+  PreferencesController->>UpdateDeliveryService: execute({ userId, deliveryChannels })
+  UpdateDeliveryService->>UserRepository: findById(userId)
+  UserRepository-->>UpdateDeliveryService: user
+  UpdateDeliveryService->>UserAggregate: configureTelegramDelivery(chatId)
+  UserAggregate-->>UpdateDeliveryService: updated user
+  UpdateDeliveryService->>UserRepository: save(user)
+  UserRepository-->>UpdateDeliveryService: void
+  UpdateDeliveryService-->>PreferencesController: user
+  PreferencesController-->>User: 200 UserResponse
+else link Telegram without knowing chat id
+  User->>PreferencesController: POST /users/:id/delivery-channels/telegram/link-code
+  PreferencesController->>PreferencesController: ensureOwnUserAccess()
+  PreferencesController->>LinkCodeService: execute({ userId })
+  LinkCodeService->>UserRepository: findById(userId)
+  UserRepository-->>LinkCodeService: user
+  LinkCodeService->>UserAggregate: startTelegramLinking(code, expiresAt)
+  UserAggregate-->>LinkCodeService: updated user
+  LinkCodeService->>UserRepository: save(user)
+  UserRepository-->>LinkCodeService: void
+  LinkCodeService-->>PreferencesController: { code, expiresAt }
+  PreferencesController-->>User: 200 TelegramLinkCodeResponse
+
+  User->>TelegramWebhook: Telegram bot sends /link <code>
+  TelegramWebhook->>UserRepository: findByTelegramLinkCode(code)
+  UserRepository-->>TelegramWebhook: user
+  TelegramWebhook->>UserAggregate: completeTelegramLinking(chatId)
+  UserAggregate-->>TelegramWebhook: updated user
+  TelegramWebhook->>UserRepository: save(user)
+  UserRepository-->>TelegramWebhook: void
+end

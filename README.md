@@ -122,7 +122,9 @@ Copy `.env.example` to `.env` and configure the following values:
 | `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/weatherflow` |
 | `JWT_SECRET` | JWT signing secret | `your-secret-key` |
 | `JWT_EXPIRES_IN` | JWT expiration window | `7d` |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token for future notification features | `your-bot-token` |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token used for alert delivery and Telegram account linking | `your-bot-token` |
+| `TELEGRAM_BOT_USERNAME` | Optional bot username shown to users when generating a Telegram link code | `weatherflow_bot` |
+| `TELEGRAM_WEBHOOK_SECRET` | Optional secret validated on Telegram webhook requests | `your-webhook-secret` |
 
 ## Testing
 

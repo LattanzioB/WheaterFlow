@@ -31,11 +31,6 @@ describe('AuthController', () => {
         lastName: 'Lattanzio',
         email: 'bruno@example.com',
         password: 'secure123',
-        deliveryChannels: {
-          telegram: {
-            chatId: '12345',
-          },
-        },
       }),
     ).resolves.toEqual({
       access_token: 'jwt-token',
@@ -45,7 +40,6 @@ describe('AuthController', () => {
       lastName: 'Lattanzio',
       email: 'bruno@example.com',
       password: 'secure123',
-      telegramChatId: '12345',
     });
   });
 

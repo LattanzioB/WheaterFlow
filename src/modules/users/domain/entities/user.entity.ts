@@ -14,6 +14,17 @@ export interface UserDeliveryChannels {
   };
 }
 
+export interface UserDeliveryChannelsInput {
+  telegram?: {
+    chatId?: string | null;
+  };
+}
+
+export interface UserTelegramLinking {
+  code: string | null;
+  expiresAt: Date | null;
+}
+
 export interface CreateUserProps {
   id?: string;
   name: string;
@@ -21,8 +32,8 @@ export interface CreateUserProps {
   email: Email;
   passwordHash: string;
   notificationPreferences?: UserAlertPreference[];
-  deliveryChannels?: Partial<UserDeliveryChannels>;
-  telegramChatId?: string | null;
+  deliveryChannels?: UserDeliveryChannelsInput;
+  telegramLinking?: Partial<UserTelegramLinking>;
   role?: UserRole;
   subscriptions?: string[];
   createdAt?: Date;
@@ -37,6 +48,7 @@ export class User {
     private passwordHash: string,
     private notificationPreferences: UserAlertPreference[],
     private deliveryChannels: UserDeliveryChannels,
+    private telegramLinking: UserTelegramLinking,
     private role: UserRole,
     private readonly createdAt: Date,
   ) {}
@@ -55,10 +67,8 @@ export class User {
       props.notificationPreferences,
       props.subscriptions,
     );
-    const deliveryChannels = User.normalizeDeliveryChannels(
-      props.deliveryChannels,
-      props.telegramChatId,
-    );
+    const deliveryChannels = User.normalizeDeliveryChannels(props.deliveryChannels);
+    const telegramLinking = User.normalizeTelegramLinking(props.telegramLinking);
     const createdAt = props.createdAt ?? new Date();
 
     if (Number.isNaN(createdAt.getTime())) {
@@ -73,6 +83,7 @@ export class User {
       normalizedPasswordHash,
       notificationPreferences,
       deliveryChannels,
+      telegramLinking,
       props.role ?? UserRole.USER,
       createdAt,
     );
@@ -98,10 +109,6 @@ export class User {
     return this.passwordHash;
   }
 
-  getTelegramChatId(): string | null {
-    return this.deliveryChannels.telegram.chatId;
-  }
-
   getRole(): UserRole {
     return this.role;
   }
@@ -118,6 +125,16 @@ export class User {
       telegram: {
         chatId: this.deliveryChannels.telegram.chatId,
       },
+    };
+  }
+
+  getTelegramLinking(): UserTelegramLinking {
+    return {
+      code: this.telegramLinking.code,
+      expiresAt:
+        this.telegramLinking.expiresAt === null
+          ? null
+          : new Date(this.telegramLinking.expiresAt),
     };
   }
 
@@ -144,10 +161,6 @@ export class User {
     this.role = role;
   }
 
-  setTelegramChatId(telegramChatId: string | null): void {
-    this.configureTelegramDelivery(telegramChatId);
-  }
-
   addSubscription(stationId: string): void {
     this.subscribeToAlerts(stationId);
   }
@@ -156,11 +169,48 @@ export class User {
     this.unsubscribeFromAlerts(stationId);
   }
 
-  configureTelegramDelivery(telegramChatId: string | null): void {
+  configureTelegramDelivery(chatId: string | null): void {
     this.deliveryChannels.telegram.chatId =
-      telegramChatId === null
+      chatId === null
         ? null
-        : User.normalizeReference(telegramChatId, 'Telegram chat id');
+        : User.normalizeReference(chatId, 'Telegram chat id');
+    this.clearTelegramLinking();
+  }
+
+  startTelegramLinking(code: string, expiresAt: Date): void {
+    const normalizedExpiresAt = User.normalizeDate(
+      expiresAt,
+      'Telegram link expiration',
+    );
+
+    if (normalizedExpiresAt.getTime() <= Date.now()) {
+      throw new Error('Telegram link expiration must be in the future');
+    }
+
+    this.telegramLinking = {
+      code: User.normalizeReference(code, 'Telegram link code'),
+      expiresAt: normalizedExpiresAt,
+    };
+  }
+
+  clearTelegramLinking(): void {
+    this.telegramLinking = {
+      code: null,
+      expiresAt: null,
+    };
+  }
+
+  hasActiveTelegramLinkCode(code: string, now: Date = new Date()): boolean {
+    return (
+      this.telegramLinking.code ===
+        User.normalizeReference(code, 'Telegram link code') &&
+      this.telegramLinking.expiresAt !== null &&
+      this.telegramLinking.expiresAt.getTime() > now.getTime()
+    );
+  }
+
+  completeTelegramLinking(chatId: string): void {
+    this.configureTelegramDelivery(chatId);
   }
 
   subscribeToAlerts(
@@ -274,6 +324,14 @@ export class User {
     return normalized;
   }
 
+  private static normalizeDate(value: Date, field: string): Date {
+    if (Number.isNaN(value.getTime())) {
+      throw new Error(`${field} must be a valid date`);
+    }
+
+    return new Date(value);
+  }
+
   private static normalizeAlertPreferences(
     notificationPreferences?: UserAlertPreference[],
     legacySubscriptions?: string[],
@@ -303,19 +361,36 @@ export class User {
   }
 
   private static normalizeDeliveryChannels(
-    deliveryChannels?: Partial<UserDeliveryChannels>,
-    legacyTelegramChatId?: string | null,
+    deliveryChannels?: UserDeliveryChannelsInput,
   ): UserDeliveryChannels {
-    const telegramChatId =
-      deliveryChannels?.telegram?.chatId ?? legacyTelegramChatId;
+    const chatId = deliveryChannels?.telegram?.chatId;
 
     return {
       telegram: {
         chatId:
-          telegramChatId === undefined || telegramChatId === null
+          chatId === undefined || chatId === null
             ? null
-            : User.normalizeReference(telegramChatId, 'Telegram chat id'),
+            : User.normalizeReference(chatId, 'Telegram chat id'),
       },
+    };
+  }
+
+  private static normalizeTelegramLinking(
+    telegramLinking?: Partial<UserTelegramLinking>,
+  ): UserTelegramLinking {
+    const code = telegramLinking?.code;
+    const expiresAt = telegramLinking?.expiresAt;
+
+    if (code == null || expiresAt == null) {
+      return {
+        code: null,
+        expiresAt: null,
+      };
+    }
+
+    return {
+      code: User.normalizeReference(code, 'Telegram link code'),
+      expiresAt: User.normalizeDate(expiresAt, 'Telegram link expiration'),
     };
   }
 

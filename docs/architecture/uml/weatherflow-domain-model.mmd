@@ -1,0 +1,108 @@
+classDiagram
+direction LR
+
+%% Users domain
+class User["User (AggregateRoot)"] {
+  +create(props)
+  +subscribeToAlerts(stationId, alertTypes)
+  +updateAlertTypesForStation(stationId, alertTypes)
+  +configureTelegramDelivery(chatId)
+  +isSubscribedToAlert(stationId, alertType)
+}
+
+class Email["Email (ValueObject)"] {
+  +create(raw)
+  +getValue()
+  +equals(other)
+}
+
+%% Stations domain
+class WeatherStation["WeatherStation (AggregateRoot)"] {
+  +create(props)
+  +rename(name)
+  +relocate(location)
+  +configureAlerts(props)
+  +activate()
+  +deactivate()
+}
+
+class Location["Location (ValueObject)"] {
+  +create(latitude, longitude)
+  +getLatitude()
+  +getLongitude()
+  +equals(other)
+}
+
+class StationAlertSettings["StationAlertSettings (ValueObject)"] {
+  +create(props)
+  +isExtremeHeatEnabled()
+  +isFrostEnabled()
+  +isStormEnabled()
+  +isCriticalHumidityEnabled()
+}
+
+class StationStatus["StationStatus (Enumeration)"] {
+  ACTIVE
+  INACTIVE
+}
+
+%% Measurements domain
+class Measurement["Measurement (AggregateRoot)"] {
+  +create(props)
+  +evaluateAlerts(evaluator, alertSettings)
+  +applyAlert(alertType)
+  +clearAlert()
+  +hasAlert()
+  +getAlertType()
+}
+
+class Temperature["Temperature (ValueObject)"] {
+  +create(celsius)
+  +getValue()
+  +isExtremeHeat()
+  +isFrost()
+}
+
+class Humidity["Humidity (ValueObject)"] {
+  +create(percent)
+  +getValue()
+  +isCritical()
+}
+
+class Pressure["Pressure (ValueObject)"] {
+  +create(hpa)
+  +getValue()
+  +isStorm()
+}
+
+class AlertType["AlertType (Enumeration)"] {
+  NONE
+  EXTREME_HEAT
+  FROST
+  STORM
+  CRITICAL_HUMIDITY
+}
+
+class AlertEvaluator["AlertEvaluator (DomainService)"] {
+  +evaluate(measurement, alertSettings)
+}
+
+class MeasurementAlertDetectedEvent["MeasurementAlertDetectedEvent (DomainEvent)"] {
+  +EVENT_NAME
+  +measurementId
+  +stationId
+  +alertType
+}
+
+User *-- Email : email
+WeatherStation *-- Location : location
+WeatherStation *-- StationAlertSettings : alert settings
+WeatherStation --> StationStatus : status
+Measurement *-- Temperature : temperature
+Measurement *-- Humidity : humidity
+Measurement *-- Pressure : pressure
+Measurement --> AlertType : alert type
+Measurement ..> AlertEvaluator : evaluate alerts
+AlertEvaluator ..> StationAlertSettings : threshold switches
+AlertEvaluator ..> AlertType : returns
+MeasurementAlertDetectedEvent --> AlertType : payload

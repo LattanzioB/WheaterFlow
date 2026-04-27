@@ -15,7 +15,6 @@ export interface RegisterUserCommand {
   lastName: string;
   email: string;
   password: string;
-  telegramChatId?: string | null;
 }
 
 export interface AuthenticationResult {
@@ -49,7 +48,6 @@ export class RegisterUserService {
       lastName: command.lastName,
       email,
       passwordHash,
-      telegramChatId: command.telegramChatId,
     });
 
     await this.userRepository.save(user);

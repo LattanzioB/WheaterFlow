@@ -134,6 +134,30 @@ npm run test
 npm run test:e2e
 ```
 
+### Mock Data
+
+To populate MongoDB before testing through Swagger, run:
+
+```bash
+npm run seed:swagger-mock-data
+```
+
+Seed behavior:
+
+- Reuses the one existing real user in the database as the primary account. If you have multiple real users, set `MOCK_PRIMARY_USER_EMAIL` before running the script.
+- Creates a second deterministic user with email `collaborator@example.com` and password `mockpass123`.
+- Upserts 3 stations across both users.
+- Inserts one week of measurements for each station, every 4 hours.
+- Configures overlapping station subscriptions so more than one user is subscribed to some stations.
+- Leaves Telegram delivery settings untouched for the existing user.
+
+If you need to target a specific existing user:
+
+```powershell
+$env:MOCK_PRIMARY_USER_EMAIL="bruno@example.com"
+npm run seed:swagger-mock-data
+```
+
 ## Next Steps
 
 1. Implement `E-02: Domain Layer` starting with the shared value objects and aggregate roots.

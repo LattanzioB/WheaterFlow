@@ -5,6 +5,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
+import { GetUserByIdService } from '../../application/services/get-user-by-id.service';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from '../../application/services/update-delivery-channels.service';
@@ -21,6 +22,11 @@ describe('UserNotificationPreferencesController', () => {
     ({
       execute: jest.fn(),
     }) as unknown as jest.Mocked<CreateTelegramLinkCodeService>;
+
+  const buildGetUserByIdService = () =>
+    ({
+      execute: jest.fn(),
+    }) as unknown as jest.Mocked<GetUserByIdService>;
 
   const buildSubscribeService = () =>
     ({
@@ -73,6 +79,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       subscribeService,
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -103,6 +110,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -119,6 +127,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
       updatePreferencesService,
@@ -144,6 +153,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -178,6 +188,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       subscribeService,
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -196,6 +207,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       linkCodeService,
+      buildGetUserByIdService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
       buildUpdatePreferencesService(),
@@ -216,5 +228,26 @@ describe('UserNotificationPreferencesController', () => {
       botUsername: 'weatherflow_bot',
       botUrl: 'https://t.me/weatherflow_bot',
     });
+  });
+
+  it('returns the authenticated user profile', async () => {
+    const getUserByIdService = buildGetUserByIdService();
+    const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      buildLinkCodeService(),
+      getUserByIdService,
+      buildSubscribeService(),
+      buildUnsubscribeService(),
+      buildUpdatePreferencesService(),
+      buildUpdateDeliveryService(),
+    );
+
+    getUserByIdService.execute.mockResolvedValue(buildUser() as any);
+
+    await expect(controller.getCurrentUser(request)).resolves.toMatchObject({
+      id: 'user-1',
+      email: 'bruno@example.com',
+    });
+    expect(getUserByIdService.execute).toHaveBeenCalledWith('user-1');
   });
 });

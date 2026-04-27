@@ -10,6 +10,7 @@ export interface MeasurementFilters {
 export interface IMeasurementRepository {
   findById(id: string): Promise<Measurement | null>;
   findByStationId(stationId: string): Promise<Measurement[]>;
+  findLatestByStationIds(stationIds: string[]): Promise<Measurement[]>;
   save(measurement: Measurement): Promise<void>;
   delete(id: string): Promise<void>;
   findWithFilters(filters: MeasurementFilters): Promise<Measurement[]>;

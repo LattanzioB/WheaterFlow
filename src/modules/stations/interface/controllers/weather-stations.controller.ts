@@ -20,6 +20,7 @@ import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.s
 import { CreateStationService } from '../../application/services/create-station.service';
 import { DeleteStationService } from '../../application/services/delete-station.service';
 import { GetStationByIdService } from '../../application/services/get-station-by-id.service';
+import { ListAllStationsService } from '../../application/services/list-all-stations.service';
 import { ListUserStationsService } from '../../application/services/list-user-stations.service';
 import { UpdateStationService } from '../../application/services/update-station.service';
 import { CreateStationDto, UpdateStationDto } from '../dtos/station.dto';
@@ -32,11 +33,19 @@ type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 export class WeatherStationsController {
   constructor(
     private readonly createStationService: CreateStationService,
+    private readonly listAllStationsService: ListAllStationsService,
     private readonly listUserStationsService: ListUserStationsService,
     private readonly getStationByIdService: GetStationByIdService,
     private readonly updateStationService: UpdateStationService,
     private readonly deleteStationService: DeleteStationService,
   ) {}
+
+  @Get('available')
+  async listAvailable(): Promise<StationResponse[]> {
+    const stations = await this.listAllStationsService.execute();
+
+    return stations.map((station) => this.toResponse(station));
+  }
 
   @Get()
   async list(@Req() req: AuthenticatedRequest): Promise<StationResponse[]> {

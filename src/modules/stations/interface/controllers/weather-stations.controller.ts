@@ -14,6 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { CreateStationService } from '../../application/services/create-station.service';
@@ -25,6 +26,7 @@ import { CreateStationDto, UpdateStationDto } from '../dtos/station.dto';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
+@ApiBearerAuth('bearer')
 @Controller('weather-stations')
 @UseGuards(JwtAuthGuard)
 export class WeatherStationsController {

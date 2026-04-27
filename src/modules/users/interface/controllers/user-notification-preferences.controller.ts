@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
@@ -30,6 +30,7 @@ import { UpdateDeliveryChannelsDto } from '../dtos/update-delivery-channels.dto'
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
+@ApiBearerAuth('bearer')
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UserNotificationPreferencesController {

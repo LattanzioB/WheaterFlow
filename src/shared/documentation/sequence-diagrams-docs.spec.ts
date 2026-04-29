@@ -30,7 +30,9 @@ describe('S-06.5 sequence diagram documentation', () => {
       '/users/:id/delivery-channels/telegram/link-code',
     );
     expect(read('login-user-sequence.mmd')).toContain('POST /auth/login');
-    expect(read('login-user-sequence.mmd')).toContain('compare(password, user.passwordHash)');
+    expect(read('login-user-sequence.mmd')).toContain(
+      'compare(password, user.passwordHash)',
+    );
   });
 
   it('captures the preference-aware alert detection and delivery flow', () => {
@@ -38,10 +40,10 @@ describe('S-06.5 sequence diagram documentation', () => {
 
     expect(source).toContain('Measurement.create(..., alertSettings)');
     expect(source).toContain('emit(MeasurementAlertDetectedEvent)');
+    expect(source).toContain('Filter subscribers by station and alert type');
     expect(source).toContain(
-      'Filter subscribers by station and alert type',
+      'resolve delivery targets before any channel call',
     );
-    expect(source).toContain('resolve delivery targets before any channel call');
   });
 
   it('covers preference management and filtered measurement queries', () => {

@@ -1,9 +1,6 @@
 import { Email } from '../../domain/value-objects/email.value-object';
 import { User } from '../../domain/entities/user.entity';
-import {
-  UserModelDocument,
-  UserPersistence,
-} from '../persistence/user.schema';
+import { UserModelDocument, UserPersistence } from '../persistence/user.schema';
 
 export class UserDocumentMapper {
   static toPersistence(user: User): UserPersistence {

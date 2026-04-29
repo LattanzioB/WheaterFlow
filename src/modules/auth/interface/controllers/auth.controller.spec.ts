@@ -99,7 +99,9 @@ describe('AuthController', () => {
     const loginService = buildLoginService();
     const controller = new AuthController(registerService, loginService);
 
-    loginService.execute.mockRejectedValue(new Error('Password cannot be empty'));
+    loginService.execute.mockRejectedValue(
+      new Error('Password cannot be empty'),
+    );
 
     await expect(
       controller.login({

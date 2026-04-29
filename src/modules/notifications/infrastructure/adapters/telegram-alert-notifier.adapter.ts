@@ -1,11 +1,11 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import { AlertNotifier } from '../../application/ports/alert-notifier.port';
+import { AlertNotifier } from '../../domain/ports/alert-notifier.port';
 import {
   MeasurementAlertNotification,
   NotificationDeliveryTarget,
-} from '../../application/ports/measurement-alert-notification';
+} from '../../domain/ports/measurement-alert-notification';
 
 interface HttpClientLike {
   post(url: string, body: Record<string, unknown>): Promise<unknown>;

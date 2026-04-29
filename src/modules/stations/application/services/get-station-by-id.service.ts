@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { IStationRepository } from '../ports/station-repository.port';
+import type { IStationRepository } from '../../domain/ports/station-repository.port';
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { STATION_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
 

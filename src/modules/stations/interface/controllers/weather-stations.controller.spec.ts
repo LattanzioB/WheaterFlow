@@ -110,11 +110,11 @@ describe('WeatherStationsController', () => {
 
     getService.execute.mockResolvedValue(buildStation() as any);
 
-    await expect(controller.getById('station-1', request)).resolves.toMatchObject(
-      {
-        id: 'station-1',
-      },
-    );
+    await expect(
+      controller.getById('station-1', request),
+    ).resolves.toMatchObject({
+      id: 'station-1',
+    });
   });
 
   it('rejects access to stations owned by another user', async () => {
@@ -130,9 +130,9 @@ describe('WeatherStationsController', () => {
 
     getService.execute.mockResolvedValue(buildStation('user-2') as any);
 
-    await expect(controller.getById('station-1', request)).rejects.toBeInstanceOf(
-      ForbiddenException,
-    );
+    await expect(
+      controller.getById('station-1', request),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('updates and deletes only after ownership passes', async () => {
@@ -163,7 +163,9 @@ describe('WeatherStationsController', () => {
     ).resolves.toMatchObject({
       sensorModel: 'WH-1080',
     });
-    await expect(controller.delete('station-1', request)).resolves.toBeUndefined();
+    await expect(
+      controller.delete('station-1', request),
+    ).resolves.toBeUndefined();
   });
 
   it('lists all stations for subscription discovery', async () => {

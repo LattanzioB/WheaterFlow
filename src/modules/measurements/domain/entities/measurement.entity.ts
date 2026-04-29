@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { StationAlertSettings } from '../../../stations/domain/value-objects/station-alert-settings.value-object';
+import type { AlertSettings } from '../../../../shared/domain/alert-settings';
 import { AlertEvaluator } from '../services/alert-evaluator.service';
 import { AlertType } from '../value-objects/alert-type.enum';
 import { Humidity } from '../value-objects/humidity.value-object';
@@ -15,7 +15,7 @@ export interface CreateMeasurementProps {
   reportedAt?: Date;
   alertStatus?: boolean;
   alertType?: AlertType;
-  alertSettings?: StationAlertSettings;
+  alertSettings?: AlertSettings;
   alertEvaluator?: AlertEvaluator;
 }
 
@@ -122,7 +122,7 @@ export class Measurement {
 
   evaluateAlerts(
     evaluator: AlertEvaluator,
-    alertSettings?: StationAlertSettings,
+    alertSettings?: AlertSettings,
   ): AlertType {
     const alertType = evaluator.evaluate(this, alertSettings);
     this.applyAlert(alertType);

@@ -1,4 +1,1 @@
-export interface AuthTokenPayload {
-  sub: string;
-  email: string;
-}
+export type { AuthTokenPayload } from '../../domain/ports/auth-token-payload';

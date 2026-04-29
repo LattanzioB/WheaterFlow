@@ -23,7 +23,8 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        description: 'Paste the access_token returned by the authentication endpoints.',
+        description:
+          'Paste the access_token returned by the authentication endpoints.',
       },
       'bearer',
     )

@@ -1,4 +1,4 @@
-import { IMeasurementRepository } from '../ports/measurement-repository.port';
+import { IMeasurementRepository } from '../../domain/ports/measurement-repository.port';
 import {
   QueryMeasurementsCommand,
   QueryMeasurementsService,

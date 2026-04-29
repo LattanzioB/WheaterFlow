@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import type { IMeasurementRepository } from '../ports/measurement-repository.port';
-import type { IStationRepository } from '../../../stations/application/ports/station-repository.port';
+import type { IMeasurementRepository } from '../../domain/ports/measurement-repository.port';
+import type { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
 import { Measurement } from '../../domain/entities/measurement.entity';
 import { MeasurementAlertDetectedEvent } from '../../domain/events/measurement-alert-detected.event';
 import { Humidity } from '../../domain/value-objects/humidity.value-object';
@@ -43,7 +43,7 @@ export class RecordMeasurementService {
       humidity: Humidity.create(command.humidity),
       pressure: Pressure.create(command.pressure),
       reportedAt: command.reportedAt,
-      alertSettings: station.getAlertSettings(),
+      alertSettings: station.getAlertSettings().toPrimitives(),
     });
 
     await this.measurementRepository.save(measurement);

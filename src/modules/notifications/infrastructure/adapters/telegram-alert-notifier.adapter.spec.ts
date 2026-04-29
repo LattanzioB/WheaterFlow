@@ -32,10 +32,7 @@ describe('TelegramAlertNotifierAdapter', () => {
     const httpClient = {
       post: jest.fn().mockResolvedValue({ ok: true }),
     };
-    const adapter = new TelegramAlertNotifierAdapter(
-      configService,
-      httpClient,
-    );
+    const adapter = new TelegramAlertNotifierAdapter(configService, httpClient);
 
     await adapter.sendMeasurementAlert(notification);
 
@@ -55,10 +52,7 @@ describe('TelegramAlertNotifierAdapter', () => {
     const httpClient = {
       post: jest.fn(),
     };
-    const adapter = new TelegramAlertNotifierAdapter(
-      configService,
-      httpClient,
-    );
+    const adapter = new TelegramAlertNotifierAdapter(configService, httpClient);
 
     await adapter.sendMeasurementAlert(notification);
 

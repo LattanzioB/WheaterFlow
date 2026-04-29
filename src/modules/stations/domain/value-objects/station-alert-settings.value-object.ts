@@ -1,9 +1,10 @@
-export interface StationAlertSettingsProps {
-  extremeHeat?: boolean;
-  frost?: boolean;
-  storm?: boolean;
-  criticalHumidity?: boolean;
-}
+import type {
+  AlertSettings,
+  AlertSettingsInput,
+} from '../../../../shared/domain/alert-settings';
+import { normalizeAlertSettings } from '../../../../shared/domain/alert-settings';
+
+export type StationAlertSettingsProps = AlertSettingsInput;
 
 export class StationAlertSettings {
   private constructor(
@@ -14,11 +15,13 @@ export class StationAlertSettings {
   ) {}
 
   static create(props: StationAlertSettingsProps = {}): StationAlertSettings {
+    const normalized = normalizeAlertSettings(props);
+
     return new StationAlertSettings(
-      props.extremeHeat ?? true,
-      props.frost ?? true,
-      props.storm ?? true,
-      props.criticalHumidity ?? true,
+      normalized.extremeHeat,
+      normalized.frost,
+      normalized.storm,
+      normalized.criticalHumidity,
     );
   }
 
@@ -47,7 +50,7 @@ export class StationAlertSettings {
     );
   }
 
-  toPrimitives(): Required<StationAlertSettingsProps> {
+  toPrimitives(): AlertSettings {
     return {
       extremeHeat: this.extremeHeat,
       frost: this.frost,

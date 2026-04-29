@@ -50,7 +50,9 @@ describe('MongoUserRepository', () => {
 
     model.findOne.mockReturnValue(query);
 
-    const user = await repository.findByEmail(Email.create('bruno@example.com'));
+    const user = await repository.findByEmail(
+      Email.create('bruno@example.com'),
+    );
 
     expect(model.findOne).toHaveBeenCalledWith({ email: 'bruno@example.com' });
     expect(user?.getId()).toBe('user-1');
@@ -135,7 +137,8 @@ describe('MongoUserRepository', () => {
 
     model.find.mockReturnValue(query);
 
-    const subscribers = await repository.findSubscribersByStationId('station-1');
+    const subscribers =
+      await repository.findSubscribersByStationId('station-1');
 
     expect(model.find).toHaveBeenCalledWith({
       'notificationPreferences.stationId': 'station-1',

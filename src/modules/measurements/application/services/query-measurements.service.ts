@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type {
   IMeasurementRepository,
   MeasurementFilters,
-} from '../ports/measurement-repository.port';
+} from '../../domain/ports/measurement-repository.port';
 import { Measurement } from '../../domain/entities/measurement.entity';
 import { MEASUREMENT_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
 

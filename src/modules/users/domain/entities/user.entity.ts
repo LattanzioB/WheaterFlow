@@ -67,8 +67,12 @@ export class User {
       props.notificationPreferences,
       props.subscriptions,
     );
-    const deliveryChannels = User.normalizeDeliveryChannels(props.deliveryChannels);
-    const telegramLinking = User.normalizeTelegramLinking(props.telegramLinking);
+    const deliveryChannels = User.normalizeDeliveryChannels(
+      props.deliveryChannels,
+    );
+    const telegramLinking = User.normalizeTelegramLinking(
+      props.telegramLinking,
+    );
     const createdAt = props.createdAt ?? new Date();
 
     if (Number.isNaN(createdAt.getTime())) {

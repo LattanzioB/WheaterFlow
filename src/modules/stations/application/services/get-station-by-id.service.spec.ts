@@ -1,4 +1,4 @@
-import { IStationRepository } from '../ports/station-repository.port';
+import { IStationRepository } from '../../domain/ports/station-repository.port';
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { Location } from '../../domain/value-objects/location.value-object';
 import { GetStationByIdService } from './get-station-by-id.service';

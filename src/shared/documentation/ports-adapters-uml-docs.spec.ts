@@ -53,9 +53,7 @@ describe('S-06.4 ports and adapters UML documentation', () => {
     expect(source).toContain(
       'IMeasurementRepository <|.. MongoMeasurementRepository',
     );
-    expect(source).toContain(
-      'AlertNotifier <|.. TelegramAlertNotifierAdapter',
-    );
+    expect(source).toContain('AlertNotifier <|.. TelegramAlertNotifierAdapter');
   });
 
   it('shows generic notification payloads separately from the Telegram-specific adapter', () => {
@@ -66,9 +64,7 @@ describe('S-06.4 ports and adapters UML documentation', () => {
     expect(source).toContain('+temperature');
     expect(source).toContain('+humidity');
     expect(source).toContain('+pressure');
-    expect(source).toContain(
-      'TelegramAlertNotifierAdapter (TelegramAdapter)',
-    );
+    expect(source).toContain('TelegramAlertNotifierAdapter (TelegramAdapter)');
   });
 
   it('exports an SVG that embeds the key ports and adapters labels', () => {

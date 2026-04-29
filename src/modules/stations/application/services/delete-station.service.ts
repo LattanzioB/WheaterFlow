@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { IStationRepository } from '../ports/station-repository.port';
+import type { IStationRepository } from '../../domain/ports/station-repository.port';
 import { STATION_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
 
 export interface DeleteStationCommand {

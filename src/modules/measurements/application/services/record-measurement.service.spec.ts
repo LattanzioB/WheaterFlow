@@ -1,10 +1,10 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { IMeasurementRepository } from '../ports/measurement-repository.port';
+import { IMeasurementRepository } from '../../domain/ports/measurement-repository.port';
 import {
   RecordMeasurementCommand,
   RecordMeasurementService,
 } from './record-measurement.service';
-import { IStationRepository } from '../../../stations/application/ports/station-repository.port';
+import { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
 import { MeasurementAlertDetectedEvent } from '../../domain/events/measurement-alert-detected.event';
 import { WeatherStation } from '../../../stations/domain/entities/weather-station.entity';
 import { Location } from '../../../stations/domain/value-objects/location.value-object';

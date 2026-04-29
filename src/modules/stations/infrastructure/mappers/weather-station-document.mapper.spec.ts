@@ -79,6 +79,8 @@ describe('WeatherStation persistence mapping', () => {
       storm: true,
       criticalHumidity: true,
     });
-    expect(station.getCreatedAt().toISOString()).toBe('2026-04-25T15:00:00.000Z');
+    expect(station.getCreatedAt().toISOString()).toBe(
+      '2026-04-25T15:00:00.000Z',
+    );
   });
 });

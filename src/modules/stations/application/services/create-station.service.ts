@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { IStationRepository } from '../ports/station-repository.port';
-import type { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import type { IStationRepository } from '../../domain/ports/station-repository.port';
+import type { IUserRepository } from '../../../users/domain/ports/user-repository.port';
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import {
   StationAlertSettings,

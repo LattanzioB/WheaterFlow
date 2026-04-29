@@ -1,7 +1,1 @@
-import { MeasurementAlertNotification } from './measurement-alert-notification';
-
-export interface AlertNotifier {
-  sendMeasurementAlert(
-    notification: MeasurementAlertNotification,
-  ): Promise<void>;
-}
+export type { AlertNotifier } from '../../domain/ports/alert-notifier.port';

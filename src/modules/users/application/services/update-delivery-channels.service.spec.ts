@@ -1,7 +1,7 @@
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { User } from '../../domain/entities/user.entity';
 import { Email } from '../../domain/value-objects/email.value-object';
-import { IUserRepository } from '../ports/user-repository.port';
+import { IUserRepository } from '../../domain/ports/user-repository.port';
 import { UpdateDeliveryChannelsService } from './update-delivery-channels.service';
 
 describe('UpdateDeliveryChannelsService', () => {

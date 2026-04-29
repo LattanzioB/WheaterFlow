@@ -1,12 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
 export class UpdateTelegramDeliveryChannelDto {
   @ApiPropertyOptional({
     example: '123456789',
     nullable: true,
-    description: 'Telegram chat id. Send null to clear the configured destination.',
+    description:
+      'Telegram chat id. Send null to clear the configured destination.',
   })
   @IsOptional()
   @IsString()

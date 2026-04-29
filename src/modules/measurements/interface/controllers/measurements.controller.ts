@@ -17,7 +17,10 @@ import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.s
 import { GetStationByIdService } from '../../../stations/application/services/get-station-by-id.service';
 import { QueryMeasurementsService } from '../../application/services/query-measurements.service';
 import { RecordMeasurementService } from '../../application/services/record-measurement.service';
-import { CreateMeasurementDto, QueryMeasurementsDto } from '../dtos/measurement.dto';
+import {
+  CreateMeasurementDto,
+  QueryMeasurementsDto,
+} from '../dtos/measurement.dto';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -42,7 +45,9 @@ export class MeasurementsController {
       });
 
       if (station.getOwnerId() !== req.user.userId) {
-        throw new ForbiddenException('You can only record measurements for your own stations');
+        throw new ForbiddenException(
+          'You can only record measurements for your own stations',
+        );
       }
 
       const measurement = await this.recordMeasurementService.execute({
@@ -87,11 +92,15 @@ export class MeasurementsController {
     }
 
     return new BadRequestException(
-      error instanceof Error ? error.message : 'Unable to process measurement request',
+      error instanceof Error
+        ? error.message
+        : 'Unable to process measurement request',
     );
   }
 
-  private toResponse(measurement: MeasurementResponseSource): MeasurementResponse {
+  private toResponse(
+    measurement: MeasurementResponseSource,
+  ): MeasurementResponse {
     return {
       id: measurement.getId(),
       stationId: measurement.getStationId(),

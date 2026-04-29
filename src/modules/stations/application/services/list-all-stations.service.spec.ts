@@ -1,5 +1,5 @@
 import { ListAllStationsService } from './list-all-stations.service';
-import { IStationRepository } from '../ports/station-repository.port';
+import { IStationRepository } from '../../domain/ports/station-repository.port';
 
 describe('ListAllStationsService', () => {
   it('returns every available station', async () => {

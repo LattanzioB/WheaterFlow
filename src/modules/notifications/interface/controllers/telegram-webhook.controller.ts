@@ -8,9 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeController } from '@nestjs/swagger';
-import {
-  ProcessTelegramWebhookService,
-} from '../../application/services/process-telegram-webhook.service';
+import { ProcessTelegramWebhookService } from '../../application/services/process-telegram-webhook.service';
 import type { TelegramWebhookUpdate } from '../../application/services/process-telegram-webhook.service';
 
 @ApiExcludeController()

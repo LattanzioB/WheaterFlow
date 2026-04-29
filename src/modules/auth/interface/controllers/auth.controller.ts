@@ -32,7 +32,10 @@ export class AuthController {
         access_token: result.accessToken,
       };
     } catch (error) {
-      if (error instanceof Error && error.message === 'Email is already registered') {
+      if (
+        error instanceof Error &&
+        error.message === 'Email is already registered'
+      ) {
         throw new ConflictException(error.message);
       }
 

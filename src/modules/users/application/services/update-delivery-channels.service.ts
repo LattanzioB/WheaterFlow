@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { USER_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
-import type { IUserRepository } from '../ports/user-repository.port';
-import type { User, UserDeliveryChannelsInput } from '../../domain/entities/user.entity';
+import type { IUserRepository } from '../../domain/ports/user-repository.port';
+import type {
+  User,
+  UserDeliveryChannelsInput,
+} from '../../domain/entities/user.entity';
 
 export interface UpdateDeliveryChannelsCommand {
   userId: string;

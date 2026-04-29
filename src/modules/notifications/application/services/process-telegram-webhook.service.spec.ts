@@ -1,6 +1,6 @@
 import { User } from '../../../users/domain/entities/user.entity';
 import { Email } from '../../../users/domain/value-objects/email.value-object';
-import type { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import type { IUserRepository } from '../../../users/domain/ports/user-repository.port';
 import { ProcessTelegramWebhookService } from './process-telegram-webhook.service';
 
 describe('ProcessTelegramWebhookService', () => {

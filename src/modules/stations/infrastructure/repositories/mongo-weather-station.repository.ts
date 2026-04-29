@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { IStationRepository } from '../../application/ports/station-repository.port';
+import { IStationRepository } from '../../domain/ports/station-repository.port';
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { WeatherStationDocumentMapper } from '../mappers/weather-station-document.mapper';
 import { WeatherStationPersistenceModel } from '../persistence/weather-station.schema';
@@ -34,10 +34,7 @@ export class MongoWeatherStationRepository implements IStationRepository {
   }
 
   async findByOwnerId(ownerId: string): Promise<WeatherStation[]> {
-    const documents = await this.stationModel
-      .find({ ownerId })
-      .lean()
-      .exec();
+    const documents = await this.stationModel.find({ ownerId }).lean().exec();
 
     return documents.map((document) =>
       WeatherStationDocumentMapper.toDomain(document),

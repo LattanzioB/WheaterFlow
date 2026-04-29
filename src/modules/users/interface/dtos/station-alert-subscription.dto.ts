@@ -15,7 +15,8 @@ export class SubscribeToStationAlertsDto {
     enumName: 'AlertType',
     isArray: true,
     example: [AlertType.EXTREME_HEAT, AlertType.STORM],
-    description: 'Alert types to subscribe to. Omit to use the station defaults.',
+    description:
+      'Alert types to subscribe to. Omit to use the station defaults.',
   })
   @IsOptional()
   @IsArray()

@@ -1,8 +1,8 @@
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
-import { IStationRepository } from '../../../stations/application/ports/station-repository.port';
+import { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
 import { WeatherStation } from '../../../stations/domain/entities/weather-station.entity';
 import { Location } from '../../../stations/domain/value-objects/location.value-object';
-import { IUserRepository } from '../ports/user-repository.port';
+import { IUserRepository } from '../../domain/ports/user-repository.port';
 import {
   UpdateStationAlertPreferencesCommand,
   UpdateStationAlertPreferencesService,

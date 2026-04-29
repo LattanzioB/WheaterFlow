@@ -62,7 +62,9 @@ export class UserNotificationPreferencesController {
   @ApiOkResponse({
     type: UserResponseDto,
   })
-  async getCurrentUser(@Req() req: AuthenticatedRequest): Promise<UserResponseDto> {
+  async getCurrentUser(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UserResponseDto> {
     try {
       const user = await this.getUserByIdService.execute(req.user.userId);
       return this.toResponse(user);
@@ -190,7 +192,8 @@ export class UserNotificationPreferencesController {
 
   @Post(':id/delivery-channels/telegram/link-code')
   @ApiOperation({
-    summary: 'Create a short-lived Telegram link code for the authenticated user',
+    summary:
+      'Create a short-lived Telegram link code for the authenticated user',
   })
   @ApiOkResponse({
     type: TelegramLinkCodeResponseDto,
@@ -206,7 +209,8 @@ export class UserNotificationPreferencesController {
         userId,
       });
       const botUsername =
-        this.configService.get<string>('telegram.botUsername')?.trim() || undefined;
+        this.configService.get<string>('telegram.botUsername')?.trim() ||
+        undefined;
 
       return {
         code: result.code,
@@ -220,9 +224,14 @@ export class UserNotificationPreferencesController {
     }
   }
 
-  private ensureOwnUserAccess(requestUser: AuthenticatedUser, userId: string): void {
+  private ensureOwnUserAccess(
+    requestUser: AuthenticatedUser,
+    userId: string,
+  ): void {
     if (requestUser.userId !== userId) {
-      throw new ForbiddenException('You can only manage your own notification settings');
+      throw new ForbiddenException(
+        'You can only manage your own notification settings',
+      );
     }
   }
 
@@ -272,7 +281,9 @@ export class UserNotificationPreferencesController {
             sensorModel: subscription.station.getSensorModel(),
             status: subscription.station.getStatus(),
             ownerId: subscription.station.getOwnerId(),
-            alertSettings: subscription.station.getAlertSettings().toPrimitives(),
+            alertSettings: subscription.station
+              .getAlertSettings()
+              .toPrimitives(),
             createdAt: subscription.station.getCreatedAt().toISOString(),
           }
         : null,
@@ -285,7 +296,9 @@ export class UserNotificationPreferencesController {
               .getValue(),
             humidity: subscription.latestMeasurement.getHumidity().getValue(),
             pressure: subscription.latestMeasurement.getPressure().getValue(),
-            reportedAt: subscription.latestMeasurement.getReportedAt().toISOString(),
+            reportedAt: subscription.latestMeasurement
+              .getReportedAt()
+              .toISOString(),
             alertStatus: subscription.latestMeasurement.hasAlert(),
             alertType: subscription.latestMeasurement.getAlertType(),
           }

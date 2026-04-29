@@ -1,1 +1,4 @@
-export type { PasswordHasher } from '../../application/ports/password-hasher.port';
+export interface PasswordHasher {
+  hash(password: string): Promise<string>;
+  compare(password: string, passwordHash: string): Promise<boolean>;
+}

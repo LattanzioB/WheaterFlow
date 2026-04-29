@@ -8,12 +8,12 @@ describe('JwtStrategy', () => {
     } as unknown as jest.Mocked<ConfigService>;
     const strategy = new JwtStrategy(configService);
 
-    expect(strategy.validate({ sub: 'user-1', email: 'ana@example.com' })).toEqual(
-      {
-        userId: 'user-1',
-        email: 'ana@example.com',
-      },
-    );
+    expect(
+      strategy.validate({ sub: 'user-1', email: 'ana@example.com' }),
+    ).toEqual({
+      userId: 'user-1',
+      email: 'ana@example.com',
+    });
     expect(configService.getOrThrow).toHaveBeenCalledWith('jwt.secret');
   });
 });

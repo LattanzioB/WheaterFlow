@@ -1,7 +1,7 @@
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
-import { IMeasurementRepository } from '../../../measurements/application/ports/measurement-repository.port';
-import { IStationRepository } from '../../../stations/application/ports/station-repository.port';
-import { IUserRepository } from '../ports/user-repository.port';
+import { IMeasurementRepository } from '../../../measurements/domain/ports/measurement-repository.port';
+import { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
+import { IUserRepository } from '../../domain/ports/user-repository.port';
 import { ListSubscribedStationsService } from './list-subscribed-stations.service';
 
 describe('ListSubscribedStationsService', () => {
@@ -24,14 +24,15 @@ describe('ListSubscribedStationsService', () => {
     findAll: jest.fn(),
   });
 
-  const buildMeasurementRepository = (): jest.Mocked<IMeasurementRepository> => ({
-    findById: jest.fn(),
-    findByStationId: jest.fn(),
-    save: jest.fn(),
-    delete: jest.fn(),
-    findWithFilters: jest.fn(),
-    findLatestByStationIds: jest.fn(),
-  });
+  const buildMeasurementRepository =
+    (): jest.Mocked<IMeasurementRepository> => ({
+      findById: jest.fn(),
+      findByStationId: jest.fn(),
+      save: jest.fn(),
+      delete: jest.fn(),
+      findWithFilters: jest.fn(),
+      findLatestByStationIds: jest.fn(),
+    });
 
   const buildUser = () => ({
     getNotificationPreferences: () => [

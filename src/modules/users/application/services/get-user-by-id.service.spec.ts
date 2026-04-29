@@ -1,4 +1,4 @@
-import { IUserRepository } from '../ports/user-repository.port';
+import { IUserRepository } from '../../domain/ports/user-repository.port';
 import { GetUserByIdService } from './get-user-by-id.service';
 import { User } from '../../domain/entities/user.entity';
 import { Email } from '../../domain/value-objects/email.value-object';

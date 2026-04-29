@@ -1,4 +1,3 @@
-import { StationAlertSettings } from '../../../stations/domain/value-objects/station-alert-settings.value-object';
 import { Measurement } from '../entities/measurement.entity';
 import { AlertType } from '../value-objects/alert-type.enum';
 import { Humidity } from '../value-objects/humidity.value-object';
@@ -55,12 +54,9 @@ describe('AlertEvaluator', () => {
       temperature: Temperature.create(41),
     });
 
-    const result = evaluator.evaluate(
-      measurement,
-      StationAlertSettings.create({
-        extremeHeat: false,
-      }),
-    );
+    const result = evaluator.evaluate(measurement, {
+      extremeHeat: false,
+    });
 
     expect(result).toBe(AlertType.NONE);
   });

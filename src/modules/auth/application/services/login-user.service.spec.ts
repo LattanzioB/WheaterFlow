@@ -1,7 +1,7 @@
-import { PasswordHasher } from '../ports/password-hasher.port';
-import { TokenService } from '../ports/token-service.port';
+import { PasswordHasher } from '../../domain/ports/password-hasher.port';
+import { TokenService } from '../../domain/ports/token-service.port';
 import { LoginUserCommand, LoginUserService } from './login-user.service';
-import { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import { IUserRepository } from '../../../users/domain/ports/user-repository.port';
 import { User } from '../../../users/domain/entities/user.entity';
 import { Email } from '../../../users/domain/value-objects/email.value-object';
 

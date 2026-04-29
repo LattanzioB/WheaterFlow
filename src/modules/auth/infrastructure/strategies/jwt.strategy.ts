@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthTokenPayload } from '../../application/ports/auth-token-payload';
+import { AuthTokenPayload } from '../../domain/ports/auth-token-payload';
 
 export interface AuthenticatedUser {
   userId: string;

@@ -7,9 +7,13 @@ import { MeasurementsController } from './measurements.controller';
 
 describe('MeasurementsController', () => {
   const buildRecordService = () =>
-    ({ execute: jest.fn() }) as unknown as jest.Mocked<RecordMeasurementService>;
+    ({
+      execute: jest.fn(),
+    }) as unknown as jest.Mocked<RecordMeasurementService>;
   const buildQueryService = () =>
-    ({ execute: jest.fn() }) as unknown as jest.Mocked<QueryMeasurementsService>;
+    ({
+      execute: jest.fn(),
+    }) as unknown as jest.Mocked<QueryMeasurementsService>;
   const buildGetStationService = () =>
     ({ execute: jest.fn() }) as unknown as jest.Mocked<GetStationByIdService>;
 

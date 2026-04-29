@@ -1,5 +1,4 @@
 import { Measurement } from './measurement.entity';
-import { StationAlertSettings } from '../../../stations/domain/value-objects/station-alert-settings.value-object';
 import { AlertType } from '../value-objects/alert-type.enum';
 import { Humidity } from '../value-objects/humidity.value-object';
 import { Pressure } from '../value-objects/pressure.value-object';
@@ -85,9 +84,9 @@ describe('Measurement', () => {
       temperature: Temperature.create(41),
       humidity: Humidity.create(55),
       pressure: Pressure.create(1005),
-      alertSettings: StationAlertSettings.create({
+      alertSettings: {
         extremeHeat: false,
-      }),
+      },
     });
 
     expect(measurement.hasAlert()).toBe(false);

@@ -16,7 +16,10 @@ describe('Measurement persistence mapping', () => {
       { stationId: 1, reportedAt: -1 },
       {},
     ]);
-    expect(MeasurementSchema.indexes()).toContainEqual([{ alertStatus: 1 }, {}]);
+    expect(MeasurementSchema.indexes()).toContainEqual([
+      { alertStatus: 1 },
+      {},
+    ]);
   });
 
   it('maps a measurement aggregate to a persistence document', () => {

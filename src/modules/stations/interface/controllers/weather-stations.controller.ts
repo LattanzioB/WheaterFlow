@@ -134,7 +134,10 @@ export class WeatherStationsController {
     }
   }
 
-  private ensureOwnership(ownerId: string, requestUser: AuthenticatedUser): void {
+  private ensureOwnership(
+    ownerId: string,
+    requestUser: AuthenticatedUser,
+  ): void {
     if (ownerId !== requestUser.userId) {
       throw new ForbiddenException('You can only manage your own stations');
     }
@@ -145,7 +148,10 @@ export class WeatherStationsController {
       return new BadRequestException('Unable to process station request');
     }
 
-    if (error.message === 'Station not found' || error.message === 'Owner user not found') {
+    if (
+      error.message === 'Station not found' ||
+      error.message === 'Owner user not found'
+    ) {
       return new NotFoundException(error.message);
     }
 

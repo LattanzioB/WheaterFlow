@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { USER_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
-import type { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import type { IUserRepository } from '../../../users/domain/ports/user-repository.port';
 
 export interface TelegramWebhookUpdate {
   message?: {
@@ -27,7 +27,9 @@ export class ProcessTelegramWebhookService {
     private readonly userRepository: IUserRepository,
   ) {}
 
-  async execute(update: TelegramWebhookUpdate): Promise<TelegramWebhookOutcome> {
+  async execute(
+    update: TelegramWebhookUpdate,
+  ): Promise<TelegramWebhookOutcome> {
     const text = update.message?.text?.trim();
     const chatId = update.message?.chat?.id;
 
@@ -35,7 +37,9 @@ export class ProcessTelegramWebhookService {
       return 'ignored';
     }
 
-    const match = text.match(ProcessTelegramWebhookService.LINK_COMMAND_PATTERN);
+    const match = text.match(
+      ProcessTelegramWebhookService.LINK_COMMAND_PATTERN,
+    );
 
     if (!match) {
       return 'ignored';

@@ -1,2 +1,5 @@
-export type { TokenService } from '../../application/ports/token-service.port';
-export type { AuthTokenPayload } from '../../application/ports/auth-token-payload';
+import { AuthTokenPayload } from './auth-token-payload';
+
+export interface TokenService {
+  generateToken(payload: AuthTokenPayload): Promise<string>;
+}

@@ -1,32 +1,32 @@
-import { StationAlertSettings } from '../../../stations/domain/value-objects/station-alert-settings.value-object';
+import {
+  DEFAULT_ALERT_SETTINGS,
+  type AlertSettings,
+} from '../../../../shared/domain/alert-settings';
 import { Measurement } from '../entities/measurement.entity';
 import { AlertType } from '../value-objects/alert-type.enum';
 
 export class AlertEvaluator {
   evaluate(
     measurement: Measurement,
-    alertSettings: StationAlertSettings = StationAlertSettings.create(),
+    alertSettings: AlertSettings = DEFAULT_ALERT_SETTINGS,
   ): AlertType {
     if (
-      alertSettings.isExtremeHeatEnabled() &&
+      alertSettings.extremeHeat &&
       measurement.getTemperature().isExtremeHeat()
     ) {
       return AlertType.EXTREME_HEAT;
     }
 
-    if (
-      alertSettings.isFrostEnabled() &&
-      measurement.getTemperature().isFrost()
-    ) {
+    if (alertSettings.frost && measurement.getTemperature().isFrost()) {
       return AlertType.FROST;
     }
 
-    if (alertSettings.isStormEnabled() && measurement.getPressure().isStorm()) {
+    if (alertSettings.storm && measurement.getPressure().isStorm()) {
       return AlertType.STORM;
     }
 
     if (
-      alertSettings.isCriticalHumidityEnabled() &&
+      alertSettings.criticalHumidity &&
       measurement.getHumidity().isCritical()
     ) {
       return AlertType.CRITICAL_HUMIDITY;

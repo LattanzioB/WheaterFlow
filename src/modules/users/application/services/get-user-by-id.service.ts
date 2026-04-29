@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { IUserRepository } from '../ports/user-repository.port';
+import type { IUserRepository } from '../../domain/ports/user-repository.port';
 import { USER_REPOSITORY_TOKEN } from '../../../../shared/tokens/injection-tokens';
 import { User } from '../../domain/entities/user.entity';
 

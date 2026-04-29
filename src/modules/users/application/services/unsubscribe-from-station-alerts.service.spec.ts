@@ -1,5 +1,5 @@
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
-import { IUserRepository } from '../ports/user-repository.port';
+import { IUserRepository } from '../../domain/ports/user-repository.port';
 import {
   UnsubscribeFromStationAlertsCommand,
   UnsubscribeFromStationAlertsService,

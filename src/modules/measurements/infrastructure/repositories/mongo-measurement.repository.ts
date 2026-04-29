@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   IMeasurementRepository,
   MeasurementFilters,
-} from '../../application/ports/measurement-repository.port';
+} from '../../domain/ports/measurement-repository.port';
 import { Measurement } from '../../domain/entities/measurement.entity';
 import { MeasurementDocumentMapper } from '../mappers/measurement-document.mapper';
 import { MeasurementPersistenceModel } from '../persistence/measurement.schema';

@@ -57,7 +57,13 @@ export class UserPersistenceModel {
   @Prop({ type: String, required: true, trim: true })
   lastName!: string;
 
-  @Prop({ type: String, required: true, unique: true, lowercase: true, trim: true })
+  @Prop({
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  })
   email!: string;
 
   @Prop({ type: String, required: true })

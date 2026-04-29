@@ -1,9 +1,9 @@
-import { AlertNotifier } from '../ports/alert-notifier.port';
+import { AlertNotifier } from '../../domain/ports/alert-notifier.port';
 import { NotificationService } from './notification.service';
-import { IMeasurementRepository } from '../../../measurements/application/ports/measurement-repository.port';
+import { IMeasurementRepository } from '../../../measurements/domain/ports/measurement-repository.port';
 import { MeasurementAlertDetectedEvent } from '../../../measurements/domain/events/measurement-alert-detected.event';
-import { IStationRepository } from '../../../stations/application/ports/station-repository.port';
-import { IUserRepository } from '../../../users/application/ports/user-repository.port';
+import { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
+import { IUserRepository } from '../../../users/domain/ports/user-repository.port';
 import { Measurement } from '../../../measurements/domain/entities/measurement.entity';
 import { Temperature } from '../../../measurements/domain/value-objects/temperature.value-object';
 import { Humidity } from '../../../measurements/domain/value-objects/humidity.value-object';

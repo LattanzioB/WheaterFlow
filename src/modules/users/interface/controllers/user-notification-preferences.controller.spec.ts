@@ -1,7 +1,4 @@
-import {
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';

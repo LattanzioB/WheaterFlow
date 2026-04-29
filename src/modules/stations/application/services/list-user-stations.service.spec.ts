@@ -1,4 +1,4 @@
-import { IStationRepository } from '../ports/station-repository.port';
+import { IStationRepository } from '../../domain/ports/station-repository.port';
 import {
   ListUserStationsCommand,
   ListUserStationsService,

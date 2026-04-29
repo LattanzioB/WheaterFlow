@@ -12,12 +12,18 @@ describe('User persistence mapping', () => {
     expect(UserSchema.path('telegramLinking.code')).toBeDefined();
     expect(UserSchema.path('notificationPreferences')).toBeDefined();
 
-    expect(UserSchema.indexes()).toContainEqual([{ email: 1 }, { unique: true }]);
+    expect(UserSchema.indexes()).toContainEqual([
+      { email: 1 },
+      { unique: true },
+    ]);
     expect(UserSchema.indexes()).toContainEqual([
       { 'notificationPreferences.stationId': 1 },
       {},
     ]);
-    expect(UserSchema.indexes()).toContainEqual([{ 'telegramLinking.code': 1 }, {}]);
+    expect(UserSchema.indexes()).toContainEqual([
+      { 'telegramLinking.code': 1 },
+      {},
+    ]);
   });
 
   it('maps a user aggregate to a persistence document', () => {

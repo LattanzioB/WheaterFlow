@@ -1,6 +1,6 @@
 import { User } from '../../domain/entities/user.entity';
 import { Email } from '../../domain/value-objects/email.value-object';
-import type { IUserRepository } from '../ports/user-repository.port';
+import type { IUserRepository } from '../../domain/ports/user-repository.port';
 import { CreateTelegramLinkCodeService } from './create-telegram-link-code.service';
 
 describe('CreateTelegramLinkCodeService', () => {

@@ -25,6 +25,9 @@ describe('S-06.3 domain UML documentation', () => {
     expect(source).toContain('Temperature (ValueObject)');
     expect(source).toContain('Humidity (ValueObject)');
     expect(source).toContain('Pressure (ValueObject)');
+    expect(source).toContain('UserRole (Enumeration)');
+    expect(source).toContain('UserDeliveryChannels (ValueObject)');
+    expect(source).toContain('UserTelegramLinking (ValueObject)');
   });
 
   it('captures the measurement alert domain service and domain event', () => {
@@ -35,11 +38,24 @@ describe('S-06.3 domain UML documentation', () => {
     expect(source).toContain('AlertEvaluator ..> StationAlertSettings');
   });
 
+  it('documents the user delivery and telegram linking model', () => {
+    const source = read('weatherflow-domain-model.mmd');
+
+    expect(source).toContain('+startTelegramLinking(code, expiresAt)');
+    expect(source).toContain('+getDeliveryChannels()');
+    expect(source).toContain('+getTelegramLinking()');
+    expect(source).toContain('User --> UserRole : role');
+    expect(source).toContain(
+      'UserDeliveryChannels *-- TelegramDeliveryChannel : telegram',
+    );
+  });
+
   it('exports an SVG that embeds the key domain labels', () => {
     const svg = read('weatherflow-domain-model.svg');
 
     expect(svg).toContain('WeatherStation');
     expect(svg).toContain('Measurement');
     expect(svg).toContain('MeasurementAlertDetectedEvent');
+    expect(svg).toContain('UserTelegramLinking');
   });
 });

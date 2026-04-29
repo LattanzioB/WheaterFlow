@@ -28,6 +28,19 @@ describe('S-06.4 ports and adapters UML documentation', () => {
     expect(source).toContain('AlertNotifier (Port)');
   });
 
+  it('matches the current auth and repository port contracts', () => {
+    const source = read('weatherflow-ports-adapters.mmd');
+
+    expect(source).toContain('+sub');
+    expect(source).toContain('+email');
+    expect(source).not.toContain('+role');
+    expect(source).toContain('+findByTelegramLinkCode(code)');
+    expect(source).toContain('+findAll()');
+    expect(source).toContain('+findByIds(ids)');
+    expect(source).toContain('+findLatestByStationIds(stationIds)');
+    expect(source).toContain('+delete(id)');
+  });
+
   it('documents concrete adapters and their dependency direction', () => {
     const source = read('weatherflow-ports-adapters.mmd');
 
@@ -50,6 +63,9 @@ describe('S-06.4 ports and adapters UML documentation', () => {
 
     expect(source).toContain('MeasurementAlertNotification (RequestModel)');
     expect(source).toContain('NotificationDeliveryTarget (RequestModel)');
+    expect(source).toContain('+temperature');
+    expect(source).toContain('+humidity');
+    expect(source).toContain('+pressure');
     expect(source).toContain(
       'TelegramAlertNotifierAdapter (TelegramAdapter)',
     );
@@ -61,5 +77,6 @@ describe('S-06.4 ports and adapters UML documentation', () => {
     expect(svg).toContain('MongoMeasurementRepository');
     expect(svg).toContain('TelegramAlertNotifierAdapter');
     expect(svg).toContain('MeasurementAlertNotification');
+    expect(svg).toContain('AuthTokenPayload');
   });
 });

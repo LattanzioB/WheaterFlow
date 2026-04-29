@@ -2,11 +2,11 @@ _bmad/
 _bmad-output/
 .agents/
 .claude/
+.codex
 .env
 node_modules/
 dist/
 coverage/
 
-docs
 claude.md
 graphify-out

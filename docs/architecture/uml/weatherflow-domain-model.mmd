@@ -7,13 +7,36 @@ class User["User (AggregateRoot)"] {
   +subscribeToAlerts(stationId, alertTypes)
   +updateAlertTypesForStation(stationId, alertTypes)
   +configureTelegramDelivery(chatId)
+  +startTelegramLinking(code, expiresAt)
+  +hasActiveTelegramLinkCode(code, now)
   +isSubscribedToAlert(stationId, alertType)
+  +getRole()
+  +getDeliveryChannels()
+  +getTelegramLinking()
 }
 
 class Email["Email (ValueObject)"] {
   +create(raw)
   +getValue()
   +equals(other)
+}
+
+class UserRole["UserRole (Enumeration)"] {
+  USER
+  ADMIN
+}
+
+class UserDeliveryChannels["UserDeliveryChannels (ValueObject)"] {
+  +telegram
+}
+
+class TelegramDeliveryChannel["TelegramDeliveryChannel (ValueObject)"] {
+  +chatId
+}
+
+class UserTelegramLinking["UserTelegramLinking (ValueObject)"] {
+  +code
+  +expiresAt
 }
 
 %% Stations domain
@@ -95,6 +118,10 @@ class MeasurementAlertDetectedEvent["MeasurementAlertDetectedEvent (DomainEvent)
 }
 
 User *-- Email : email
+User --> UserRole : role
+User *-- UserDeliveryChannels : delivery channels
+UserDeliveryChannels *-- TelegramDeliveryChannel : telegram
+User *-- UserTelegramLinking : telegram linking
 WeatherStation *-- Location : location
 WeatherStation *-- StationAlertSettings : alert settings
 WeatherStation --> StationStatus : status

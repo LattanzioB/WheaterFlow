@@ -14,7 +14,6 @@ class TokenService["TokenService (Port)"] {
 class AuthTokenPayload["AuthTokenPayload (Payload)"] {
   +sub
   +email
-  +role
 }
 
 class BcryptPasswordHasher["BcryptPasswordHasher (Adapter)"] {
@@ -30,20 +29,28 @@ class JwtTokenService["JwtTokenService (Adapter)"] {
 class IUserRepository["IUserRepository (Port)"] {
   +findById(id)
   +findByEmail(email)
+  +findByTelegramLinkCode(code)
   +save(user)
+  +delete(id)
+  +findAll()
   +findSubscribersByStationId(stationId)
 }
 
 class IStationRepository["IStationRepository (Port)"] {
   +findById(id)
+  +findByIds(ids)
   +findByOwnerId(ownerId)
   +save(station)
+  +delete(id)
+  +findAll()
 }
 
 class IMeasurementRepository["IMeasurementRepository (Port)"] {
   +findById(id)
   +findByStationId(stationId)
+  +findLatestByStationIds(stationIds)
   +save(measurement)
+  +delete(id)
   +findWithFilters(filters)
 }
 
@@ -93,6 +100,9 @@ class MeasurementAlertNotification["MeasurementAlertNotification (RequestModel)"
   +stationName
   +alertType
   +reportedAt
+  +temperature
+  +humidity
+  +pressure
 }
 
 class NotificationDeliveryTarget["NotificationDeliveryTarget (RequestModel)"] {

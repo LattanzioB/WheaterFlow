@@ -4,6 +4,7 @@ import { USER_REPOSITORY_TOKEN } from '../../shared/tokens/injection-tokens';
 import { MeasurementsModule } from '../measurements/measurements.module';
 import { StationsModule } from '../stations/stations.module';
 import { CreateTelegramLinkCodeService } from './application/services/create-telegram-link-code.service';
+import { GetUserByIdService } from './application/services/get-user-by-id.service';
 import { ListSubscribedStationsService } from './application/services/list-subscribed-stations.service';
 import { SubscribeToStationAlertsService } from './application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from './application/services/unsubscribe-from-station-alerts.service';
@@ -30,6 +31,7 @@ import { UserNotificationPreferencesController } from './interface/controllers/u
   controllers: [UserNotificationPreferencesController],
   providers: [
     CreateTelegramLinkCodeService,
+    GetUserByIdService,
     ListSubscribedStationsService,
     SubscribeToStationAlertsService,
     UnsubscribeFromStationAlertsService,

@@ -13,6 +13,7 @@ describe('ListUserStationsService', () => {
 
   const buildStationRepository = (): jest.Mocked<IStationRepository> => ({
     findById: jest.fn(),
+    findByIds: jest.fn(),
     findByOwnerId: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),

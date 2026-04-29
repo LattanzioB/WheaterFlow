@@ -18,7 +18,9 @@ import { Request } from 'express';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
+import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
+import { GetUserByIdService } from '../../application/services/get-user-by-id.service';
 import {
   ListSubscribedStationsService,
   SubscribedStationSummary,
@@ -34,6 +36,7 @@ import {
 } from '../dtos/station-alert-subscription.dto';
 import { TelegramLinkCodeResponseDto } from '../dtos/telegram-link-code-response.dto';
 import { UpdateDeliveryChannelsDto } from '../dtos/update-delivery-channels.dto';
+import { UserResponseDto } from '../dtos/user-response.dto';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -44,6 +47,7 @@ export class UserNotificationPreferencesController {
   constructor(
     private readonly configService: ConfigService,
     private readonly createTelegramLinkCodeService: CreateTelegramLinkCodeService,
+    private readonly getUserByIdService: GetUserByIdService,
     private readonly listSubscribedStationsService: ListSubscribedStationsService,
     private readonly subscribeToStationAlertsService: SubscribeToStationAlertsService,
     private readonly unsubscribeFromStationAlertsService: UnsubscribeFromStationAlertsService,
@@ -51,6 +55,21 @@ export class UserNotificationPreferencesController {
     private readonly updateDeliveryChannelsService: UpdateDeliveryChannelsService,
   ) {}
 
+  @Get('me')
+  @ApiOperation({
+    summary: 'Get the authenticated user profile',
+  })
+  @ApiOkResponse({
+    type: UserResponseDto,
+  })
+  async getCurrentUser(@Req() req: AuthenticatedRequest): Promise<UserResponseDto> {
+    try {
+      const user = await this.getUserByIdService.execute(req.user.userId);
+      return this.toResponse(user);
+    } catch (error) {
+      throw this.mapDomainError(error);
+    }
+  }
   @Get(':id/subscriptions')
   async listSubscriptions(
     @Param('id') userId: string,
@@ -74,12 +93,15 @@ export class UserNotificationPreferencesController {
   }
 
   @Post(':id/subscriptions/:stationId')
+  @ApiOkResponse({
+    type: UserResponseDto,
+  })
   async subscribe(
     @Param('id') userId: string,
     @Param('stationId') stationId: string,
     @Body() dto: SubscribeToStationAlertsDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -96,11 +118,14 @@ export class UserNotificationPreferencesController {
   }
 
   @Delete(':id/subscriptions/:stationId')
+  @ApiOkResponse({
+    type: UserResponseDto,
+  })
   async unsubscribe(
     @Param('id') userId: string,
     @Param('stationId') stationId: string,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -116,12 +141,15 @@ export class UserNotificationPreferencesController {
   }
 
   @Patch(':id/subscriptions/:stationId')
+  @ApiOkResponse({
+    type: UserResponseDto,
+  })
   async updateAlertPreferences(
     @Param('id') userId: string,
     @Param('stationId') stationId: string,
     @Body() dto: UpdateStationAlertPreferencesDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -138,11 +166,14 @@ export class UserNotificationPreferencesController {
   }
 
   @Patch(':id/delivery-channels')
+  @ApiOkResponse({
+    type: UserResponseDto,
+  })
   async updateDeliveryChannels(
     @Param('id') userId: string,
     @Body() dto: UpdateDeliveryChannelsDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<UserResponse> {
+  ): Promise<UserResponseDto> {
     this.ensureOwnUserAccess(req.user, userId);
 
     try {
@@ -211,7 +242,7 @@ export class UserNotificationPreferencesController {
     return new BadRequestException(error.message);
   }
 
-  private toResponse(user: UserResponseSource): UserResponse {
+  private toResponse(user: UserResponseSource): UserResponseDto {
     return {
       id: user.getId(),
       name: user.getName(),
@@ -270,7 +301,7 @@ interface UserResponseSource {
   getEmail(): { getValue(): string };
   getNotificationPreferences(): Array<{
     stationId: string;
-    alertTypes: string[];
+    alertTypes: AlertType[];
   }>;
   getDeliveryChannels(): {
     telegram: {
@@ -280,26 +311,9 @@ interface UserResponseSource {
   getCreatedAt(): Date;
 }
 
-interface UserResponse {
-  id: string;
-  name: string;
-  lastName: string;
-  email: string;
-  notificationPreferences: Array<{
-    stationId: string;
-    alertTypes: string[];
-  }>;
-  deliveryChannels: {
-    telegram: {
-      chatId: string | null;
-    };
-  };
-  createdAt: string;
-}
-
 interface SubscribedStationResponse {
   stationId: string;
-  alertTypes: string[];
+  alertTypes: AlertType[];
   hasActiveAlert: boolean;
   station: {
     id: string;
@@ -327,6 +341,6 @@ interface SubscribedStationResponse {
     pressure: number;
     reportedAt: string;
     alertStatus: boolean;
-    alertType: string;
+    alertType: AlertType;
   } | null;
 }

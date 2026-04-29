@@ -5,6 +5,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
+import { GetUserByIdService } from '../../application/services/get-user-by-id.service';
 import { ListSubscribedStationsService } from '../../application/services/list-subscribed-stations.service';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
@@ -23,6 +24,10 @@ describe('UserNotificationPreferencesController', () => {
       execute: jest.fn(),
     }) as unknown as jest.Mocked<CreateTelegramLinkCodeService>;
 
+  const buildGetUserByIdService = () =>
+    ({
+      execute: jest.fn(),
+    }) as unknown as jest.Mocked<GetUserByIdService>;
   const buildListSubscribedStationsService = () =>
     ({
       execute: jest.fn(),
@@ -79,6 +84,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildListSubscribedStationsService(),
       subscribeService,
       buildUnsubscribeService(),
@@ -110,6 +116,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildListSubscribedStationsService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
@@ -127,6 +134,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildListSubscribedStationsService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
@@ -153,6 +161,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildListSubscribedStationsService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
@@ -188,6 +197,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       buildListSubscribedStationsService(),
       subscribeService,
       buildUnsubscribeService(),
@@ -207,6 +217,7 @@ describe('UserNotificationPreferencesController', () => {
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       linkCodeService,
+      buildGetUserByIdService(),
       buildListSubscribedStationsService(),
       buildSubscribeService(),
       buildUnsubscribeService(),
@@ -230,11 +241,33 @@ describe('UserNotificationPreferencesController', () => {
     });
   });
 
+  it('returns the authenticated user profile', async () => {
+    const getUserByIdService = buildGetUserByIdService();
+    const controller = new UserNotificationPreferencesController(
+      buildConfigService(),
+      buildLinkCodeService(),
+      getUserByIdService,
+      buildListSubscribedStationsService(),
+      buildSubscribeService(),
+      buildUnsubscribeService(),
+      buildUpdatePreferencesService(),
+      buildUpdateDeliveryService(),
+    );
+
+    getUserByIdService.execute.mockResolvedValue(buildUser() as any);
+
+    await expect(controller.getCurrentUser(request)).resolves.toMatchObject({
+      id: 'user-1',
+      email: 'bruno@example.com',
+    });
+    expect(getUserByIdService.execute).toHaveBeenCalledWith('user-1');
+  });
   it('lists subscribed stations with latest measurement status', async () => {
     const listSubscribedStationsService = buildListSubscribedStationsService();
     const controller = new UserNotificationPreferencesController(
       buildConfigService(),
       buildLinkCodeService(),
+      buildGetUserByIdService(),
       listSubscribedStationsService,
       buildSubscribeService(),
       buildUnsubscribeService(),

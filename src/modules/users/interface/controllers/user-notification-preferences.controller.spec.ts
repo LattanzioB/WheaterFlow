@@ -28,7 +28,6 @@ describe('UserNotificationPreferencesController', () => {
     ({
       execute: jest.fn(),
     }) as unknown as jest.Mocked<GetUserByIdService>;
-
   const buildListSubscribedStationsService = () =>
     ({
       execute: jest.fn(),
@@ -263,7 +262,6 @@ describe('UserNotificationPreferencesController', () => {
     });
     expect(getUserByIdService.execute).toHaveBeenCalledWith('user-1');
   });
-
   it('lists subscribed stations with latest measurement status', async () => {
     const listSubscribedStationsService = buildListSubscribedStationsService();
     const controller = new UserNotificationPreferencesController(

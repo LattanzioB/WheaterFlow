@@ -70,7 +70,6 @@ export class UserNotificationPreferencesController {
       throw this.mapDomainError(error);
     }
   }
-
   @Get(':id/subscriptions')
   async listSubscriptions(
     @Param('id') userId: string,

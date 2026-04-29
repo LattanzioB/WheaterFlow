@@ -3,6 +3,7 @@ import { StationStatus } from '../../domain/value-objects/station-status.enum';
 import { CreateStationService } from '../../application/services/create-station.service';
 import { DeleteStationService } from '../../application/services/delete-station.service';
 import { GetStationByIdService } from '../../application/services/get-station-by-id.service';
+import { ListAllStationsService } from '../../application/services/list-all-stations.service';
 import { ListUserStationsService } from '../../application/services/list-user-stations.service';
 import { UpdateStationService } from '../../application/services/update-station.service';
 import { WeatherStationsController } from './weather-stations.controller';
@@ -10,6 +11,8 @@ import { WeatherStationsController } from './weather-stations.controller';
 describe('WeatherStationsController', () => {
   const buildCreateService = () =>
     ({ execute: jest.fn() }) as unknown as jest.Mocked<CreateStationService>;
+  const buildListAllService = () =>
+    ({ execute: jest.fn() }) as unknown as jest.Mocked<ListAllStationsService>;
   const buildListService = () =>
     ({ execute: jest.fn() }) as unknown as jest.Mocked<ListUserStationsService>;
   const buildGetService = () =>
@@ -51,6 +54,7 @@ describe('WeatherStationsController', () => {
     const listService = buildListService();
     const controller = new WeatherStationsController(
       buildCreateService(),
+      buildListAllService(),
       listService,
       buildGetService(),
       buildUpdateService(),
@@ -67,6 +71,7 @@ describe('WeatherStationsController', () => {
     const createService = buildCreateService();
     const controller = new WeatherStationsController(
       createService,
+      buildListAllService(),
       buildListService(),
       buildGetService(),
       buildUpdateService(),
@@ -96,6 +101,7 @@ describe('WeatherStationsController', () => {
     const getService = buildGetService();
     const controller = new WeatherStationsController(
       buildCreateService(),
+      buildListAllService(),
       buildListService(),
       getService,
       buildUpdateService(),
@@ -115,6 +121,7 @@ describe('WeatherStationsController', () => {
     const getService = buildGetService();
     const controller = new WeatherStationsController(
       buildCreateService(),
+      buildListAllService(),
       buildListService(),
       getService,
       buildUpdateService(),
@@ -134,6 +141,7 @@ describe('WeatherStationsController', () => {
     const deleteService = buildDeleteService();
     const controller = new WeatherStationsController(
       buildCreateService(),
+      buildListAllService(),
       buildListService(),
       getService,
       updateService,
@@ -156,5 +164,26 @@ describe('WeatherStationsController', () => {
       sensorModel: 'WH-1080',
     });
     await expect(controller.delete('station-1', request)).resolves.toBeUndefined();
+  });
+
+  it('lists all stations for subscription discovery', async () => {
+    const listAllService = buildListAllService();
+    const controller = new WeatherStationsController(
+      buildCreateService(),
+      listAllService,
+      buildListService(),
+      buildGetService(),
+      buildUpdateService(),
+      buildDeleteService(),
+    );
+
+    listAllService.execute.mockResolvedValue([buildStation('user-2') as any]);
+
+    await expect(controller.listAvailable()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'station-1',
+        ownerId: 'user-2',
+      }),
+    ]);
   });
 });

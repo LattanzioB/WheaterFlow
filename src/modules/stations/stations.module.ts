@@ -5,6 +5,7 @@ import { UsersModule } from '../users/users.module';
 import { CreateStationService } from './application/services/create-station.service';
 import { DeleteStationService } from './application/services/delete-station.service';
 import { GetStationByIdService } from './application/services/get-station-by-id.service';
+import { ListAllStationsService } from './application/services/list-all-stations.service';
 import { ListUserStationsService } from './application/services/list-user-stations.service';
 import { UpdateStationService } from './application/services/update-station.service';
 import { MongoWeatherStationRepository } from './infrastructure/repositories/mongo-weather-station.repository';
@@ -28,6 +29,7 @@ import { WeatherStationsController } from './interface/controllers/weather-stati
   providers: [
     CreateStationService,
     ListUserStationsService,
+    ListAllStationsService,
     GetStationByIdService,
     UpdateStationService,
     DeleteStationService,

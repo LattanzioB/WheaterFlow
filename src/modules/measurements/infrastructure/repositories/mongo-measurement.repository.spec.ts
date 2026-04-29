@@ -13,6 +13,7 @@ describe('MongoMeasurementRepository', () => {
       replaceOne: jest.fn(),
       deleteOne: jest.fn(),
       find: jest.fn(),
+      aggregate: jest.fn(),
     }) as any;
 
   const measurementDocument = {
@@ -119,5 +120,56 @@ describe('MongoMeasurementRepository', () => {
       },
       { upsert: true },
     );
+  });
+
+  it('queries the latest measurement per station', async () => {
+    const measurementModel = buildModel();
+    const stationModel = buildModel();
+    const aggregateQuery = {
+      exec: jest.fn().mockResolvedValue([measurementDocument]),
+    };
+    const repository = new MongoMeasurementRepository(
+      measurementModel,
+      stationModel,
+    );
+
+    measurementModel.aggregate.mockReturnValue(aggregateQuery);
+
+    const measurements = await repository.findLatestByStationIds([
+      'station-1',
+      'station-2',
+    ]);
+
+    expect(measurementModel.aggregate).toHaveBeenCalledWith([
+      {
+        $match: {
+          stationId: {
+            $in: ['station-1', 'station-2'],
+          },
+        },
+      },
+      {
+        $sort: {
+          stationId: 1,
+          reportedAt: -1,
+          _id: -1,
+        },
+      },
+      {
+        $group: {
+          _id: '$stationId',
+          latestMeasurement: {
+            $first: '$$ROOT',
+          },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: '$latestMeasurement',
+        },
+      },
+    ]);
+    expect(measurements).toHaveLength(1);
+    expect(measurements[0].getStationId()).toBe('station-1');
   });
 });

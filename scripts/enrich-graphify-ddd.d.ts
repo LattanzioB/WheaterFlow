@@ -1,4 +1,5 @@
 export interface GraphNodeInput {
+  id?: string;
   label?: string;
   source_file?: string;
 }
@@ -18,7 +19,8 @@ export interface GraphNodeWithDdd extends GraphNodeInput {
 
 export interface EnrichedGraph {
   nodes: GraphNodeWithDdd[];
-  edges: unknown[];
+  links?: unknown[];
+  edges?: unknown[];
   ddd: {
     boundedContext: string;
     generatedAt: string;
@@ -34,6 +36,6 @@ export interface EnrichedGraph {
 export function classifyNode(node: GraphNodeInput): NodeClassification;
 export function collectArchitectureViolations(repoRoot: string): string[];
 export function createEnrichedGraph(
-  graphData: { nodes?: GraphNodeInput[]; edges?: unknown[] },
+  graphData: { nodes?: GraphNodeInput[]; links?: unknown[]; edges?: unknown[] },
   repoRoot: string,
 ): EnrichedGraph;

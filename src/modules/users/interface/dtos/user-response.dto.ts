@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 
 export class UserNotificationPreferenceDto {
@@ -67,10 +67,7 @@ export class UserResponseDto {
   })
   notificationPreferences!: UserNotificationPreferenceDto[];
 
-  @ApiProperty({
-    type: UserDeliveryChannelsDto,
-    description: 'Configured delivery channels for notifications.',
-  })
+  @ApiHideProperty()
   deliveryChannels!: UserDeliveryChannelsDto;
 
   @ApiProperty({

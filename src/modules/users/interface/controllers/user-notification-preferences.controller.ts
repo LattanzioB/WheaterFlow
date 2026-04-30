@@ -15,7 +15,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiExcludeEndpoint,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
@@ -168,6 +173,7 @@ export class UserNotificationPreferencesController {
   }
 
   @Patch(':id/delivery-channels')
+  @ApiExcludeEndpoint()
   @ApiOkResponse({
     type: UserResponseDto,
   })
@@ -191,6 +197,7 @@ export class UserNotificationPreferencesController {
   }
 
   @Post(':id/delivery-channels/telegram/link-code')
+  @ApiExcludeEndpoint()
   @ApiOperation({
     summary:
       'Create a short-lived Telegram link code for the authenticated user',

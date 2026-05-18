@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MEASUREMENT_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
+import {
+  ALERT_PUBLISHER_TOKEN,
+  MEASUREMENT_REPOSITORY_TOKEN,
+} from '@shared/tokens/injection-tokens';
 import { StationsModule } from '../stations/stations.module';
 import { QueryMeasurementsService } from './application/services/query-measurements.service';
 import { RecordMeasurementService } from './application/services/record-measurement.service';
+import { RabbitMqAlertPublisherAdapter } from './infrastructure/adapters/rabbitmq-alert-publisher.adapter';
 import { MongoMeasurementRepository } from './infrastructure/repositories/mongo-measurement.repository';
 import {
   MeasurementPersistenceModel,
@@ -36,6 +40,10 @@ import {
     {
       provide: MEASUREMENT_REPOSITORY_TOKEN,
       useClass: MongoMeasurementRepository,
+    },
+    {
+      provide: ALERT_PUBLISHER_TOKEN,
+      useClass: RabbitMqAlertPublisherAdapter,
     },
   ],
   exports: [MEASUREMENT_REPOSITORY_TOKEN],

@@ -1,4 +1,5 @@
 export { AlertType } from './measurements/alert-type';
+export type { ClimateAlertDetectedMessage } from './measurements/climate-alert-detected.message';
 export { MeasurementAlertDetectedEvent } from './measurements/measurement-alert-detected.event';
 export type {
   MeasurementAlertNotification,

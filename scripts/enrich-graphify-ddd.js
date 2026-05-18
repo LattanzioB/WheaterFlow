@@ -32,6 +32,9 @@ function normalizePath(value) {
 }
 
 function getLayerFromPath(normalizedPath) {
+  if (normalizedPath.startsWith('libs/contracts/src/')) {
+    return 'contracts';
+  }
   if (normalizedPath.includes('/domain/')) {
     return 'domain';
   }
@@ -44,13 +47,23 @@ function getLayerFromPath(normalizedPath) {
   if (normalizedPath.includes('/infrastructure/')) {
     return 'infrastructure';
   }
-  if (normalizedPath.startsWith('src/shared/domain/')) {
+  if (
+    normalizedPath.startsWith('src/shared/domain/') ||
+    normalizedPath.startsWith('libs/shared/src/domain/')
+  ) {
     return 'domain-shared';
   }
-  if (normalizedPath.startsWith('src/shared/')) {
+  if (
+    normalizedPath.startsWith('src/shared/') ||
+    normalizedPath.startsWith('libs/shared/src/')
+  ) {
     return 'shared';
   }
-  if (normalizedPath.startsWith('src/')) {
+  if (
+    normalizedPath.startsWith('src/') ||
+    normalizedPath.startsWith('apps/api/src/') ||
+    normalizedPath.startsWith('apps/notifications/src/')
+  ) {
     return 'app-shell';
   }
   if (normalizedPath.startsWith('scripts/')) {
@@ -63,12 +76,20 @@ function getLayerFromPath(normalizedPath) {
 }
 
 function getModuleFromPath(normalizedPath) {
-  const match = normalizedPath.match(/^src\/modules\/([^/]+)\//);
+  const match = normalizedPath.match(
+    /^(?:src|apps\/(?:api|notifications)\/src)\/modules\/([^/]+)\//,
+  );
   if (match) {
     return MODULE_NAMES[match[1]] || match[1];
   }
-  if (normalizedPath.startsWith('src/shared/')) {
+  if (
+    normalizedPath.startsWith('src/shared/') ||
+    normalizedPath.startsWith('libs/shared/src/')
+  ) {
     return 'Shared';
+  }
+  if (normalizedPath.startsWith('libs/contracts/src/')) {
+    return 'Contracts';
   }
   if (normalizedPath.startsWith('scripts/')) {
     return 'Tooling';
@@ -138,6 +159,24 @@ function extractImports(content) {
 }
 
 function resolveImport(sourceFile, importPath, repoRoot) {
+  if (importPath === '@contracts') {
+    return 'libs/contracts/src/index.ts';
+  }
+  if (importPath.startsWith('@contracts/')) {
+    return normalizePath(`${importPath.replace('@contracts/', 'libs/contracts/src/')}.ts`);
+  }
+  if (importPath.startsWith('@shared/')) {
+    return normalizePath(`${importPath.replace('@shared/', 'libs/shared/src/')}.ts`);
+  }
+  if (importPath.startsWith('@api/')) {
+    return normalizePath(`${importPath.replace('@api/', 'apps/api/src/')}.ts`);
+  }
+  if (importPath.startsWith('@notifications/')) {
+    return normalizePath(
+      `${importPath.replace('@notifications/', 'apps/notifications/src/')}.ts`,
+    );
+  }
+
   if (!importPath.startsWith('.')) {
     return importPath;
   }
@@ -154,7 +193,12 @@ function isAllowedInterfaceInfrastructureImport(resolvedImport) {
 }
 
 function isDomainSafeExternalImport(importPath) {
-  return importPath.startsWith('node:');
+  return (
+    importPath.startsWith('node:') ||
+    importPath === '@contracts' ||
+    importPath.startsWith('@contracts/') ||
+    importPath.startsWith('@shared/domain/')
+  );
 }
 
 function isApplicationSafeExternalImport(importPath) {
@@ -166,11 +210,15 @@ function isApplicationSafeExternalImport(importPath) {
 }
 
 function collectArchitectureViolations(repoRoot) {
-  const moduleRoot = path.join(repoRoot, 'src', 'modules');
-  const sharedDomainRoot = path.join(repoRoot, 'src', 'shared', 'domain');
+  const architectureRoots = [
+    path.join(repoRoot, 'src', 'modules'),
+    path.join(repoRoot, 'apps', 'api', 'src', 'modules'),
+    path.join(repoRoot, 'apps', 'notifications', 'src', 'modules'),
+    path.join(repoRoot, 'src', 'shared', 'domain'),
+    path.join(repoRoot, 'libs', 'shared', 'src', 'domain'),
+  ];
   const files = [
-    ...walk(moduleRoot),
-    ...(fs.existsSync(sharedDomainRoot) ? walk(sharedDomainRoot) : []),
+    ...architectureRoots.flatMap((root) => (fs.existsSync(root) ? walk(root) : [])),
   ].filter((file) => file.endsWith('.ts') && !file.endsWith('.spec.ts'));
 
   const violations = [];
@@ -196,7 +244,8 @@ function collectArchitectureViolations(repoRoot) {
           importedLayer === 'interface' ||
           importedLayer === 'infrastructure' ||
           (importedLayer === 'shared' &&
-            !resolvedImport.startsWith('src/shared/domain/'))
+            !resolvedImport.startsWith('src/shared/domain/') &&
+            !resolvedImport.startsWith('libs/shared/src/domain/'))
         ) {
           violations.push(
             `${normalizedFile}: domain must not import ${resolvedImport}`,
@@ -229,6 +278,16 @@ function collectArchitectureViolations(repoRoot) {
       ) {
         violations.push(
           `${normalizedFile}: interface must not import ${resolvedImport}`,
+        );
+      }
+
+      if (
+        normalizedFile.startsWith('apps/api/') &&
+        (resolvedImport.startsWith('apps/notifications/') ||
+          importPath.startsWith('@notifications/'))
+      ) {
+        violations.push(
+          `${normalizedFile}: API app must not import Notification app code ${resolvedImport}`,
         );
       }
     }

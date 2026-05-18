@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.build.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/notifications"
+  },
+  "include": ["src/**/*.ts", "../../apps/api/src/**/*.ts", "../../libs/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "**/*.spec.ts",
+    "../../apps/api/src/**/*.spec.ts",
+    "../../libs/**/*.spec.ts"
+  ]
+}

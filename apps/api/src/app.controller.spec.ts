@@ -19,4 +19,13 @@ describe('AppController', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
   });
+
+  describe('health', () => {
+    it('should report the API service as healthy', () => {
+      expect(appController.getHealth()).toEqual({
+        service: 'api',
+        status: 'ok',
+      });
+    });
+  });
 });

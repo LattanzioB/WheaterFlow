@@ -1,5 +1,6 @@
 import { MODULE_METADATA } from '@nestjs/common/constants';
-import { NotificationsAppModule } from './notifications-app.module';
+
+const ORIGINAL_ENV = process.env;
 
 function moduleNames(moduleClass: unknown): string[] {
   const imports = Reflect.getMetadata(
@@ -21,7 +22,24 @@ function moduleNames(moduleClass: unknown): string[] {
 }
 
 describe('NotificationsAppModule', () => {
-  it('boots through the Notification service boundary instead of the API app shell', () => {
+  beforeAll(() => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      MONGODB_URI: 'mongodb://localhost:27017/weatherflow-test',
+      RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
+    };
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  it('boots through the Notification service boundary instead of the API app shell', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const moduleExports: typeof import('./notifications-app.module') =
+      await import('./notifications-app.module');
+    const { NotificationsAppModule } = moduleExports;
+
     expect(moduleNames(NotificationsAppModule)).toEqual(
       expect.arrayContaining(['NotificationsModule']),
     );

@@ -3,7 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from '@shared/config/configuration';
-import { envValidationSchema } from '@shared/config/env-validation';
+import { notificationsEnvValidationSchema } from '@shared/config/env-validation';
+import { HealthController } from './health.controller';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
@@ -11,7 +12,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-      validationSchema: envValidationSchema,
+      validationSchema: notificationsEnvValidationSchema,
       validationOptions: {
         abortEarly: false,
       },
@@ -28,5 +29,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     EventEmitterModule.forRoot(),
     NotificationsModule,
   ],
+  controllers: [HealthController],
 })
 export class NotificationsAppModule {}

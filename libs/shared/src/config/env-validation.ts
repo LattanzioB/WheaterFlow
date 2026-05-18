@@ -1,16 +1,41 @@
 import * as Joi from 'joi';
 
+const commonEnvValidationSchema = {
+  MONGODB_URI: Joi.string().required().messages({
+    'any.required':
+      'MONGODB_URI is required. Set it to your MongoDB Atlas URI.',
+  }),
+  RABBITMQ_URL: Joi.string()
+    .uri({ scheme: ['amqp', 'amqps'] })
+    .required(),
+  RABBITMQ_ALERT_EXCHANGE: Joi.string().default('weatherflow.alerts'),
+  RABBITMQ_ALERT_QUEUE: Joi.string().default(
+    'weatherflow.notifications.alerts',
+  ),
+  RABBITMQ_ALERT_ROUTING_KEY: Joi.string().default('alerts.climate.detected'),
+  TELEGRAM_BOT_TOKEN: Joi.string().optional().allow(''),
+  TELEGRAM_BOT_USERNAME: Joi.string().optional().allow(''),
+  TELEGRAM_WEBHOOK_SECRET: Joi.string().optional().allow(''),
+};
+
 export const envValidationSchema = Joi.object({
   PORT: Joi.number().default(3000),
-  MONGODB_URI: Joi.string().required().messages({
-    'any.required': 'MONGODB_URI is required. Set it in your .env file.',
-  }),
+  ...commonEnvValidationSchema,
   JWT_SECRET: Joi.string().required().min(8).messages({
     'any.required': 'JWT_SECRET is required. Set it in your .env file.',
     'string.min': 'JWT_SECRET must be at least 8 characters long.',
   }),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
-  TELEGRAM_BOT_TOKEN: Joi.string().optional().allow(''),
-  TELEGRAM_BOT_USERNAME: Joi.string().optional().allow(''),
-  TELEGRAM_WEBHOOK_SECRET: Joi.string().optional().allow(''),
+  NOTIFICATION_SERVICE_URL: Joi.string().uri().required(),
+  NOTIFICATION_DELIVERY_MODE: Joi.string()
+    .valid('log', 'telegram')
+    .default('log'),
+});
+
+export const notificationsEnvValidationSchema = Joi.object({
+  NOTIFICATIONS_PORT: Joi.number().default(3001),
+  ...commonEnvValidationSchema,
+  NOTIFICATION_DELIVERY_MODE: Joi.string()
+    .valid('log', 'telegram')
+    .default('log'),
 });

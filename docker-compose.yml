@@ -1,21 +1,88 @@
+name: weatherflow
+
 services:
-  mongodb:
-    image: mongo:7
-    container_name: weatherflow-mongodb
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: weatherflow-rabbitmq
     ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-weatherflow}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-weatherflow}
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  api:
+    container_name: weatherflow-api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI to your MongoDB Atlas connection string}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local API auth}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notifications:3001}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://weatherflow:weatherflow@rabbitmq:5672}
+      RABBITMQ_ALERT_EXCHANGE: ${RABBITMQ_ALERT_EXCHANGE:-weatherflow.alerts}
+      RABBITMQ_ALERT_ROUTING_KEY: ${RABBITMQ_ALERT_ROUTING_KEY:-alerts.climate.detected}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-    environment:
-      - MONGO_INITDB_DATABASE=weatherflow
     restart: unless-stopped
 
-volumes:
-  mongodb_data:
-    name: weatherflow-mongodb-data
+  notifications:
+    container_name: weatherflow-notifications
+    build:
+      context: .
+      dockerfile: apps/notifications/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      NOTIFICATIONS_PORT: 3001
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI to your MongoDB Atlas connection string}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://weatherflow:weatherflow@rabbitmq:5672}
+      RABBITMQ_ALERT_EXCHANGE: ${RABBITMQ_ALERT_EXCHANGE:-weatherflow.alerts}
+      RABBITMQ_ALERT_QUEUE: ${RABBITMQ_ALERT_QUEUE:-weatherflow.notifications.alerts}
+      RABBITMQ_ALERT_ROUTING_KEY: ${RABBITMQ_ALERT_ROUTING_KEY:-alerts.climate.detected}
+      NOTIFICATION_DELIVERY_MODE: ${NOTIFICATION_DELIVERY_MODE:-log}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped

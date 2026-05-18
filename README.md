@@ -1,6 +1,6 @@
 # WeatherFlow
 
-WeatherFlow is a weather monitoring REST API built with **NestJS 11** and **MongoDB**. This repository currently contains the project foundation: strict TypeScript configuration, shared environment handling, MongoDB wiring, Swagger bootstrap, and a hexagonal module scaffold for the core domains.
+WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**, **MongoDB Atlas**, and **RabbitMQ**. The repository contains two independently runnable applications: the API service for weather data and alert detection, and the Notification service for notification delivery workflows.
 
 ## Tech Stack
 
@@ -8,9 +8,10 @@ WeatherFlow is a weather monitoring REST API built with **NestJS 11** and **Mong
 |---|---|
 | NestJS 11 | Application framework |
 | TypeScript (strict) | Type-safe backend development |
-| MongoDB 7 + Mongoose | Local and cloud document database access |
+| MongoDB Atlas + Mongoose | Managed document database access |
+| RabbitMQ | Asynchronous alert messaging |
 | Swagger / OpenAPI | Interactive API documentation |
-| Docker Compose | Local MongoDB infrastructure |
+| Docker Compose | Local API, Notification service, and RabbitMQ infrastructure |
 | Jest + SWC | Unit and e2e testing |
 | ESLint + Prettier | Linting and formatting |
 
@@ -20,6 +21,7 @@ WeatherFlow is a weather monitoring REST API built with **NestJS 11** and **Mong
 |---|---|
 | [Node.js](https://nodejs.org/) | 20+ |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest |
+| MongoDB Atlas | Free tier is enough |
 | npm | Bundled with Node.js |
 
 ## Installation
@@ -40,26 +42,31 @@ Copy-Item .env.example .env
 ## Running Locally
 
 ```bash
-# Start MongoDB
-docker compose up -d
+# Start the local distributed environment
+docker compose up --build
 
-# Start the NestJS app in watch mode
-npm run start:dev
+# Or run each NestJS app directly in watch mode
+npm run start:api:dev
+npm run start:notifications:dev
 ```
 
-With the local Docker service running, the application connects to MongoDB using the `MONGODB_URI` from `.env`.
+Docker Compose starts RabbitMQ plus separate API and Notification service containers. MongoDB is not run locally; both services connect to MongoDB Atlas through `MONGODB_URI`.
 
 - API base URL: `http://localhost:3000`
 - Swagger UI: `http://localhost:3000/api/docs`
 - OpenAPI JSON: `http://localhost:3000/api/docs-json`
+- Notification service health: `http://localhost:3001/health`
+- RabbitMQ management UI: `http://localhost:15672`
 
 ## Available Scripts
 
 | Script | Description |
 |---|---|
-| `npm run start:dev` | Start the development server with hot reload |
+| `npm run start:api:dev` | Start the API service with hot reload |
+| `npm run start:notifications:dev` | Start the Notification service with hot reload |
 | `npm run build` | Compile the production build |
-| `npm run start:prod` | Run the compiled app |
+| `npm run start:api:prod` | Run the compiled API service |
+| `npm run start:notifications:prod` | Run the compiled Notification service |
 | `npm run lint` | Run ESLint |
 | `npm run test` | Run unit tests |
 | `npm run test:e2e` | Run end-to-end tests |
@@ -119,12 +126,30 @@ Copy `.env.example` to `.env` and configure the following values:
 | Variable | Description | Example |
 |---|---|---|
 | `PORT` | HTTP server port | `3000` |
-| `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/weatherflow` |
+| `NOTIFICATIONS_PORT` | Notification service HTTP port | `3001` |
+| `MONGODB_URI` | MongoDB Atlas connection string | `mongodb+srv://.../weatherflow` |
 | `JWT_SECRET` | JWT signing secret | `your-secret-key` |
 | `JWT_EXPIRES_IN` | JWT expiration window | `7d` |
+| `NOTIFICATION_SERVICE_URL` | Internal URL the API uses for synchronous calls to notifications | `http://notifications:3001` |
+| `RABBITMQ_DEFAULT_USER` | Local RabbitMQ username created by Compose | `weatherflow` |
+| `RABBITMQ_DEFAULT_PASS` | Local RabbitMQ password created by Compose | `weatherflow` |
+| `RABBITMQ_URL` | AMQP connection string used by both services | `amqp://weatherflow:weatherflow@rabbitmq:5672` |
+| `RABBITMQ_ALERT_EXCHANGE` | Alert exchange name | `weatherflow.alerts` |
+| `RABBITMQ_ALERT_QUEUE` | Notification alert queue name | `weatherflow.notifications.alerts` |
+| `RABBITMQ_ALERT_ROUTING_KEY` | Climate alert routing key | `alerts.climate.detected` |
+| `NOTIFICATION_DELIVERY_MODE` | Notification runtime mode for local delivery | `log` |
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token used for alert delivery and Telegram account linking | `your-bot-token` |
 | `TELEGRAM_BOT_USERNAME` | Optional bot username shown to users when generating a Telegram link code | `weatherflow_bot` |
 | `TELEGRAM_WEBHOOK_SECRET` | Optional secret validated on Telegram webhook requests | `your-webhook-secret` |
+
+## Local Smoke Checks
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3001/health
+```
+
+Open `http://localhost:15672` and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` from `.env`.
 
 ## Testing
 

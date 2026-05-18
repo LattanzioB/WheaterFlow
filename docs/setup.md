@@ -1,51 +1,24 @@
-# Setup & Development Guide — WeatherFlow
+# Setup & Development Guide - WeatherFlow
 
 ## Prerequisites
 
 - Node.js 20+
 - npm 9+
+- Docker Desktop
 - MongoDB Atlas account (free tier works)
-- Telegram Bot Token (optional — needed for alert notifications)
+- Telegram Bot Token (optional for local notification delivery)
 
 ---
 
 ## Initial Setup
 
-### 1. Scaffold the project
+### 1. Install dependencies
 
 ```bash
-npm install -g @nestjs/cli
-nest new weatherflow --strict --skip-git --package-manager=npm
-cd weatherflow
+npm install
 ```
 
-### 2. Install dependencies
-
-```bash
-# Database
-npm install @nestjs/mongoose mongoose
-
-# Auth
-npm install @nestjs/jwt @nestjs/passport passport passport-jwt bcrypt
-npm install -D @types/passport-jwt @types/bcrypt
-
-# API docs
-npm install @nestjs/swagger swagger-ui-express
-
-# Config
-npm install @nestjs/config
-
-# Validation
-npm install class-validator class-transformer
-
-# Events (for Telegram notifications)
-npm install @nestjs/event-emitter
-
-# HTTP client (for Telegram Bot API)
-npm install axios
-```
-
-### 3. Configure environment
+### 2. Configure environment
 
 Copy `.env.example` to `.env` and fill in values:
 
@@ -53,113 +26,143 @@ Copy `.env.example` to `.env` and fill in values:
 cp .env.example .env
 ```
 
+PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Minimum local distributed environment:
+
 ```env
 PORT=3000
+NOTIFICATIONS_PORT=3001
 MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/weatherflow
 JWT_SECRET=your-secret-key-here
 JWT_EXPIRES_IN=7d
-TELEGRAM_BOT_TOKEN=your-bot-token-here
+NOTIFICATION_SERVICE_URL=http://notifications:3001
+RABBITMQ_DEFAULT_USER=weatherflow
+RABBITMQ_DEFAULT_PASS=weatherflow
+RABBITMQ_URL=amqp://weatherflow:weatherflow@rabbitmq:5672
+RABBITMQ_ALERT_EXCHANGE=weatherflow.alerts
+RABBITMQ_ALERT_QUEUE=weatherflow.notifications.alerts
+RABBITMQ_ALERT_ROUTING_KEY=alerts.climate.detected
+NOTIFICATION_DELIVERY_MODE=log
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_BOT_USERNAME=
+TELEGRAM_WEBHOOK_SECRET=
 ```
 
-**Getting MongoDB URI:**
-1. Create a free cluster at [mongodb.com/atlas](https://mongodb.com/atlas)
-2. Create a database user
-3. Whitelist your IP (or use 0.0.0.0/0 for dev)
-4. Copy the connection string
+### MongoDB Atlas URI
 
-**Getting Telegram Bot Token:**
-1. Message `@BotFather` on Telegram
-2. Send `/newbot` and follow instructions
-3. Copy the token provided
+1. Create a free cluster at [mongodb.com/atlas](https://mongodb.com/atlas).
+2. Create a database user.
+3. Whitelist your IP address, or use `0.0.0.0/0` only for development.
+4. Copy the connection string into `MONGODB_URI`.
+
+MongoDB is intentionally not defined in `docker-compose.yml`. The API and Notification service both connect to Atlas through `MONGODB_URI`.
 
 ---
 
-## Running the Project
+## Running the Distributed Environment
 
 ```bash
-# Development (hot reload)
-npm run start:dev
-
-# Production build
-npm run build
-npm run start:prod
+docker compose up --build
 ```
 
-API is available at: `http://localhost:3000`
-Swagger docs at: `http://localhost:3000/api/docs`
+Local URLs:
+
+| Service | URL |
+|---|---|
+| API | `http://localhost:3000` |
+| Swagger UI | `http://localhost:3000/api/docs` |
+| OpenAPI JSON | `http://localhost:3000/api/docs-json` |
+| Notification service health | `http://localhost:3001/health` |
+| RabbitMQ management UI | `http://localhost:15672` |
+
+Open RabbitMQ management and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS`.
+
+### Smoke Tests
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3001/health
+```
+
+### Running Services Without Docker Images
+
+```bash
+npm run start:api:dev
+npm run start:notifications:dev
+```
+
+### Production Build
+
+```bash
+npm run build
+npm run start:api:prod
+npm run start:notifications:prod
+```
 
 ---
 
 ## Running Tests
 
 ```bash
-# All unit tests
 npm run test
-
-# Watch mode
 npm run test:watch
-
-# Coverage report
 npm run test:cov
 ```
 
-**What to test:** Focus on domain layer — entities and value objects.
-```bash
-# Examples
-npm run test -- user.entity.spec.ts
-npm run test -- measurement.entity.spec.ts
-npm run test -- email.value-object.spec.ts
-npm run test -- temperature.value-object.spec.ts
-```
+Focus unit tests on domain entities, value objects, application services, and infrastructure wiring that can be verified deterministically.
 
 ---
 
 ## Project Structure Quick Reference
 
-```
-src/
-├── auth/                   # JWT auth (login, register, guard, strategy)
-├── modules/
-│   ├── users/              # User aggregate
-│   │   ├── domain/         # Entity, value objects, port interface
-│   │   ├── application/    # Services (CRUD + subscriptions)
-│   │   ├── infrastructure/ # MongoRepository + Mapper
-│   │   └── interface/      # Controller + DTOs
-│   ├── stations/           # WeatherStation aggregate (same structure)
-│   ├── measurements/       # Measurement aggregate (same structure)
-│   └── notifications/      # INotificationPort + TelegramAdapter
-└── shared/
-    ├── exceptions/         # Domain exceptions + HTTP filter
-    ├── tokens/             # Injection token constants
-    └── config/             # ConfigModule setup
+```text
+apps/
+|-- api/
+|   `-- src/
+|       |-- modules/
+|       |   |-- auth/
+|       |   |-- measurements/
+|       |   |-- stations/
+|       |   `-- users/
+|       `-- main.ts
+`-- notifications/
+    `-- src/
+        |-- modules/
+        |   `-- notifications/
+        `-- main.ts
+libs/
+|-- contracts/
+`-- shared/
 ```
 
 ---
 
 ## Git Workflow
 
-This project uses **feature-branch workflow**:
+This project uses feature branches against `main`.
 
 ```bash
-# Start a new feature
-git checkout -b feature/create-user-aggregate
-
-# Work, commit, push
+git checkout main
+git pull --ff-only
+git checkout -b feature/my-story
 git add .
-git commit -m "feat: implement User entity and Email value object"
-git push origin feature/create-user-aggregate
-
-# Open PR → review → merge to main
+git commit -m "feat(scope): describe the change"
+git push -u origin feature/my-story
 ```
 
-**Branch naming:** `feature/<description>`, `fix/<description>`, `docs/<description>`
+Open a pull request into `main`, wait for review, and squash merge after checks pass.
 
 ---
 
 ## Development Tips
 
-- **Layer discipline:** Never import from `infrastructure/` in `domain/` or `application/`.
-- **Value objects:** Always use static `create()` factory — never `new` directly.
-- **Repositories:** Always inject via token (`USER_REPOSITORY_TOKEN`), not the concrete class.
-- **Alert logic:** The `evaluateAlerts()` method is called inside `Measurement.create()`. It sets both `alertStatus` and `alertType` automatically.
-- **Swagger:** Add `@ApiTags()`, `@ApiOperation()`, `@ApiResponse()` to all controllers so docs stay up to date.
+- Keep layer discipline: domain code stays framework-free.
+- Use value object factory methods instead of direct constructors.
+- Inject repositories through tokens rather than concrete classes.
+- Alert detection remains in the measurement/domain flow.
+- Keep Docker Compose focused on local service orchestration; managed dependencies like MongoDB Atlas stay external.

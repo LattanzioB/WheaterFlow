@@ -21,6 +21,13 @@ describe('configuration factory', () => {
     process.env.TELEGRAM_BOT_TOKEN = 'test-token';
     process.env.TELEGRAM_BOT_USERNAME = 'weatherflow_bot';
     process.env.TELEGRAM_WEBHOOK_SECRET = 'secret-token';
+    process.env.NOTIFICATIONS_PORT = '4001';
+    process.env.NOTIFICATION_SERVICE_URL = 'http://notifications:3001';
+    process.env.NOTIFICATION_DELIVERY_MODE = 'log';
+    process.env.RABBITMQ_URL = 'amqp://weatherflow:weatherflow@rabbitmq:5672';
+    process.env.RABBITMQ_ALERT_EXCHANGE = 'weatherflow.alerts';
+    process.env.RABBITMQ_ALERT_QUEUE = 'weatherflow.notifications.alerts';
+    process.env.RABBITMQ_ALERT_ROUTING_KEY = 'alerts.climate.detected';
 
     const config = configuration();
     expect(typeof config).toBe('object');
@@ -69,6 +76,12 @@ describe('configuration factory', () => {
     expect(config.port).toBe(3000);
   });
 
+  it('should map NOTIFICATIONS_PORT to notificationsPort as a number', () => {
+    process.env.NOTIFICATIONS_PORT = '4001';
+    const config = configuration();
+    expect(config.notificationsPort).toBe(4001);
+  });
+
   // EC-18
   it('should default jwt.expiresIn to "7d" when JWT_EXPIRES_IN is not set', () => {
     delete process.env.JWT_EXPIRES_IN;
@@ -86,6 +99,32 @@ describe('configuration factory', () => {
     expect(config.telegram.webhookSecret).toBe('secret-token');
   });
 
+  it('should map notification service runtime options', () => {
+    process.env.NOTIFICATION_SERVICE_URL = 'http://notifications:3001';
+    process.env.NOTIFICATION_DELIVERY_MODE = 'telegram';
+
+    const config = configuration();
+
+    expect(config.notifications.serviceUrl).toBe('http://notifications:3001');
+    expect(config.notifications.deliveryMode).toBe('telegram');
+  });
+
+  it('should map RabbitMQ alert topology', () => {
+    process.env.RABBITMQ_URL = 'amqp://weatherflow:weatherflow@rabbitmq:5672';
+    process.env.RABBITMQ_ALERT_EXCHANGE = 'weatherflow.alerts';
+    process.env.RABBITMQ_ALERT_QUEUE = 'weatherflow.notifications.alerts';
+    process.env.RABBITMQ_ALERT_ROUTING_KEY = 'alerts.climate.detected';
+
+    const config = configuration();
+
+    expect(config.rabbitmq).toEqual({
+      url: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
+      alertExchange: 'weatherflow.alerts',
+      alertQueue: 'weatherflow.notifications.alerts',
+      alertRoutingKey: 'alerts.climate.detected',
+    });
+  });
+
   // EC-19
   it('should use camelCase keys (not SCREAMING_SNAKE)', () => {
     process.env.PORT = '3000';
@@ -97,7 +136,15 @@ describe('configuration factory', () => {
     const config = configuration();
     const keys = Object.keys(config);
     expect(keys).toEqual(
-      expect.arrayContaining(['port', 'database', 'jwt', 'telegram']),
+      expect.arrayContaining([
+        'port',
+        'notificationsPort',
+        'database',
+        'jwt',
+        'telegram',
+        'notifications',
+        'rabbitmq',
+      ]),
     );
     expect(config.database).toHaveProperty('uri');
     expect(config.jwt).toHaveProperty('secret');
@@ -105,5 +152,11 @@ describe('configuration factory', () => {
     expect(config.telegram).toHaveProperty('botToken');
     expect(config.telegram).toHaveProperty('botUsername');
     expect(config.telegram).toHaveProperty('webhookSecret');
+    expect(config.notifications).toHaveProperty('serviceUrl');
+    expect(config.notifications).toHaveProperty('deliveryMode');
+    expect(config.rabbitmq).toHaveProperty('url');
+    expect(config.rabbitmq).toHaveProperty('alertExchange');
+    expect(config.rabbitmq).toHaveProperty('alertQueue');
+    expect(config.rabbitmq).toHaveProperty('alertRoutingKey');
   });
 });

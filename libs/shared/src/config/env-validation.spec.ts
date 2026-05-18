@@ -1,10 +1,20 @@
-import { envValidationSchema } from './env-validation';
+import {
+  envValidationSchema,
+  notificationsEnvValidationSchema,
+} from './env-validation';
 
 type EnvShape = {
   JWT_EXPIRES_IN?: string;
   JWT_SECRET: string;
   MONGODB_URI: string;
+  NOTIFICATION_DELIVERY_MODE?: string;
+  NOTIFICATION_SERVICE_URL: string;
+  NOTIFICATIONS_PORT?: number | string;
   PORT?: number | string;
+  RABBITMQ_ALERT_EXCHANGE?: string;
+  RABBITMQ_ALERT_QUEUE?: string;
+  RABBITMQ_ALERT_ROUTING_KEY?: string;
+  RABBITMQ_URL: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_BOT_USERNAME?: string;
   TELEGRAM_WEBHOOK_SECRET?: string;
@@ -24,6 +34,12 @@ describe('envValidationSchema', () => {
     MONGODB_URI: 'mongodb://localhost:27017/weatherflow',
     JWT_SECRET: 'super-secret-key-12345',
     JWT_EXPIRES_IN: '7d',
+    NOTIFICATION_SERVICE_URL: 'http://notifications:3001',
+    NOTIFICATION_DELIVERY_MODE: 'log',
+    RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
+    RABBITMQ_ALERT_EXCHANGE: 'weatherflow.alerts',
+    RABBITMQ_ALERT_QUEUE: 'weatherflow.notifications.alerts',
+    RABBITMQ_ALERT_ROUTING_KEY: 'alerts.climate.detected',
     TELEGRAM_BOT_TOKEN: 'bot123:ABC-DEF',
     TELEGRAM_BOT_USERNAME: 'weatherflow_bot',
     TELEGRAM_WEBHOOK_SECRET: 'secret-token',
@@ -52,6 +68,20 @@ describe('envValidationSchema', () => {
   it('should pass with all required variables present', () => {
     const { error } = validateEnv(validEnv);
     expect(error).toBeUndefined();
+  });
+
+  it('should fail when RABBITMQ_URL is missing', () => {
+    const env = omitEnvKeys(validEnv, 'RABBITMQ_URL');
+    const { error } = validateEnv(env, false);
+    expect(error).toBeDefined();
+    expect(error!.message).toContain('RABBITMQ_URL');
+  });
+
+  it('should fail when NOTIFICATION_SERVICE_URL is missing for the API', () => {
+    const env = omitEnvKeys(validEnv, 'NOTIFICATION_SERVICE_URL');
+    const { error } = validateEnv(env, false);
+    expect(error).toBeDefined();
+    expect(error!.message).toContain('NOTIFICATION_SERVICE_URL');
   });
 
   // EC-20
@@ -129,6 +159,20 @@ describe('envValidationSchema', () => {
     expect(value.JWT_EXPIRES_IN).toBe('7d');
   });
 
+  it('should default RabbitMQ alert topology when optional names are omitted', () => {
+    const env = omitEnvKeys(
+      validEnv,
+      'RABBITMQ_ALERT_EXCHANGE',
+      'RABBITMQ_ALERT_QUEUE',
+      'RABBITMQ_ALERT_ROUTING_KEY',
+    );
+    const { error, value } = validateEnv(env);
+    expect(error).toBeUndefined();
+    expect(value.RABBITMQ_ALERT_EXCHANGE).toBe('weatherflow.alerts');
+    expect(value.RABBITMQ_ALERT_QUEUE).toBe('weatherflow.notifications.alerts');
+    expect(value.RABBITMQ_ALERT_ROUTING_KEY).toBe('alerts.climate.detected');
+  });
+
   // EC-29
   it('should coerce PORT to a number', () => {
     const env = { ...validEnv, PORT: '8080' };
@@ -136,5 +180,44 @@ describe('envValidationSchema', () => {
     expect(error).toBeUndefined();
     expect(value.PORT).toBe(8080);
     expect(typeof value.PORT).toBe('number');
+  });
+});
+
+describe('notificationsEnvValidationSchema', () => {
+  const validEnv: Partial<EnvShape> = {
+    NOTIFICATIONS_PORT: '3001',
+    MONGODB_URI: 'mongodb+srv://user:pass@cluster.mongodb.net/weatherflow',
+    RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
+    RABBITMQ_ALERT_EXCHANGE: 'weatherflow.alerts',
+    RABBITMQ_ALERT_QUEUE: 'weatherflow.notifications.alerts',
+    RABBITMQ_ALERT_ROUTING_KEY: 'alerts.climate.detected',
+    NOTIFICATION_DELIVERY_MODE: 'log',
+  };
+
+  const validateNotificationsEnv = (
+    env: Partial<EnvShape>,
+  ): EnvValidationResult =>
+    notificationsEnvValidationSchema.validate(env) as EnvValidationResult;
+
+  it('should pass without API-only JWT or service URL settings', () => {
+    const { error } = validateNotificationsEnv(validEnv);
+    expect(error).toBeUndefined();
+  });
+
+  it('should default NOTIFICATIONS_PORT to 3001', () => {
+    const { NOTIFICATIONS_PORT, ...env } = validEnv;
+    const { error, value } = validateNotificationsEnv(env);
+    expect(NOTIFICATIONS_PORT).toBe('3001');
+    expect(error).toBeUndefined();
+    expect(value.NOTIFICATIONS_PORT).toBe(3001);
+  });
+
+  it('should reject unsupported notification delivery modes', () => {
+    const { error } = validateNotificationsEnv({
+      ...validEnv,
+      NOTIFICATION_DELIVERY_MODE: 'smtp',
+    });
+    expect(error).toBeDefined();
+    expect(error!.message).toContain('NOTIFICATION_DELIVERY_MODE');
   });
 });

@@ -1,5 +1,6 @@
 import { MODULE_METADATA } from '@nestjs/common/constants';
-import { AppModule } from './app.module';
+
+const ORIGINAL_ENV = process.env;
 
 function moduleNames(moduleClass: unknown): string[] {
   const imports = Reflect.getMetadata(
@@ -21,7 +22,25 @@ function moduleNames(moduleClass: unknown): string[] {
 }
 
 describe('AppModule', () => {
-  it('keeps the API application free of the Notification service module', () => {
+  beforeAll(() => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      MONGODB_URI: 'mongodb://localhost:27017/weatherflow-test',
+      JWT_SECRET: 'test-secret-key',
+      RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
+      NOTIFICATION_SERVICE_URL: 'http://notifications:3001',
+    };
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  it('keeps the API application free of the Notification service module', async () => {
+    const moduleExports: typeof import('./app.module') =
+      await import('./app.module');
+    const { AppModule } = moduleExports;
+
     expect(moduleNames(AppModule)).toEqual(
       expect.arrayContaining([
         'AuthModule',

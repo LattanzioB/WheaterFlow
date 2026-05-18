@@ -10,6 +10,12 @@ import { MeasurementDocumentMapper } from '../mappers/measurement-document.mappe
 import { MeasurementPersistenceModel } from '../persistence/measurement.schema';
 import { WeatherStationPersistenceModel } from '../../../stations/infrastructure/persistence/weather-station.schema';
 
+type MeasurementFilterQuery = {
+  alertStatus?: boolean;
+  stationId?: string | { $in: string[] };
+  temperature?: Partial<Record<'$gte' | '$lte', number>>;
+};
+
 @Injectable()
 export class MongoMeasurementRepository implements IMeasurementRepository {
   constructor(
@@ -90,7 +96,7 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
   }
 
   async findWithFilters(filters: MeasurementFilters): Promise<Measurement[]> {
-    const query: Record<string, any> = {};
+    const query: MeasurementFilterQuery = {};
 
     if (filters.stationName) {
       const stationIds = await this.findStationIdsByName(filters.stationName);
@@ -103,15 +109,17 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
     }
 
     if (filters.tempMin !== undefined || filters.tempMax !== undefined) {
-      query.temperature = {};
+      const temperatureFilter: Partial<Record<'$gte' | '$lte', number>> = {};
 
       if (filters.tempMin !== undefined) {
-        query.temperature.$gte = filters.tempMin;
+        temperatureFilter.$gte = filters.tempMin;
       }
 
       if (filters.tempMax !== undefined) {
-        query.temperature.$lte = filters.tempMax;
+        temperatureFilter.$lte = filters.tempMax;
       }
+
+      query.temperature = temperatureFilter;
     }
 
     if (filters.alertOnly) {

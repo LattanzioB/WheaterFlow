@@ -37,7 +37,6 @@ describe('AppModule', () => {
   });
 
   it('keeps the API application free of the Notification service module', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const moduleExports: typeof import('./app.module') =
       await import('./app.module');
     const { AppModule } = moduleExports;

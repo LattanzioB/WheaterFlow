@@ -35,7 +35,6 @@ describe('NotificationsAppModule', () => {
   });
 
   it('boots through the Notification service boundary instead of the API app shell', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const moduleExports: typeof import('./notifications-app.module') =
       await import('./notifications-app.module');
     const { NotificationsAppModule } = moduleExports;

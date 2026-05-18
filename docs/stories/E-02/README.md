@@ -41,7 +41,7 @@ The notification capability is extracted because it is already modeled as suppor
 
 ## Definition of Done
 
-1. `docker compose up` starts MongoDB, RabbitMQ, API service, and Notification service.
+1. `docker compose up` starts RabbitMQ, the API service, and the Notification service; both services connect to MongoDB Atlas through `MONGODB_URI`.
 2. API and Notification service are built as separate Docker images.
 3. Alert detection remains in the measurement/domain flow.
 4. Climate alerts are published to RabbitMQ and consumed by the Notification service.
@@ -49,4 +49,3 @@ The notification capability is extracted because it is already modeled as suppor
 6. Unit tests exist for the new Notification service behavior.
 7. Integration tests verify real service boundaries without Postman/manual simulation.
 8. Architecture docs include diagrams, responsibilities, sequence diagrams, and technical justification.
-

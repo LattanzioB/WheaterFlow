@@ -19,6 +19,16 @@ describe('QueryMeasurementsService', () => {
       findWithFilters: jest.fn(),
     });
 
+  const sampleMeasurements = [
+    Measurement.create({
+      id: 'measurement-1',
+      stationId: 'station-1',
+      temperature: Temperature.create(25),
+      humidity: Humidity.create(60),
+      pressure: Pressure.create(1000),
+    }),
+  ];
+
   it('normalizes filters before querying the repository', async () => {
     const measurementRepository = buildMeasurementRepository();
     const service = new QueryMeasurementsService(measurementRepository);
@@ -26,19 +36,16 @@ describe('QueryMeasurementsService', () => {
       stationName: ' Central ',
       tempMin: 10,
       tempMax: 30,
+      humidityMin: 40,
+      humidityMax: 80,
+      pressureMin: 990,
+      pressureMax: 1020,
+      reportedFrom: '2026-04-01T00:00:00.000Z',
+      reportedTo: '2026-04-30T23:59:59.999Z',
       alertOnly: true,
     };
-    const measurements = [
-      Measurement.create({
-        id: 'measurement-1',
-        stationId: 'station-1',
-        temperature: Temperature.create(25),
-        humidity: Humidity.create(60),
-        pressure: Pressure.create(1000),
-      }),
-    ];
 
-    measurementRepository.findWithFilters.mockResolvedValue(measurements);
+    measurementRepository.findWithFilters.mockResolvedValue(sampleMeasurements);
 
     const result = await service.execute(command);
 
@@ -48,25 +55,47 @@ describe('QueryMeasurementsService', () => {
           stationName: 'Central',
           tempMin: 10,
           tempMax: 30,
+          humidityMin: 40,
+          humidityMax: 80,
+          pressureMin: 990,
+          pressureMax: 1020,
+          reportedFrom: new Date('2026-04-01T00:00:00.000Z'),
+          reportedTo: new Date('2026-04-30T23:59:59.999Z'),
           alertOnly: true,
         },
       ],
     ]);
-    expect(result).toEqual(measurements);
+    expect(result).toEqual(sampleMeasurements);
   });
 
-  it('rejects invalid temperature ranges before querying', async () => {
-    const measurementRepository = buildMeasurementRepository();
-    const service = new QueryMeasurementsService(measurementRepository);
-
-    await expect(
-      service.execute({
-        tempMin: 30,
-        tempMax: 10,
-      }),
-    ).rejects.toThrow(
+  it.each([
+    [
+      { tempMin: 30, tempMax: 10 },
       'Minimum temperature cannot be greater than maximum temperature',
-    );
-    expect(measurementRepository.findWithFilters.mock.calls).toHaveLength(0);
-  });
+    ],
+    [
+      { humidityMin: 95, humidityMax: 50 },
+      'Minimum humidity cannot be greater than maximum humidity',
+    ],
+    [
+      { pressureMin: 1030, pressureMax: 980 },
+      'Minimum pressure cannot be greater than maximum pressure',
+    ],
+    [
+      {
+        reportedFrom: '2026-04-30T00:00:00.000Z',
+        reportedTo: '2026-04-01T00:00:00.000Z',
+      },
+      'reportedFrom cannot be later than reportedTo',
+    ],
+  ])(
+    'rejects invalid ranges before querying (%j)',
+    async (command, message) => {
+      const measurementRepository = buildMeasurementRepository();
+      const service = new QueryMeasurementsService(measurementRepository);
+
+      await expect(service.execute(command)).rejects.toThrow(message);
+      expect(measurementRepository.findWithFilters.mock.calls).toHaveLength(0);
+    },
+  );
 });

@@ -4,6 +4,12 @@ export interface MeasurementFilters {
   stationName?: string;
   tempMin?: number;
   tempMax?: number;
+  humidityMin?: number;
+  humidityMax?: number;
+  pressureMin?: number;
+  pressureMax?: number;
+  reportedFrom?: Date;
+  reportedTo?: Date;
   alertOnly?: boolean;
 }
 

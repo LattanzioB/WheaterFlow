@@ -5,6 +5,7 @@ import { STATION_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
 
 export interface ListUserStationsCommand {
   ownerId: string;
+  name?: string;
 }
 
 @Injectable()
@@ -21,6 +22,9 @@ export class ListUserStationsService {
       throw new Error('Owner id cannot be empty');
     }
 
-    return this.stationRepository.findByOwnerId(ownerId);
+    return this.stationRepository.findWithFilters({
+      ownerId,
+      name: command.name?.trim() || undefined,
+    });
   }
 }

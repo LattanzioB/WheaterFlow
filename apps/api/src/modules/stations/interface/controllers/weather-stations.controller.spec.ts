@@ -63,8 +63,32 @@ describe('WeatherStationsController', () => {
 
     listService.execute.mockResolvedValue([buildStation() as any]);
 
-    await expect(controller.list(request)).resolves.toHaveLength(1);
-    expect(listService.execute).toHaveBeenCalledWith({ ownerId: 'user-1' });
+    await expect(controller.list({}, request)).resolves.toHaveLength(1);
+    expect(listService.execute).toHaveBeenCalledWith({
+      ownerId: 'user-1',
+      name: undefined,
+    });
+  });
+
+  it('passes the station name filter when listing owned stations', async () => {
+    const listService = buildListService();
+    const controller = new WeatherStationsController(
+      buildCreateService(),
+      buildListAllService(),
+      listService,
+      buildGetService(),
+      buildUpdateService(),
+      buildDeleteService(),
+    );
+
+    listService.execute.mockResolvedValue([]);
+
+    await controller.list({ name: 'Central' }, request);
+
+    expect(listService.execute).toHaveBeenCalledWith({
+      ownerId: 'user-1',
+      name: 'Central',
+    });
   });
 
   it('creates a station for the authenticated owner', async () => {
@@ -181,7 +205,7 @@ describe('WeatherStationsController', () => {
 
     listAllService.execute.mockResolvedValue([buildStation('user-2') as any]);
 
-    await expect(controller.listAvailable()).resolves.toEqual([
+    await expect(controller.listAvailable({})).resolves.toEqual([
       expect.objectContaining({
         id: 'station-1',
         ownerId: 'user-2',

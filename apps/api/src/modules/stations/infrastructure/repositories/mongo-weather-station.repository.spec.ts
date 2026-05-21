@@ -48,6 +48,41 @@ describe('MongoWeatherStationRepository', () => {
     expect(stations[0].getAlertSettings().toPrimitives().storm).toBe(false);
   });
 
+  it('filters stations by case-insensitive partial name', async () => {
+    const model = buildModel();
+    const query = buildQuery([stationDocument]);
+    const repository = new MongoWeatherStationRepository(model);
+
+    model.find.mockReturnValue(query);
+
+    await repository.findWithFilters({ name: 'Cent' });
+
+    expect(model.find).toHaveBeenCalledWith({
+      name: {
+        $regex: 'Cent',
+        $options: 'i',
+      },
+    });
+  });
+
+  it('combines owner and name filters when listing owned stations', async () => {
+    const model = buildModel();
+    const query = buildQuery([stationDocument]);
+    const repository = new MongoWeatherStationRepository(model);
+
+    model.find.mockReturnValue(query);
+
+    await repository.findWithFilters({ ownerId: 'user-1', name: 'Central' });
+
+    expect(model.find).toHaveBeenCalledWith({
+      ownerId: 'user-1',
+      name: {
+        $regex: 'Central',
+        $options: 'i',
+      },
+    });
+  });
+
   it('upserts the mapped station document when saving', async () => {
     const model = buildModel();
     const repository = new MongoWeatherStationRepository(model);

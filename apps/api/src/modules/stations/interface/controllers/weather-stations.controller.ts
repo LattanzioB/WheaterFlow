@@ -10,6 +10,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -23,7 +24,11 @@ import { GetStationByIdService } from '../../application/services/get-station-by
 import { ListAllStationsService } from '../../application/services/list-all-stations.service';
 import { ListUserStationsService } from '../../application/services/list-user-stations.service';
 import { UpdateStationService } from '../../application/services/update-station.service';
-import { CreateStationDto, UpdateStationDto } from '../dtos/station.dto';
+import {
+  CreateStationDto,
+  QueryStationsDto,
+  UpdateStationDto,
+} from '../dtos/station.dto';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -41,16 +46,24 @@ export class WeatherStationsController {
   ) {}
 
   @Get('available')
-  async listAvailable(): Promise<StationResponse[]> {
-    const stations = await this.listAllStationsService.execute();
+  async listAvailable(
+    @Query() dto: QueryStationsDto,
+  ): Promise<StationResponse[]> {
+    const stations = await this.listAllStationsService.execute({
+      name: dto.name,
+    });
 
     return stations.map((station) => this.toResponse(station));
   }
 
   @Get()
-  async list(@Req() req: AuthenticatedRequest): Promise<StationResponse[]> {
+  async list(
+    @Query() dto: QueryStationsDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<StationResponse[]> {
     const stations = await this.listUserStationsService.execute({
       ownerId: req.user.userId,
+      name: dto.name,
     });
 
     return stations.map((station) => this.toResponse(station));

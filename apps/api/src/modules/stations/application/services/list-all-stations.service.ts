@@ -3,6 +3,10 @@ import type { IStationRepository } from '../../domain/ports/station-repository.p
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { STATION_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
 
+export interface ListAllStationsCommand {
+  name?: string;
+}
+
 @Injectable()
 export class ListAllStationsService {
   constructor(
@@ -10,7 +14,11 @@ export class ListAllStationsService {
     private readonly stationRepository: IStationRepository,
   ) {}
 
-  async execute(): Promise<WeatherStation[]> {
-    return this.stationRepository.findAll();
+  async execute(
+    command: ListAllStationsCommand = {},
+  ): Promise<WeatherStation[]> {
+    return this.stationRepository.findWithFilters({
+      name: command.name?.trim() || undefined,
+    });
   }
 }

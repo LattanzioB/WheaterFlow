@@ -137,7 +137,50 @@ describe('MeasurementsController', () => {
       stationName: 'Central',
       tempMin: 10,
       tempMax: 30,
+      humidityMin: undefined,
+      humidityMax: undefined,
+      pressureMin: undefined,
+      pressureMax: undefined,
+      reportedFrom: undefined,
+      reportedTo: undefined,
       alertOnly: true,
+    });
+  });
+
+  it('maps extended measurement query params into the service command', async () => {
+    const queryService = buildQueryService();
+    const controller = new MeasurementsController(
+      buildRecordService(),
+      queryService,
+      buildGetStationService(),
+    );
+
+    queryService.execute.mockResolvedValue([]);
+
+    await controller.query({
+      stationName: 'North',
+      tempMin: 0,
+      tempMax: 40,
+      humidityMin: 30,
+      humidityMax: 90,
+      pressureMin: 950,
+      pressureMax: 1050,
+      reportedFrom: '2026-04-01T00:00:00.000Z',
+      reportedTo: '2026-04-30T00:00:00.000Z',
+      alertOnly: false,
+    });
+
+    expect(queryService.execute).toHaveBeenCalledWith({
+      stationName: 'North',
+      tempMin: 0,
+      tempMax: 40,
+      humidityMin: 30,
+      humidityMax: 90,
+      pressureMin: 950,
+      pressureMax: 1050,
+      reportedFrom: '2026-04-01T00:00:00.000Z',
+      reportedTo: '2026-04-30T00:00:00.000Z',
+      alertOnly: false,
     });
   });
 });

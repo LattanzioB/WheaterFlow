@@ -73,6 +73,12 @@ export class MeasurementsController {
         stationName: dto.stationName,
         tempMin: dto.tempMin,
         tempMax: dto.tempMax,
+        humidityMin: dto.humidityMin,
+        humidityMax: dto.humidityMax,
+        pressureMin: dto.pressureMin,
+        pressureMax: dto.pressureMax,
+        reportedFrom: dto.reportedFrom,
+        reportedTo: dto.reportedTo,
         alertOnly: dto.alertOnly,
       });
 

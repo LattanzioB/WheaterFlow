@@ -115,6 +115,17 @@ export class CreateStationDto {
   alertSettings?: StationAlertSettingsDto;
 }
 
+export class QueryStationsDto {
+  @ApiPropertyOptional({
+    example: 'Central',
+    description: 'Case-insensitive partial match on station name',
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  name?: string;
+}
+
 export class UpdateStationDto {
   @ApiPropertyOptional({
     example: 'North Station',

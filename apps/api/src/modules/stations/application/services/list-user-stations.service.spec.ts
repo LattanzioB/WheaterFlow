@@ -18,9 +18,10 @@ describe('ListUserStationsService', () => {
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
+    findWithFilters: jest.fn(),
   });
 
-  it('lists the stations for a normalized owner id', async () => {
+  it('lists the stations for a normalized owner id and optional name', async () => {
     const stationRepository = buildStationRepository();
     const service = new ListUserStationsService(stationRepository);
     const stations = [
@@ -33,11 +34,16 @@ describe('ListUserStationsService', () => {
       }),
     ];
 
-    stationRepository.findByOwnerId.mockResolvedValue(stations);
+    stationRepository.findWithFilters.mockResolvedValue(stations);
 
-    const result = await service.execute(command);
+    const result = await service.execute({
+      ...command,
+      name: ' Central ',
+    });
 
-    expect(stationRepository.findByOwnerId.mock.calls).toEqual([['owner-1']]);
+    expect(stationRepository.findWithFilters.mock.calls).toEqual([
+      [{ ownerId: 'owner-1', name: 'Central' }],
+    ]);
     expect(result).toEqual(stations);
   });
 
@@ -50,6 +56,6 @@ describe('ListUserStationsService', () => {
         ownerId: '   ',
       }),
     ).rejects.toThrow('Owner id cannot be empty');
-    expect(stationRepository.findByOwnerId.mock.calls).toHaveLength(0);
+    expect(stationRepository.findWithFilters.mock.calls).toHaveLength(0);
   });
 });

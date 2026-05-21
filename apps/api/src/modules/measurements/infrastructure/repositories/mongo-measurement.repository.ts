@@ -14,6 +14,9 @@ type MeasurementFilterQuery = {
   alertStatus?: boolean;
   stationId?: string | { $in: string[] };
   temperature?: Partial<Record<'$gte' | '$lte', number>>;
+  humidity?: Partial<Record<'$gte' | '$lte', number>>;
+  pressure?: Partial<Record<'$gte' | '$lte', number>>;
+  reportedAt?: Partial<Record<'$gte' | '$lte', Date>>;
 };
 
 @Injectable()
@@ -109,17 +112,47 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
     }
 
     if (filters.tempMin !== undefined || filters.tempMax !== undefined) {
-      const temperatureFilter: Partial<Record<'$gte' | '$lte', number>> = {};
+      query.temperature = this.buildNumericRangeFilter(
+        filters.tempMin,
+        filters.tempMax,
+      );
+    }
 
-      if (filters.tempMin !== undefined) {
-        temperatureFilter.$gte = filters.tempMin;
+    if (
+      filters.humidityMin !== undefined ||
+      filters.humidityMax !== undefined
+    ) {
+      query.humidity = this.buildNumericRangeFilter(
+        filters.humidityMin,
+        filters.humidityMax,
+      );
+    }
+
+    if (
+      filters.pressureMin !== undefined ||
+      filters.pressureMax !== undefined
+    ) {
+      query.pressure = this.buildNumericRangeFilter(
+        filters.pressureMin,
+        filters.pressureMax,
+      );
+    }
+
+    if (
+      filters.reportedFrom !== undefined ||
+      filters.reportedTo !== undefined
+    ) {
+      const reportedAtFilter: Partial<Record<'$gte' | '$lte', Date>> = {};
+
+      if (filters.reportedFrom !== undefined) {
+        reportedAtFilter.$gte = filters.reportedFrom;
       }
 
-      if (filters.tempMax !== undefined) {
-        temperatureFilter.$lte = filters.tempMax;
+      if (filters.reportedTo !== undefined) {
+        reportedAtFilter.$lte = filters.reportedTo;
       }
 
-      query.temperature = temperatureFilter;
+      query.reportedAt = reportedAtFilter;
     }
 
     if (filters.alertOnly) {
@@ -147,6 +180,23 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
       .exec();
 
     return stations.map((station) => station._id);
+  }
+
+  private buildNumericRangeFilter(
+    min: number | undefined,
+    max: number | undefined,
+  ): Partial<Record<'$gte' | '$lte', number>> {
+    const rangeFilter: Partial<Record<'$gte' | '$lte', number>> = {};
+
+    if (min !== undefined) {
+      rangeFilter.$gte = min;
+    }
+
+    if (max !== undefined) {
+      rangeFilter.$lte = max;
+    }
+
+    return rangeFilter;
   }
 
   private static escapeRegExp(value: string): string {

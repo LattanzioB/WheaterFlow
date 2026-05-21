@@ -1,13 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { randomUUID } from 'node:crypto';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { IMeasurementRepository } from '../../domain/ports/measurement-repository.port';
 import type { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
 import { Measurement } from '../../domain/entities/measurement.entity';
-import { MeasurementAlertDetectedEvent } from '@contracts/measurements/measurement-alert-detected.event';
+import type { WeatherStation } from '../../../stations/domain/entities/weather-station.entity';
+import type { ClimateAlertDetectedMessage } from '@contracts/measurements/climate-alert-detected.message';
+import type { AlertPublisher } from '../ports/alert-publisher.port';
 import { Humidity } from '../../domain/value-objects/humidity.value-object';
 import { Pressure } from '../../domain/value-objects/pressure.value-object';
 import { Temperature } from '../../domain/value-objects/temperature.value-object';
 import {
+  ALERT_PUBLISHER_TOKEN,
   MEASUREMENT_REPOSITORY_TOKEN,
   STATION_REPOSITORY_TOKEN,
 } from '@shared/tokens/injection-tokens';
@@ -22,12 +25,15 @@ export interface RecordMeasurementCommand {
 
 @Injectable()
 export class RecordMeasurementService {
+  private readonly logger = new Logger(RecordMeasurementService.name);
+
   constructor(
     @Inject(MEASUREMENT_REPOSITORY_TOKEN)
     private readonly measurementRepository: IMeasurementRepository,
     @Inject(STATION_REPOSITORY_TOKEN)
     private readonly stationRepository: IStationRepository,
-    private readonly eventEmitter: EventEmitter2,
+    @Inject(ALERT_PUBLISHER_TOKEN)
+    private readonly alertPublisher: AlertPublisher,
   ) {}
 
   async execute(command: RecordMeasurementCommand): Promise<Measurement> {
@@ -49,16 +55,39 @@ export class RecordMeasurementService {
     await this.measurementRepository.save(measurement);
 
     if (measurement.hasAlert()) {
-      this.eventEmitter.emit(
-        MeasurementAlertDetectedEvent.EVENT_NAME,
-        new MeasurementAlertDetectedEvent(
-          measurement.getId(),
-          measurement.getStationId(),
-          measurement.getAlertType(),
-        ),
+      const message = this.buildClimateAlertDetectedMessage(
+        measurement,
+        station,
       );
+
+      try {
+        await this.alertPublisher.publishClimateAlert(message);
+      } catch (error) {
+        this.logger.error(
+          'Climate alert message could not be published after measurement persistence',
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
     }
 
     return measurement;
+  }
+
+  private buildClimateAlertDetectedMessage(
+    measurement: Measurement,
+    station: WeatherStation,
+  ): ClimateAlertDetectedMessage {
+    return {
+      messageId: randomUUID(),
+      occurredAt: new Date().toISOString(),
+      measurementId: measurement.getId(),
+      stationId: measurement.getStationId(),
+      stationName: station.getName(),
+      alertType: measurement.getAlertType(),
+      reportedAt: measurement.getReportedAt().toISOString(),
+      temperature: measurement.getTemperature().getValue(),
+      humidity: measurement.getHumidity().getValue(),
+      pressure: measurement.getPressure().getValue(),
+    };
   }
 }

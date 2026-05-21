@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { IStationRepository } from '../../domain/ports/station-repository.port';
+import {
+  IStationRepository,
+  StationFilters,
+} from '../../domain/ports/station-repository.port';
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { WeatherStationDocumentMapper } from '../mappers/weather-station-document.mapper';
 import { WeatherStationPersistenceModel } from '../persistence/weather-station.schema';
@@ -34,11 +37,7 @@ export class MongoWeatherStationRepository implements IStationRepository {
   }
 
   async findByOwnerId(ownerId: string): Promise<WeatherStation[]> {
-    const documents = await this.stationModel.find({ ownerId }).lean().exec();
-
-    return documents.map((document) =>
-      WeatherStationDocumentMapper.toDomain(document),
-    );
+    return this.findWithFilters({ ownerId });
   }
 
   async save(station: WeatherStation): Promise<void> {
@@ -54,9 +53,33 @@ export class MongoWeatherStationRepository implements IStationRepository {
   }
 
   async findAll(): Promise<WeatherStation[]> {
-    const documents = await this.stationModel.find().lean().exec();
+    return this.findWithFilters({});
+  }
+
+  async findWithFilters(filters: StationFilters): Promise<WeatherStation[]> {
+    const query: Record<string, unknown> = {};
+
+    if (filters.ownerId) {
+      query.ownerId = filters.ownerId;
+    }
+
+    const name = filters.name?.trim();
+
+    if (name) {
+      query.name = {
+        $regex: MongoWeatherStationRepository.escapeRegExp(name),
+        $options: 'i',
+      };
+    }
+
+    const documents = await this.stationModel.find(query).lean().exec();
+
     return documents.map((document) =>
       WeatherStationDocumentMapper.toDomain(document),
     );
+  }
+
+  private static escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

@@ -63,7 +63,8 @@ export class QueryMeasurementsDto {
 
   @ApiPropertyOptional({
     example: 10,
-    description: 'Minimum temperature filter',
+    description:
+      'Minimum temperature (C). Use alone for greater-than semantics.',
   })
   @IsOptional()
   @Type(() => Number)
@@ -72,12 +73,65 @@ export class QueryMeasurementsDto {
 
   @ApiPropertyOptional({
     example: 35,
-    description: 'Maximum temperature filter',
+    description: 'Maximum temperature (C). Use alone for less-than semantics.',
   })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   tempMax?: number;
+
+  @ApiPropertyOptional({
+    example: 50,
+    description: 'Minimum humidity (%). Use alone for greater-than semantics.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  humidityMin?: number;
+
+  @ApiPropertyOptional({
+    example: 90,
+    description: 'Maximum humidity (%). Use alone for less-than semantics.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  humidityMax?: number;
+
+  @ApiPropertyOptional({
+    example: 980,
+    description:
+      'Minimum pressure (hPa). Use alone for greater-than semantics.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  pressureMin?: number;
+
+  @ApiPropertyOptional({
+    example: 1020,
+    description: 'Maximum pressure (hPa). Use alone for less-than semantics.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  pressureMax?: number;
+
+  @ApiPropertyOptional({
+    example: '2026-04-01T00:00:00.000Z',
+    description: 'Inclusive lower bound for measurement reportedAt (ISO-8601)',
+  })
+  @IsOptional()
+  @IsDateString()
+  reportedFrom?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-04-30T23:59:59.999Z',
+    description: 'Inclusive upper bound for measurement reportedAt (ISO-8601)',
+  })
+  @IsOptional()
+  @IsDateString()
+  reportedTo?: string;
 
   @ApiPropertyOptional({
     example: true,

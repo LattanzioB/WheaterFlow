@@ -172,4 +172,34 @@ describe('MongoMeasurementRepository', () => {
     expect(measurements).toHaveLength(1);
     expect(measurements[0].getStationId()).toBe('station-1');
   });
+
+  it('builds date, humidity, and pressure filters in the measurement query', async () => {
+    const measurementModel = buildModel();
+    const stationModel = buildModel();
+    const measurementQuery = buildQuery([measurementDocument]);
+    const repository = new MongoMeasurementRepository(
+      measurementModel,
+      stationModel,
+    );
+
+    measurementModel.find.mockReturnValue(measurementQuery);
+
+    await repository.findWithFilters({
+      humidityMin: 50,
+      humidityMax: 95,
+      pressureMin: 980,
+      pressureMax: 1015,
+      reportedFrom: new Date('2026-04-01T00:00:00.000Z'),
+      reportedTo: new Date('2026-04-30T23:59:59.999Z'),
+    });
+
+    expect(measurementModel.find).toHaveBeenCalledWith({
+      humidity: { $gte: 50, $lte: 95 },
+      pressure: { $gte: 980, $lte: 1015 },
+      reportedAt: {
+        $gte: new Date('2026-04-01T00:00:00.000Z'),
+        $lte: new Date('2026-04-30T23:59:59.999Z'),
+      },
+    });
+  });
 });

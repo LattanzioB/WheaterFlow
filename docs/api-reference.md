@@ -157,7 +157,26 @@ Authenticate and receive a JWT.
 ## Weather Stations
 
 ### `GET /weather-stations`
-**Auth required.** Response `200`: array of Station objects.
+**Auth required.** Lists stations owned by the authenticated user.
+
+**Query params (optional):**
+| Param | Type | Description |
+|---|---|---|
+| `name` | string | Case-insensitive partial match on station name |
+
+**Response `200`:** array of Station objects.
+
+---
+
+### `GET /weather-stations/available`
+**Auth required.** Lists all stations available for alert subscription discovery.
+
+**Query params (optional):**
+| Param | Type | Description |
+|---|---|---|
+| `name` | string | Case-insensitive partial match on station name |
+
+**Response `200`:** array of Station objects.
 
 ---
 
@@ -222,10 +241,18 @@ Authenticate and receive a JWT.
 **Query params (all optional):**
 | Param | Type | Description |
 |---|---|---|
-| `stationName` | string | Filter by station name (partial match) |
-| `tempMin` | number | Minimum temperature (C) |
-| `tempMax` | number | Maximum temperature (C) |
+| `stationName` | string | Filter by station name (case-insensitive partial match) |
+| `tempMin` | number | Minimum temperature (C); alone implies greater-than |
+| `tempMax` | number | Maximum temperature (C); alone implies less-than |
+| `humidityMin` | number | Minimum humidity (%); alone implies greater-than |
+| `humidityMax` | number | Maximum humidity (%); alone implies less-than |
+| `pressureMin` | number | Minimum pressure (hPa); alone implies greater-than |
+| `pressureMax` | number | Maximum pressure (hPa); alone implies less-than |
+| `reportedFrom` | string (ISO-8601) | Inclusive lower bound for `reportedAt` |
+| `reportedTo` | string (ISO-8601) | Inclusive upper bound for `reportedAt` |
 | `alertOnly` | boolean | If `true`, return only alert measurements |
+
+Invalid ranges (`tempMin` > `tempMax`, `humidityMin` > `humidityMax`, `pressureMin` > `pressureMax`, or `reportedFrom` > `reportedTo`) return `400`.
 
 **Response `200`:** Array of Measurement objects.
 

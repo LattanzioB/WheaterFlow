@@ -35,11 +35,9 @@ describe('CreateStationService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
-    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
   });
 
   const owner = User.create({

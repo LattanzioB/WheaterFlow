@@ -245,16 +245,6 @@ async function upsertSecondaryUser(usersCollection) {
     lastName: SECONDARY_USER_LAST_NAME,
     email: SECONDARY_USER_EMAIL,
     passwordHash,
-    notificationPreferences: [],
-    deliveryChannels: {
-      telegram: {
-        chatId: null,
-      },
-    },
-    telegramLinking: {
-      code: null,
-      expiresAt: null,
-    },
     role: 'USER',
     createdAt: baseCreatedAt,
   };
@@ -266,14 +256,6 @@ async function upsertSecondaryUser(usersCollection) {
   );
 
   return userDocument;
-}
-
-function mergePreferences(existingPreferences, mockPreferences) {
-  const preserved = (existingPreferences ?? []).filter(
-    (preference) => !preference.stationId.startsWith(MOCK_STATION_PREFIX),
-  );
-
-  return [...preserved, ...mockPreferences];
 }
 
 async function upsertStations(stationsCollection, users) {
@@ -356,33 +338,42 @@ async function main() {
   const { measurementDocuments, timelineCount } =
     await replaceMeasurements(measurementsCollection);
 
-  const refreshedPrimaryUser = await usersCollection.findOne({ _id: primaryUser._id });
-  const refreshedSecondaryUser = await usersCollection.findOne({
-    _id: secondaryUser._id,
-  });
-
-  await usersCollection.updateOne(
-    { _id: primaryUser._id },
-    {
-      $set: {
-        notificationPreferences: mergePreferences(
-          refreshedPrimaryUser?.notificationPreferences,
-          buildNotificationPreferences('primary'),
-        ),
-      },
-    },
+  const notificationProfilesCollection = db.collection(
+    'user_notification_profiles',
   );
 
-  await usersCollection.updateOne(
-    { _id: secondaryUser._id },
+  await notificationProfilesCollection.replaceOne(
+    { _id: primaryUser._id },
     {
-      $set: {
-        notificationPreferences: mergePreferences(
-          refreshedSecondaryUser?.notificationPreferences,
-          buildNotificationPreferences('secondary'),
-        ),
+      _id: primaryUser._id,
+      notificationPreferences: buildNotificationPreferences('primary'),
+      deliveryChannels: {
+        telegram: { chatId: null },
+        log: { enabled: true },
+      },
+      telegramLinking: {
+        code: null,
+        expiresAt: null,
       },
     },
+    { upsert: true },
+  );
+
+  await notificationProfilesCollection.replaceOne(
+    { _id: SECONDARY_USER_ID },
+    {
+      _id: SECONDARY_USER_ID,
+      notificationPreferences: buildNotificationPreferences('secondary'),
+      deliveryChannels: {
+        telegram: { chatId: null },
+        log: { enabled: true },
+      },
+      telegramLinking: {
+        code: null,
+        expiresAt: null,
+      },
+    },
+    { upsert: true },
   );
 
   console.log(

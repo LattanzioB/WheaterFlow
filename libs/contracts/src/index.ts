@@ -5,3 +5,8 @@ export type {
   MeasurementAlertNotification,
   NotificationDeliveryTarget,
 } from './notifications/measurement-alert-notification';
+export type {
+  NotificationDeliveryChannels,
+  NotificationProfileResponse,
+  StationAlertPreference,
+} from './notifications/notification-profile';

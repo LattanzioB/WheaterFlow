@@ -22,11 +22,9 @@ describe('LoginUserService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
-    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
   });
 
   const buildPasswordHasher = (): jest.Mocked<PasswordHasher> => ({

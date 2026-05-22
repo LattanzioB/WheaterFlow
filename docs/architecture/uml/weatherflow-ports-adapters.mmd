@@ -29,11 +29,26 @@ class JwtTokenService["JwtTokenService (Adapter)"] {
 class IUserRepository["IUserRepository (Port)"] {
   +findById(id)
   +findByEmail(email)
-  +findByTelegramLinkCode(code)
   +save(user)
   +delete(id)
   +findAll()
+}
+
+class INotificationProfileRepository["INotificationProfileRepository (Port)"] {
+  +findByUserId(userId)
+  +findByTelegramLinkCode(code)
   +findSubscribersByStationId(stationId)
+  +save(profile)
+  +delete(userId)
+}
+
+class INotificationServiceClient["INotificationServiceClient (Port)"] {
+  +getProfile(userId)
+  +subscribe(request)
+  +unsubscribe(request)
+  +updateAlertPreferences(request)
+  +updateDeliveryChannels(request)
+  +createTelegramLinkCode(userId)
 }
 
 class IStationRepository["IStationRepository (Port)"] {
@@ -65,6 +80,17 @@ class MongoUserRepository["MongoUserRepository (Adapter)"] {
   +findById(id)
   +findByEmail(email)
   +save(user)
+}
+
+class MongoNotificationProfileRepository["MongoNotificationProfileRepository (Adapter)"] {
+  +findByUserId(userId)
+  +findByTelegramLinkCode(code)
+  +save(profile)
+}
+
+class HttpNotificationServiceClient["HttpNotificationServiceClient (Adapter)"] {
+  +getProfile(userId)
+  +subscribe(request)
 }
 
 class MongoWeatherStationRepository["MongoWeatherStationRepository (Adapter)"] {
@@ -121,6 +147,8 @@ TokenService <|.. JwtTokenService
 JwtTokenService ..> AuthTokenPayload : signs
 
 IUserRepository <|.. MongoUserRepository
+INotificationProfileRepository <|.. MongoNotificationProfileRepository
+INotificationServiceClient <|.. HttpNotificationServiceClient
 IStationRepository <|.. MongoWeatherStationRepository
 IMeasurementRepository <|.. MongoMeasurementRepository
 IMeasurementRepository ..> MeasurementFilters : query contract

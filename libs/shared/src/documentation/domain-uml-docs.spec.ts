@@ -26,6 +26,7 @@ describe('S-06.3 domain UML documentation', () => {
     expect(source).toContain('Humidity (ValueObject)');
     expect(source).toContain('Pressure (ValueObject)');
     expect(source).toContain('UserRole (Enumeration)');
+    expect(source).toContain('UserNotificationProfile (AggregateRoot)');
     expect(source).toContain('UserDeliveryChannels (ValueObject)');
     expect(source).toContain('UserTelegramLinking (ValueObject)');
   });
@@ -38,7 +39,7 @@ describe('S-06.3 domain UML documentation', () => {
     expect(source).toContain('AlertEvaluator ..> StationAlertSettings');
   });
 
-  it('documents the user delivery and telegram linking model', () => {
+  it('documents notification profile delivery and telegram linking', () => {
     const source = read('weatherflow-domain-model.mmd');
 
     expect(source).toContain('+startTelegramLinking(code, expiresAt)');
@@ -46,7 +47,7 @@ describe('S-06.3 domain UML documentation', () => {
     expect(source).toContain('+getTelegramLinking()');
     expect(source).toContain('User --> UserRole : role');
     expect(source).toContain(
-      'UserDeliveryChannels *-- TelegramDeliveryChannel : telegram',
+      'UserNotificationProfile *-- UserDeliveryChannels : delivery channels',
     );
   });
 

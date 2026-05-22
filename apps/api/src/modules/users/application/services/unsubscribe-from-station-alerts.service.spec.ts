@@ -1,11 +1,13 @@
 import { AlertType } from '../../../measurements/domain/value-objects/alert-type.enum';
 import { IUserRepository } from '../../domain/ports/user-repository.port';
+import { INotificationServiceClient } from '../../domain/ports/notification-service-client.port';
 import {
   UnsubscribeFromStationAlertsCommand,
   UnsubscribeFromStationAlertsService,
 } from './unsubscribe-from-station-alerts.service';
 import { User } from '../../domain/entities/user.entity';
 import { Email } from '../../domain/value-objects/email.value-object';
+import { UserNotificationProfileService } from './user-notification-profile.service';
 
 describe('UnsubscribeFromStationAlertsService', () => {
   const command: UnsubscribeFromStationAlertsCommand = {
@@ -16,49 +18,76 @@ describe('UnsubscribeFromStationAlertsService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
-    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
   });
 
-  it('removes an existing station subscription and persists the user', async () => {
+  const buildNotificationClient = (): jest.Mocked<INotificationServiceClient> => ({
+    getProfile: jest.fn(),
+    listSubscriptions: jest.fn(),
+    subscribe: jest.fn(),
+    unsubscribe: jest.fn(),
+    updateAlertPreferences: jest.fn(),
+    updateDeliveryChannels: jest.fn(),
+    createTelegramLinkCode: jest.fn(),
+  });
+
+  it('removes an existing station subscription through the notification service', async () => {
     const userRepository = buildUserRepository();
-    const service = new UnsubscribeFromStationAlertsService(userRepository);
+    const notificationClient = buildNotificationClient();
+    const service = new UnsubscribeFromStationAlertsService(
+      userRepository,
+      notificationClient,
+      new UserNotificationProfileService(notificationClient),
+    );
     const user = User.create({
       id: 'user-1',
       name: 'Bruno',
       lastName: 'Lattanzio',
       email: Email.create('bruno@example.com'),
       passwordHash: 'hash',
+    });
+
+    userRepository.findById.mockResolvedValue(user);
+    notificationClient.unsubscribe.mockResolvedValue({
+      userId: 'user-1',
       notificationPreferences: [
-        {
-          stationId: 'station-1',
-          alertTypes: [AlertType.STORM],
-        },
         {
           stationId: 'station-2',
           alertTypes: [AlertType.FROST],
         },
       ],
+      deliveryChannels: {
+        telegram: { chatId: null },
+        log: { enabled: true },
+      },
     });
-
-    userRepository.findById.mockResolvedValue(user);
 
     const result = await service.execute(command);
 
-    expect(result.getSubscriptions()).toEqual(['station-2']);
-    expect(userRepository.save.mock.calls).toEqual([[result]]);
+    expect(notificationClient.unsubscribe.mock.calls).toEqual([[command]]);
+    expect(result.notificationProfile.notificationPreferences).toEqual([
+      {
+        stationId: 'station-2',
+        alertTypes: [AlertType.FROST],
+      },
+    ]);
+    expect(userRepository.save.mock.calls).toHaveLength(0);
   });
 
   it('rejects unknown users before saving', async () => {
     const userRepository = buildUserRepository();
-    const service = new UnsubscribeFromStationAlertsService(userRepository);
+    const notificationClient = buildNotificationClient();
+    const service = new UnsubscribeFromStationAlertsService(
+      userRepository,
+      notificationClient,
+      new UserNotificationProfileService(notificationClient),
+    );
 
     userRepository.findById.mockResolvedValue(null);
 
     await expect(service.execute(command)).rejects.toThrow('User not found');
-    expect(userRepository.save.mock.calls).toHaveLength(0);
+    expect(notificationClient.unsubscribe.mock.calls).toHaveLength(0);
   });
 });

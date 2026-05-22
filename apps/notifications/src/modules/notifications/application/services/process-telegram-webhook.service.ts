@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { USER_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
-import type { IUserRepository } from '@api/modules/users/domain/ports/user-repository.port';
+import { NOTIFICATION_PROFILE_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
+import type { INotificationProfileRepository } from '../../../notification-preferences/domain/ports/notification-profile-repository.port';
 
 export interface TelegramWebhookUpdate {
   message?: {
@@ -23,8 +23,8 @@ export class ProcessTelegramWebhookService {
     /^\/link(?:@\w+)?\s+([A-Z0-9-]+)\s*$/i;
 
   constructor(
-    @Inject(USER_REPOSITORY_TOKEN)
-    private readonly userRepository: IUserRepository,
+    @Inject(NOTIFICATION_PROFILE_REPOSITORY_TOKEN)
+    private readonly notificationProfileRepository: INotificationProfileRepository,
   ) {}
 
   async execute(
@@ -46,18 +46,19 @@ export class ProcessTelegramWebhookService {
     }
 
     const linkCode = match[1].toUpperCase();
-    const user = await this.userRepository.findByTelegramLinkCode(linkCode);
+    const profile =
+      await this.notificationProfileRepository.findByTelegramLinkCode(linkCode);
 
-    if (!user) {
+    if (!profile) {
       return 'invalid-code';
     }
 
-    if (!user.hasActiveTelegramLinkCode(linkCode)) {
+    if (!profile.hasActiveTelegramLinkCode(linkCode)) {
       return 'expired-code';
     }
 
-    user.completeTelegramLinking(String(chatId));
-    await this.userRepository.save(user);
+    profile.completeTelegramLinking(String(chatId));
+    await this.notificationProfileRepository.save(profile);
 
     return 'linked';
   }

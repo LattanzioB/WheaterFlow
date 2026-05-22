@@ -6,9 +6,11 @@ import type { IStationRepository } from '../../../stations/domain/ports/station-
 import { WeatherStation } from '../../../stations/domain/entities/weather-station.entity';
 import {
   MEASUREMENT_REPOSITORY_TOKEN,
+  NOTIFICATION_SERVICE_CLIENT_TOKEN,
   STATION_REPOSITORY_TOKEN,
   USER_REPOSITORY_TOKEN,
 } from '@shared/tokens/injection-tokens';
+import type { INotificationServiceClient } from '../../domain/ports/notification-service-client.port';
 import type { IUserRepository } from '../../domain/ports/user-repository.port';
 
 export interface ListSubscribedStationsCommand {
@@ -29,6 +31,8 @@ export class ListSubscribedStationsService {
   constructor(
     @Inject(USER_REPOSITORY_TOKEN)
     private readonly userRepository: IUserRepository,
+    @Inject(NOTIFICATION_SERVICE_CLIENT_TOKEN)
+    private readonly notificationServiceClient: INotificationServiceClient,
     @Inject(STATION_REPOSITORY_TOKEN)
     private readonly stationRepository: IStationRepository,
     @Inject(MEASUREMENT_REPOSITORY_TOKEN)
@@ -50,7 +54,8 @@ export class ListSubscribedStationsService {
       throw new Error('User not found');
     }
 
-    const preferences = user.getNotificationPreferences();
+    const preferences =
+      await this.notificationServiceClient.listSubscriptions(userId);
 
     if (preferences.length === 0) {
       return [];

@@ -19,11 +19,9 @@ describe('RegisterUserService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
-    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
   });
 
   const buildPasswordHasher = (): jest.Mocked<PasswordHasher> => ({
@@ -62,11 +60,6 @@ describe('RegisterUserService', () => {
     expect(savedUser.getLastName()).toBe('Lattanzio');
     expect(savedUser.getEmail().getValue()).toBe('bruno@example.com');
     expect(savedUser.getPasswordHash()).toBe('hashed-password');
-    expect(savedUser.getDeliveryChannels()).toEqual({
-      telegram: {
-        chatId: null,
-      },
-    });
 
     expect(tokenService.generateToken.mock.calls).toEqual([
       [

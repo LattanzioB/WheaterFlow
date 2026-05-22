@@ -4,13 +4,18 @@ direction LR
 %% Users domain
 class User["User (AggregateRoot)"] {
   +create(props)
+  +getRole()
+  +changeName(name, lastName)
+  +changePasswordHash(passwordHash)
+}
+
+class UserNotificationProfile["UserNotificationProfile (AggregateRoot)"] {
   +subscribeToAlerts(stationId, alertTypes)
   +updateAlertTypesForStation(stationId, alertTypes)
   +configureTelegramDelivery(chatId)
   +startTelegramLinking(code, expiresAt)
   +hasActiveTelegramLinkCode(code, now)
   +isSubscribedToAlert(stationId, alertType)
-  +getRole()
   +getDeliveryChannels()
   +getTelegramLinking()
 }
@@ -119,9 +124,9 @@ class MeasurementAlertDetectedEvent["MeasurementAlertDetectedEvent (DomainEvent)
 
 User *-- Email : email
 User --> UserRole : role
-User *-- UserDeliveryChannels : delivery channels
+UserNotificationProfile *-- UserDeliveryChannels : delivery channels
 UserDeliveryChannels *-- TelegramDeliveryChannel : telegram
-User *-- UserTelegramLinking : telegram linking
+UserNotificationProfile *-- UserTelegramLinking : telegram linking
 WeatherStation *-- Location : location
 WeatherStation *-- StationAlertSettings : alert settings
 WeatherStation --> StationStatus : status

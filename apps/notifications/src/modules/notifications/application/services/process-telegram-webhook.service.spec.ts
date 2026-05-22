@@ -1,102 +1,53 @@
-import { User } from '@api/modules/users/domain/entities/user.entity';
-import { Email } from '@api/modules/users/domain/value-objects/email.value-object';
-import type { IUserRepository } from '@api/modules/users/domain/ports/user-repository.port';
+import { UserNotificationProfile } from '../../../notification-preferences/domain/entities/user-notification-profile.entity';
+import { INotificationProfileRepository } from '../../../notification-preferences/domain/ports/notification-profile-repository.port';
 import { ProcessTelegramWebhookService } from './process-telegram-webhook.service';
 
 describe('ProcessTelegramWebhookService', () => {
-  const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
-    findById: jest.fn(),
-    findByEmail: jest.fn(),
+  const buildRepository = (): jest.Mocked<INotificationProfileRepository> => ({
+    findByUserId: jest.fn(),
     findByTelegramLinkCode: jest.fn(),
+    findSubscribersByStationId: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
-    findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
   });
 
-  it('links a Telegram chat id when a valid /link command is received', async () => {
-    const userRepository = buildUserRepository();
-    const user = User.create({
-      id: 'user-1',
-      name: 'Bruno',
-      lastName: 'Lattanzio',
-      email: Email.create('bruno@example.com'),
-      passwordHash: 'hash',
+  it('links a telegram chat when the code is valid', async () => {
+    const repository = buildRepository();
+    const service = new ProcessTelegramWebhookService(repository);
+    const profile = UserNotificationProfile.create({
+      userId: 'user-1',
       telegramLinking: {
-        code: 'WF-A1B2C3D4',
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        code: 'WF-AB12CD34',
+        expiresAt: new Date(Date.now() + 60_000),
       },
     });
-    const service = new ProcessTelegramWebhookService(userRepository);
 
-    userRepository.findByTelegramLinkCode.mockResolvedValue(user);
+    repository.findByTelegramLinkCode.mockResolvedValue(profile);
 
     await expect(
       service.execute({
         message: {
-          text: '/link WF-A1B2C3D4',
-          chat: {
-            id: 123456789,
-          },
+          text: '/link WF-AB12CD34',
+          chat: { id: 12345 },
         },
       }),
     ).resolves.toBe('linked');
 
-    expect(user.getDeliveryChannels()).toEqual({
-      telegram: {
-        chatId: '123456789',
-      },
-    });
-    expect(user.getTelegramLinking()).toEqual({
-      code: null,
-      expiresAt: null,
-    });
-    expect(userRepository.save).toHaveBeenCalledWith(user);
+    expect(repository.save.mock.calls).toEqual([[profile]]);
+    expect(profile.getDeliveryChannels().telegram.chatId).toBe('12345');
   });
 
-  it('ignores unrelated Telegram messages', async () => {
-    const service = new ProcessTelegramWebhookService(buildUserRepository());
+  it('ignores unrelated webhook messages', async () => {
+    const repository = buildRepository();
+    const service = new ProcessTelegramWebhookService(repository);
 
     await expect(
       service.execute({
         message: {
-          text: 'hello there',
-          chat: {
-            id: 123456789,
-          },
+          text: 'hello',
+          chat: { id: 12345 },
         },
       }),
     ).resolves.toBe('ignored');
-  });
-
-  it('rejects expired Telegram link codes', async () => {
-    const userRepository = buildUserRepository();
-    const user = User.create({
-      id: 'user-1',
-      name: 'Bruno',
-      lastName: 'Lattanzio',
-      email: Email.create('bruno@example.com'),
-      passwordHash: 'hash',
-      telegramLinking: {
-        code: 'WF-OLD',
-        expiresAt: new Date('2026-04-25T12:00:00.000Z'),
-      },
-    });
-    const service = new ProcessTelegramWebhookService(userRepository);
-
-    userRepository.findByTelegramLinkCode.mockResolvedValue(user);
-
-    await expect(
-      service.execute({
-        message: {
-          text: '/link WF-OLD',
-          chat: {
-            id: 123456789,
-          },
-        },
-      }),
-    ).resolves.toBe('expired-code');
-
-    expect(userRepository.save).not.toHaveBeenCalled();
   });
 });

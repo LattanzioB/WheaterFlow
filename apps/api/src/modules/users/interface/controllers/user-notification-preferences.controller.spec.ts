@@ -55,18 +55,28 @@ describe('UserNotificationPreferencesController', () => {
     getName: () => 'Bruno',
     getLastName: () => 'Lattanzio',
     getEmail: () => ({ getValue: () => 'bruno@example.com' }),
-    getNotificationPreferences: () => [
-      {
-        stationId: 'station-1',
-        alertTypes: [AlertType.STORM],
-      },
-    ],
-    getDeliveryChannels: () => ({
-      telegram: {
-        chatId: '12345',
-      },
-    }),
     getCreatedAt: () => new Date('2026-04-25T12:00:00.000Z'),
+  });
+
+  const buildUserWithProfile = () => ({
+    user: buildUser(),
+    notificationProfile: {
+      userId: 'user-1',
+      notificationPreferences: [
+        {
+          stationId: 'station-1',
+          alertTypes: [AlertType.STORM],
+        },
+      ],
+      deliveryChannels: {
+        telegram: {
+          chatId: '12345',
+        },
+        log: {
+          enabled: true,
+        },
+      },
+    },
   });
 
   const request = {
@@ -89,7 +99,7 @@ describe('UserNotificationPreferencesController', () => {
       buildUpdateDeliveryService(),
     );
 
-    subscribeService.execute.mockResolvedValue(buildUser() as any);
+    subscribeService.execute.mockResolvedValue(buildUserWithProfile() as any);
 
     await expect(
       controller.subscribe(
@@ -139,7 +149,9 @@ describe('UserNotificationPreferencesController', () => {
       buildUpdateDeliveryService(),
     );
 
-    updatePreferencesService.execute.mockResolvedValue(buildUser() as any);
+    updatePreferencesService.execute.mockResolvedValue(
+      buildUserWithProfile() as any,
+    );
 
     await expect(
       controller.updateAlertPreferences(
@@ -166,7 +178,9 @@ describe('UserNotificationPreferencesController', () => {
       updateDeliveryService,
     );
 
-    updateDeliveryService.execute.mockResolvedValue(buildUser() as any);
+    updateDeliveryService.execute.mockResolvedValue(
+      buildUserWithProfile() as any,
+    );
 
     await expect(
       controller.updateDeliveryChannels(
@@ -251,7 +265,7 @@ describe('UserNotificationPreferencesController', () => {
       buildUpdateDeliveryService(),
     );
 
-    getUserByIdService.execute.mockResolvedValue(buildUser() as any);
+    getUserByIdService.execute.mockResolvedValue(buildUserWithProfile() as any);
 
     await expect(controller.getCurrentUser(request)).resolves.toMatchObject({
       id: 'user-1',

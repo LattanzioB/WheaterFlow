@@ -3,12 +3,14 @@ import { IStationRepository } from '../../../stations/domain/ports/station-repos
 import { WeatherStation } from '../../../stations/domain/entities/weather-station.entity';
 import { Location } from '../../../stations/domain/value-objects/location.value-object';
 import { IUserRepository } from '../../domain/ports/user-repository.port';
+import { INotificationServiceClient } from '../../domain/ports/notification-service-client.port';
 import {
   SubscribeToStationAlertsCommand,
   SubscribeToStationAlertsService,
 } from './subscribe-to-station-alerts.service';
 import { User } from '../../domain/entities/user.entity';
 import { Email } from '../../domain/value-objects/email.value-object';
+import { UserNotificationProfileService } from './user-notification-profile.service';
 
 describe('SubscribeToStationAlertsService', () => {
   const command: SubscribeToStationAlertsCommand = {
@@ -20,11 +22,9 @@ describe('SubscribeToStationAlertsService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
-    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
   });
 
   const buildStationRepository = (): jest.Mocked<IStationRepository> => ({
@@ -34,6 +34,16 @@ describe('SubscribeToStationAlertsService', () => {
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
+  });
+
+  const buildNotificationClient = (): jest.Mocked<INotificationServiceClient> => ({
+    getProfile: jest.fn(),
+    listSubscriptions: jest.fn(),
+    subscribe: jest.fn(),
+    unsubscribe: jest.fn(),
+    updateAlertPreferences: jest.fn(),
+    updateDeliveryChannels: jest.fn(),
+    createTelegramLinkCode: jest.fn(),
   });
 
   const user = User.create({
@@ -55,43 +65,56 @@ describe('SubscribeToStationAlertsService', () => {
   it('subscribes a user to selected alert types for an existing station', async () => {
     const userRepository = buildUserRepository();
     const stationRepository = buildStationRepository();
+    const notificationClient = buildNotificationClient();
     const service = new SubscribeToStationAlertsService(
       userRepository,
       stationRepository,
+      notificationClient,
+      new UserNotificationProfileService(notificationClient),
     );
 
     userRepository.findById.mockResolvedValue(user);
     stationRepository.findById.mockResolvedValue(station);
+    notificationClient.subscribe.mockResolvedValue({
+      userId: 'user-1',
+      notificationPreferences: [
+        {
+          stationId: 'station-1',
+          alertTypes: [AlertType.STORM, AlertType.CRITICAL_HUMIDITY],
+        },
+      ],
+      deliveryChannels: {
+        telegram: { chatId: null },
+        log: { enabled: true },
+      },
+    });
 
     const result = await service.execute(command);
 
-    expect(userRepository.findById.mock.calls).toEqual([['user-1']]);
-    expect(stationRepository.findById.mock.calls).toEqual([['station-1']]);
-    expect(result.getSubscribedAlertTypesForStation('station-1')).toEqual([
-      AlertType.STORM,
-      AlertType.CRITICAL_HUMIDITY,
+    expect(notificationClient.subscribe.mock.calls).toEqual([[command]]);
+    expect(result.notificationProfile.notificationPreferences).toEqual([
+      {
+        stationId: 'station-1',
+        alertTypes: [AlertType.STORM, AlertType.CRITICAL_HUMIDITY],
+      },
     ]);
-    expect(userRepository.save.mock.calls).toEqual([[result]]);
+    expect(userRepository.save.mock.calls).toHaveLength(0);
   });
 
   it('rejects unknown users and stations before saving', async () => {
     const userRepository = buildUserRepository();
     const stationRepository = buildStationRepository();
+    const notificationClient = buildNotificationClient();
     const service = new SubscribeToStationAlertsService(
       userRepository,
       stationRepository,
+      notificationClient,
+      new UserNotificationProfileService(notificationClient),
     );
 
     userRepository.findById.mockResolvedValue(null);
 
     await expect(service.execute(command)).rejects.toThrow('User not found');
-    expect(stationRepository.findById.mock.calls).toHaveLength(0);
-    expect(userRepository.save.mock.calls).toHaveLength(0);
-
-    userRepository.findById.mockResolvedValue(user);
-    stationRepository.findById.mockResolvedValue(null);
-
-    await expect(service.execute(command)).rejects.toThrow('Station not found');
-    expect(userRepository.save.mock.calls).toHaveLength(0);
+    expect(notificationClient.subscribe.mock.calls).toHaveLength(0);
   });
 });

@@ -1,7 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { USER_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
+import {
+  NOTIFICATION_SERVICE_CLIENT_TOKEN,
+  USER_REPOSITORY_TOKEN,
+} from '@shared/tokens/injection-tokens';
+import type { INotificationServiceClient } from '../../domain/ports/notification-service-client.port';
 import type { IUserRepository } from '../../domain/ports/user-repository.port';
-import type { User } from '../../domain/entities/user.entity';
+import {
+  UserNotificationProfileService,
+  UserWithNotificationProfile,
+} from './user-notification-profile.service';
 
 export interface UnsubscribeFromStationAlertsCommand {
   userId: string;
@@ -13,18 +20,26 @@ export class UnsubscribeFromStationAlertsService {
   constructor(
     @Inject(USER_REPOSITORY_TOKEN)
     private readonly userRepository: IUserRepository,
+    @Inject(NOTIFICATION_SERVICE_CLIENT_TOKEN)
+    private readonly notificationServiceClient: INotificationServiceClient,
+    private readonly userNotificationProfileService: UserNotificationProfileService,
   ) {}
 
-  async execute(command: UnsubscribeFromStationAlertsCommand): Promise<User> {
+  async execute(
+    command: UnsubscribeFromStationAlertsCommand,
+  ): Promise<UserWithNotificationProfile> {
     const user = await this.userRepository.findById(command.userId);
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    user.unsubscribeFromAlerts(command.stationId);
-    await this.userRepository.save(user);
+    const notificationProfile =
+      await this.notificationServiceClient.unsubscribe(command);
 
-    return user;
+    return this.userNotificationProfileService.withRemoteProfile(
+      user,
+      notificationProfile,
+    );
   }
 }

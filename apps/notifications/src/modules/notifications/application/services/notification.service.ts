@@ -8,13 +8,13 @@ import type {
 import type { IMeasurementRepository } from '@api/modules/measurements/domain/ports/measurement-repository.port';
 import { MeasurementAlertDetectedEvent } from '@contracts/measurements/measurement-alert-detected.event';
 import type { IStationRepository } from '@api/modules/stations/domain/ports/station-repository.port';
-import type { IUserRepository } from '@api/modules/users/domain/ports/user-repository.port';
-import type { User } from '@api/modules/users/domain/entities/user.entity';
+import type { UserNotificationProfile } from '../../../notification-preferences/domain/entities/user-notification-profile.entity';
+import type { INotificationProfileRepository } from '../../../notification-preferences/domain/ports/notification-profile-repository.port';
 import {
   ALERT_NOTIFIER_TOKEN,
   MEASUREMENT_REPOSITORY_TOKEN,
+  NOTIFICATION_PROFILE_REPOSITORY_TOKEN,
   STATION_REPOSITORY_TOKEN,
-  USER_REPOSITORY_TOKEN,
 } from '@shared/tokens/injection-tokens';
 
 @Injectable()
@@ -26,8 +26,8 @@ export class NotificationService {
     private readonly measurementRepository: IMeasurementRepository,
     @Inject(STATION_REPOSITORY_TOKEN)
     private readonly stationRepository: IStationRepository,
-    @Inject(USER_REPOSITORY_TOKEN)
-    private readonly userRepository: IUserRepository,
+    @Inject(NOTIFICATION_PROFILE_REPOSITORY_TOKEN)
+    private readonly notificationProfileRepository: INotificationProfileRepository,
   ) {}
 
   @OnEvent(MeasurementAlertDetectedEvent.EVENT_NAME)
@@ -46,9 +46,10 @@ export class NotificationService {
       return;
     }
 
-    const subscribers = await this.userRepository.findSubscribersByStationId(
-      event.stationId,
-    );
+    const subscribers =
+      await this.notificationProfileRepository.findSubscribersByStationId(
+        event.stationId,
+      );
 
     const notifications = subscribers
       .filter((subscriber) =>
@@ -60,7 +61,7 @@ export class NotificationService {
       }))
       .filter(({ deliveryTargets }) => deliveryTargets.length > 0)
       .map<MeasurementAlertNotification>(({ subscriber, deliveryTargets }) => ({
-        userId: subscriber.getId(),
+        userId: subscriber.getUserId(),
         deliveryTargets,
         measurementId: measurement.getId(),
         stationId: station.getId(),
@@ -77,14 +78,23 @@ export class NotificationService {
     }
   }
 
-  private resolveDeliveryTargets(user: User): NotificationDeliveryTarget[] {
-    const deliveryChannels = user.getDeliveryChannels();
+  private resolveDeliveryTargets(
+    profile: UserNotificationProfile,
+  ): NotificationDeliveryTarget[] {
+    const deliveryChannels = profile.getDeliveryChannels();
     const deliveryTargets: NotificationDeliveryTarget[] = [];
 
     if (deliveryChannels.telegram.chatId !== null) {
       deliveryTargets.push({
         channel: 'telegram',
         destination: deliveryChannels.telegram.chatId,
+      });
+    }
+
+    if (deliveryChannels.log?.enabled) {
+      deliveryTargets.push({
+        channel: 'log',
+        destination: profile.getUserId(),
       });
     }
 

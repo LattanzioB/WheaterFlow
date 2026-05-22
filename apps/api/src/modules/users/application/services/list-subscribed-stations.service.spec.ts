@@ -2,17 +2,16 @@ import { AlertType } from '../../../measurements/domain/value-objects/alert-type
 import { IMeasurementRepository } from '../../../measurements/domain/ports/measurement-repository.port';
 import { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
 import { IUserRepository } from '../../domain/ports/user-repository.port';
+import { INotificationServiceClient } from '../../domain/ports/notification-service-client.port';
 import { ListSubscribedStationsService } from './list-subscribed-stations.service';
 
 describe('ListSubscribedStationsService', () => {
   const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
     findById: jest.fn(),
     findByEmail: jest.fn(),
-    findByTelegramLinkCode: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
   });
 
   const buildStationRepository = (): jest.Mocked<IStationRepository> => ({
@@ -34,17 +33,18 @@ describe('ListSubscribedStationsService', () => {
       findLatestByStationIds: jest.fn(),
     });
 
+  const buildNotificationClient = (): jest.Mocked<INotificationServiceClient> => ({
+    getProfile: jest.fn(),
+    listSubscriptions: jest.fn(),
+    subscribe: jest.fn(),
+    unsubscribe: jest.fn(),
+    updateAlertPreferences: jest.fn(),
+    updateDeliveryChannels: jest.fn(),
+    createTelegramLinkCode: jest.fn(),
+  });
+
   const buildUser = () => ({
-    getNotificationPreferences: () => [
-      {
-        stationId: 'station-1',
-        alertTypes: [AlertType.STORM],
-      },
-      {
-        stationId: 'station-2',
-        alertTypes: [AlertType.FROST],
-      },
-    ],
+    getId: () => 'user-1',
   });
 
   const buildStation = (id: string, name: string) =>
@@ -66,15 +66,27 @@ describe('ListSubscribedStationsService', () => {
 
   it('returns subscribed stations with their latest measurements', async () => {
     const userRepository = buildUserRepository();
+    const notificationClient = buildNotificationClient();
     const stationRepository = buildStationRepository();
     const measurementRepository = buildMeasurementRepository();
     const service = new ListSubscribedStationsService(
       userRepository,
+      notificationClient,
       stationRepository,
       measurementRepository,
     );
 
     userRepository.findById.mockResolvedValue(buildUser() as any);
+    notificationClient.listSubscriptions.mockResolvedValue([
+      {
+        stationId: 'station-1',
+        alertTypes: [AlertType.STORM],
+      },
+      {
+        stationId: 'station-2',
+        alertTypes: [AlertType.FROST],
+      },
+    ]);
     stationRepository.findByIds.mockResolvedValue([
       buildStation('station-1', 'Central'),
       buildStation('station-2', 'North'),
@@ -104,15 +116,27 @@ describe('ListSubscribedStationsService', () => {
 
   it('filters the response to active alerts only when requested', async () => {
     const userRepository = buildUserRepository();
+    const notificationClient = buildNotificationClient();
     const stationRepository = buildStationRepository();
     const measurementRepository = buildMeasurementRepository();
     const service = new ListSubscribedStationsService(
       userRepository,
+      notificationClient,
       stationRepository,
       measurementRepository,
     );
 
     userRepository.findById.mockResolvedValue(buildUser() as any);
+    notificationClient.listSubscriptions.mockResolvedValue([
+      {
+        stationId: 'station-1',
+        alertTypes: [AlertType.STORM],
+      },
+      {
+        stationId: 'station-2',
+        alertTypes: [AlertType.FROST],
+      },
+    ]);
     stationRepository.findByIds.mockResolvedValue([
       buildStation('station-1', 'Central'),
       buildStation('station-2', 'North'),
@@ -137,10 +161,12 @@ describe('ListSubscribedStationsService', () => {
 
   it('throws when the user does not exist', async () => {
     const userRepository = buildUserRepository();
+    const notificationClient = buildNotificationClient();
     const stationRepository = buildStationRepository();
     const measurementRepository = buildMeasurementRepository();
     const service = new ListSubscribedStationsService(
       userRepository,
+      notificationClient,
       stationRepository,
       measurementRepository,
     );

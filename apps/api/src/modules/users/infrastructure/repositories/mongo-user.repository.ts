@@ -28,15 +28,6 @@ export class MongoUserRepository implements IUserRepository {
     return document ? UserDocumentMapper.toDomain(document) : null;
   }
 
-  async findByTelegramLinkCode(code: string): Promise<User | null> {
-    const document = await this.userModel
-      .findOne({ 'telegramLinking.code': code })
-      .lean()
-      .exec();
-
-    return document ? UserDocumentMapper.toDomain(document) : null;
-  }
-
   async save(user: User): Promise<void> {
     const document = UserDocumentMapper.toPersistence(user);
 
@@ -51,17 +42,6 @@ export class MongoUserRepository implements IUserRepository {
 
   async findAll(): Promise<User[]> {
     const documents = await this.userModel.find().lean().exec();
-    return documents.map((document) => UserDocumentMapper.toDomain(document));
-  }
-
-  async findSubscribersByStationId(stationId: string): Promise<User[]> {
-    const documents = await this.userModel
-      .find({
-        'notificationPreferences.stationId': stationId,
-      })
-      .lean()
-      .exec();
-
     return documents.map((document) => UserDocumentMapper.toDomain(document));
   }
 }

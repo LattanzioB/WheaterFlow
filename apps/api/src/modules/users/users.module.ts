@@ -1,6 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { USER_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
+import {
+  NOTIFICATION_SERVICE_CLIENT_TOKEN,
+  USER_REPOSITORY_TOKEN,
+} from '@shared/tokens/injection-tokens';
 import { MeasurementsModule } from '../measurements/measurements.module';
 import { StationsModule } from '../stations/stations.module';
 import { CreateTelegramLinkCodeService } from './application/services/create-telegram-link-code.service';
@@ -10,6 +13,8 @@ import { SubscribeToStationAlertsService } from './application/services/subscrib
 import { UnsubscribeFromStationAlertsService } from './application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from './application/services/update-delivery-channels.service';
 import { UpdateStationAlertPreferencesService } from './application/services/update-station-alert-preferences.service';
+import { UserNotificationProfileService } from './application/services/user-notification-profile.service';
+import { HttpNotificationServiceClient } from './infrastructure/adapters/http-notification-service.client';
 import { MongoUserRepository } from './infrastructure/repositories/mongo-user.repository';
 import {
   UserPersistenceModel,
@@ -37,9 +42,14 @@ import { UserNotificationPreferencesController } from './interface/controllers/u
     UnsubscribeFromStationAlertsService,
     UpdateStationAlertPreferencesService,
     UpdateDeliveryChannelsService,
+    UserNotificationProfileService,
     {
       provide: USER_REPOSITORY_TOKEN,
       useClass: MongoUserRepository,
+    },
+    {
+      provide: NOTIFICATION_SERVICE_CLIENT_TOKEN,
+      useClass: HttpNotificationServiceClient,
     },
   ],
   exports: [USER_REPOSITORY_TOKEN],

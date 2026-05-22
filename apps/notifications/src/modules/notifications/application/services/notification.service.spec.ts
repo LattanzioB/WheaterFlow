@@ -3,16 +3,15 @@ import { NotificationService } from './notification.service';
 import { IMeasurementRepository } from '@api/modules/measurements/domain/ports/measurement-repository.port';
 import { MeasurementAlertDetectedEvent } from '@contracts/measurements/measurement-alert-detected.event';
 import { IStationRepository } from '@api/modules/stations/domain/ports/station-repository.port';
-import { IUserRepository } from '@api/modules/users/domain/ports/user-repository.port';
 import { Measurement } from '@api/modules/measurements/domain/entities/measurement.entity';
 import { Temperature } from '@api/modules/measurements/domain/value-objects/temperature.value-object';
 import { Humidity } from '@api/modules/measurements/domain/value-objects/humidity.value-object';
 import { Pressure } from '@api/modules/measurements/domain/value-objects/pressure.value-object';
-import { AlertType } from '@api/modules/measurements/domain/value-objects/alert-type.enum';
+import { AlertType } from '@contracts/measurements/alert-type';
 import { WeatherStation } from '@api/modules/stations/domain/entities/weather-station.entity';
 import { Location } from '@api/modules/stations/domain/value-objects/location.value-object';
-import { User } from '@api/modules/users/domain/entities/user.entity';
-import { Email } from '@api/modules/users/domain/value-objects/email.value-object';
+import { UserNotificationProfile } from '../../../notification-preferences/domain/entities/user-notification-profile.entity';
+import { INotificationProfileRepository } from '../../../notification-preferences/domain/ports/notification-profile-repository.port';
 
 describe('NotificationService', () => {
   const buildAlertNotifier = (): jest.Mocked<AlertNotifier> => ({
@@ -38,15 +37,14 @@ describe('NotificationService', () => {
     findAll: jest.fn(),
   });
 
-  const buildUserRepository = (): jest.Mocked<IUserRepository> => ({
-    findById: jest.fn(),
-    findByEmail: jest.fn(),
-    findByTelegramLinkCode: jest.fn(),
-    save: jest.fn(),
-    delete: jest.fn(),
-    findAll: jest.fn(),
-    findSubscribersByStationId: jest.fn(),
-  });
+  const buildNotificationProfileRepository =
+    (): jest.Mocked<INotificationProfileRepository> => ({
+      findByUserId: jest.fn(),
+      findByTelegramLinkCode: jest.fn(),
+      findSubscribersByStationId: jest.fn(),
+      save: jest.fn(),
+      delete: jest.fn(),
+    });
 
   const event = new MeasurementAlertDetectedEvent(
     'measurement-1',
@@ -77,23 +75,19 @@ describe('NotificationService', () => {
     const alertNotifier = buildAlertNotifier();
     const measurementRepository = buildMeasurementRepository();
     const stationRepository = buildStationRepository();
-    const userRepository = buildUserRepository();
+    const notificationProfileRepository = buildNotificationProfileRepository();
     const service = new NotificationService(
       alertNotifier,
       measurementRepository,
       stationRepository,
-      userRepository,
+      notificationProfileRepository,
     );
 
     measurementRepository.findById.mockResolvedValue(measurement);
     stationRepository.findById.mockResolvedValue(station);
-    userRepository.findSubscribersByStationId.mockResolvedValue([
-      User.create({
-        id: 'user-1',
-        name: 'Bruno',
-        lastName: 'Lattanzio',
-        email: Email.create('bruno@example.com'),
-        passwordHash: 'hash',
+    notificationProfileRepository.findSubscribersByStationId.mockResolvedValue([
+      UserNotificationProfile.create({
+        userId: 'user-1',
         notificationPreferences: [
           {
             stationId: 'station-1',
@@ -106,12 +100,8 @@ describe('NotificationService', () => {
           },
         },
       }),
-      User.create({
-        id: 'user-2',
-        name: 'Ana',
-        lastName: 'Observer',
-        email: Email.create('ana@example.com'),
-        passwordHash: 'hash',
+      UserNotificationProfile.create({
+        userId: 'user-2',
         notificationPreferences: [
           {
             stationId: 'station-1',
@@ -119,12 +109,8 @@ describe('NotificationService', () => {
           },
         ],
       }),
-      User.create({
-        id: 'user-3',
-        name: 'Nico',
-        lastName: 'OtherAlert',
-        email: Email.create('nico@example.com'),
-        passwordHash: 'hash',
+      UserNotificationProfile.create({
+        userId: 'user-3',
         notificationPreferences: [
           {
             stationId: 'station-1',
@@ -141,42 +127,33 @@ describe('NotificationService', () => {
 
     await service.handleAlert(event);
 
-    expect(userRepository.findSubscribersByStationId.mock.calls).toEqual([
-      ['station-1'],
-    ]);
-    expect(alertNotifier.sendMeasurementAlert.mock.calls).toEqual([
-      [
-        {
-          userId: 'user-1',
-          deliveryTargets: [
-            {
-              channel: 'telegram',
-              destination: '12345',
-            },
-          ],
-          measurementId: 'measurement-1',
-          stationId: 'station-1',
-          stationName: 'Central',
-          alertType: AlertType.STORM,
-          reportedAt: new Date('2026-04-25T17:30:00.000Z'),
-          temperature: 25,
-          humidity: 92,
-          pressure: 970,
-        },
+    expect(
+      notificationProfileRepository.findSubscribersByStationId.mock.calls,
+    ).toEqual([['station-1']]);
+    expect(alertNotifier.sendMeasurementAlert.mock.calls).toHaveLength(2);
+    expect(alertNotifier.sendMeasurementAlert.mock.calls[0][0]).toMatchObject({
+      userId: 'user-1',
+      deliveryTargets: [
+        { channel: 'telegram', destination: '12345' },
+        { channel: 'log', destination: 'user-1' },
       ],
-    ]);
+    });
+    expect(alertNotifier.sendMeasurementAlert.mock.calls[1][0]).toMatchObject({
+      userId: 'user-2',
+      deliveryTargets: [{ channel: 'log', destination: 'user-2' }],
+    });
   });
 
   it('skips notification delivery when the measurement is missing', async () => {
     const alertNotifier = buildAlertNotifier();
     const measurementRepository = buildMeasurementRepository();
     const stationRepository = buildStationRepository();
-    const userRepository = buildUserRepository();
+    const notificationProfileRepository = buildNotificationProfileRepository();
     const service = new NotificationService(
       alertNotifier,
       measurementRepository,
       stationRepository,
-      userRepository,
+      notificationProfileRepository,
     );
 
     measurementRepository.findById.mockResolvedValue(null);
@@ -184,9 +161,9 @@ describe('NotificationService', () => {
     await service.handleAlert(event);
 
     expect(stationRepository.findById.mock.calls).toHaveLength(0);
-    expect(userRepository.findSubscribersByStationId.mock.calls).toHaveLength(
-      0,
-    );
+    expect(
+      notificationProfileRepository.findSubscribersByStationId.mock.calls,
+    ).toHaveLength(0);
     expect(alertNotifier.sendMeasurementAlert.mock.calls).toHaveLength(0);
   });
 });

@@ -1,6 +1,9 @@
-import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { USER_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
+import {
+  NOTIFICATION_SERVICE_CLIENT_TOKEN,
+  USER_REPOSITORY_TOKEN,
+} from '@shared/tokens/injection-tokens';
+import type { INotificationServiceClient } from '../../domain/ports/notification-service-client.port';
 import type { IUserRepository } from '../../domain/ports/user-repository.port';
 
 export interface CreateTelegramLinkCodeCommand {
@@ -10,15 +13,18 @@ export interface CreateTelegramLinkCodeCommand {
 export interface TelegramLinkCodeResult {
   code: string;
   expiresAt: Date;
+  instructions: string;
+  botUsername?: string;
+  botUrl?: string;
 }
 
 @Injectable()
 export class CreateTelegramLinkCodeService {
-  private static readonly CODE_TTL_MINUTES = 10;
-
   constructor(
     @Inject(USER_REPOSITORY_TOKEN)
     private readonly userRepository: IUserRepository,
+    @Inject(NOTIFICATION_SERVICE_CLIENT_TOKEN)
+    private readonly notificationServiceClient: INotificationServiceClient,
   ) {}
 
   async execute(
@@ -30,31 +36,16 @@ export class CreateTelegramLinkCodeService {
       throw new Error('User not found');
     }
 
-    const code = await this.generateUniqueCode();
-    const expiresAt = new Date(
-      Date.now() + CreateTelegramLinkCodeService.CODE_TTL_MINUTES * 60 * 1000,
+    const result = await this.notificationServiceClient.createTelegramLinkCode(
+      command.userId,
     );
 
-    user.startTelegramLinking(code, expiresAt);
-    await this.userRepository.save(user);
-
     return {
-      code,
-      expiresAt,
+      code: result.code,
+      expiresAt: new Date(result.expiresAt),
+      instructions: result.instructions,
+      botUsername: result.botUsername,
+      botUrl: result.botUrl,
     };
-  }
-
-  private async generateUniqueCode(): Promise<string> {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const code = `WF-${randomBytes(4).toString('hex').toUpperCase()}`;
-      const existingUser =
-        await this.userRepository.findByTelegramLinkCode(code);
-
-      if (!existingUser) {
-        return code;
-      }
-    }
-
-    throw new Error('Unable to generate a unique Telegram link code');
   }
 }

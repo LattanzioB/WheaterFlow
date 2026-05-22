@@ -51,10 +51,7 @@ describe('S-06.5 sequence diagram documentation', () => {
       'update station alert preferences',
     );
     expect(read('manage-notification-preferences-sequence.mmd')).toContain(
-      'configureTelegramDelivery',
-    );
-    expect(read('manage-notification-preferences-sequence.mmd')).toContain(
-      'startTelegramLinking(code, expiresAt)',
+      'HttpNotificationServiceClient',
     );
     expect(read('manage-notification-preferences-sequence.mmd')).toContain(
       'findByTelegramLinkCode(code)',

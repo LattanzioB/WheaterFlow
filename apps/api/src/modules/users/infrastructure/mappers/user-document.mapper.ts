@@ -10,9 +10,6 @@ export class UserDocumentMapper {
       lastName: user.getLastName(),
       email: user.getEmail().getValue(),
       passwordHash: user.getPasswordHash(),
-      notificationPreferences: user.getNotificationPreferences(),
-      deliveryChannels: user.getDeliveryChannels(),
-      telegramLinking: user.getTelegramLinking(),
       role: user.getRole(),
       createdAt: user.getCreatedAt(),
     };
@@ -25,21 +22,6 @@ export class UserDocumentMapper {
       lastName: document.lastName,
       email: Email.create(document.email),
       passwordHash: document.passwordHash,
-      notificationPreferences: document.notificationPreferences.map(
-        (preference) => ({
-          stationId: preference.stationId,
-          alertTypes: [...preference.alertTypes],
-        }),
-      ),
-      deliveryChannels: {
-        telegram: {
-          chatId: document.deliveryChannels.telegram.chatId,
-        },
-      },
-      telegramLinking: {
-        code: document.telegramLinking?.code ?? null,
-        expiresAt: document.telegramLinking?.expiresAt ?? null,
-      },
       role: document.role,
       createdAt: document.createdAt,
     });

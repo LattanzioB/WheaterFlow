@@ -42,6 +42,7 @@ import {
 import { TelegramLinkCodeResponseDto } from '../dtos/telegram-link-code-response.dto';
 import { UpdateDeliveryChannelsDto } from '../dtos/update-delivery-channels.dto';
 import { UserResponseDto } from '../dtos/user-response.dto';
+import { UserWithNotificationProfile } from '../../application/services/user-notification-profile.service';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -258,15 +259,15 @@ export class UserNotificationPreferencesController {
     return new BadRequestException(error.message);
   }
 
-  private toResponse(user: UserResponseSource): UserResponseDto {
+  private toResponse(profile: UserWithNotificationProfile): UserResponseDto {
     return {
-      id: user.getId(),
-      name: user.getName(),
-      lastName: user.getLastName(),
-      email: user.getEmail().getValue(),
-      notificationPreferences: user.getNotificationPreferences(),
-      deliveryChannels: user.getDeliveryChannels(),
-      createdAt: user.getCreatedAt().toISOString(),
+      id: profile.user.getId(),
+      name: profile.user.getName(),
+      lastName: profile.user.getLastName(),
+      email: profile.user.getEmail().getValue(),
+      notificationPreferences: profile.notificationProfile.notificationPreferences,
+      deliveryChannels: profile.notificationProfile.deliveryChannels,
+      createdAt: profile.user.getCreatedAt().toISOString(),
     };
   }
 
@@ -312,23 +313,6 @@ export class UserNotificationPreferencesController {
         : null,
     };
   }
-}
-
-interface UserResponseSource {
-  getId(): string;
-  getName(): string;
-  getLastName(): string;
-  getEmail(): { getValue(): string };
-  getNotificationPreferences(): Array<{
-    stationId: string;
-    alertTypes: AlertType[];
-  }>;
-  getDeliveryChannels(): {
-    telegram: {
-      chatId: string | null;
-    };
-  };
-  getCreatedAt(): Date;
 }
 
 interface SubscribedStationResponse {

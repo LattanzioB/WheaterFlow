@@ -35,6 +35,8 @@ describe('S-06.4 ports and adapters UML documentation', () => {
     expect(source).toContain('+email');
     expect(source).not.toContain('+role');
     expect(source).toContain('+findByTelegramLinkCode(code)');
+    expect(source).toContain('INotificationProfileRepository (Port)');
+    expect(source).toContain('HttpNotificationServiceClient (Adapter)');
     expect(source).toContain('+findAll()');
     expect(source).toContain('+findByIds(ids)');
     expect(source).toContain('+findLatestByStationIds(stationIds)');

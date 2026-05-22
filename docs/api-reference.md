@@ -49,8 +49,34 @@ Authenticate and receive a JWT.
 
 ## Users
 
+Notification preferences are owned by the Notification service (`http://localhost:3001`). The API routes below are **proxy routes**: they keep the same URLs and JWT checks, then forward state changes to the Notification service.
+
+| Route | Mode |
+|-------|------|
+| `GET/POST/PATCH/DELETE /users/:id/subscriptions...` | API proxy → Notification service |
+| `PATCH /users/:id/delivery-channels` | API proxy → Notification service |
+| `POST /users/:id/delivery-channels/telegram/link-code` | API proxy → Notification service |
+| `GET /users/me` | API (identity) + Notification service (preferences) |
+
+Direct Notification service routes (no JWT on the service boundary; intended for internal or local use):
+
+| Method | Route |
+|--------|-------|
+| `GET` | `/notification-preferences/users/:userId` |
+| `GET` | `/notification-preferences/users/:userId/subscriptions` |
+| `POST` | `/notification-preferences/users/:userId/subscriptions/:stationId` |
+| `DELETE` | `/notification-preferences/users/:userId/subscriptions/:stationId` |
+| `PATCH` | `/notification-preferences/users/:userId/subscriptions/:stationId` |
+| `PATCH` | `/notification-preferences/users/:userId/delivery-channels` |
+| `POST` | `/notification-preferences/users/:userId/delivery-channels/telegram/link-code` |
+| `POST` | `/notifications/telegram/webhook` |
+
+Persistence: `user_notification_profiles` collection in MongoDB (Notification service).
+
+---
+
 ### `POST /users/:id/subscriptions/:stationId`
-**Auth required.** Subscribes the user to the station and selected alert types.
+**Auth required.** Subscribes the user to the station and selected alert types. Proxied to the Notification service.
 
 **Body (optional):**
 ```json

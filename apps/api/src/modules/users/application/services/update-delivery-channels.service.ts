@@ -1,14 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { USER_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
+import {
+  NOTIFICATION_SERVICE_CLIENT_TOKEN,
+  USER_REPOSITORY_TOKEN,
+} from '@shared/tokens/injection-tokens';
+import type { INotificationServiceClient } from '../../domain/ports/notification-service-client.port';
+export interface DeliveryChannelsInput {
+  telegram?: {
+    chatId?: string | null;
+  };
+  log?: {
+    enabled?: boolean;
+  };
+}
 import type { IUserRepository } from '../../domain/ports/user-repository.port';
-import type {
-  User,
-  UserDeliveryChannelsInput,
-} from '../../domain/entities/user.entity';
+import {
+  UserNotificationProfileService,
+  UserWithNotificationProfile,
+} from './user-notification-profile.service';
 
 export interface UpdateDeliveryChannelsCommand {
   userId: string;
-  deliveryChannels: UserDeliveryChannelsInput;
+  deliveryChannels: DeliveryChannelsInput;
 }
 
 @Injectable()
@@ -16,21 +28,29 @@ export class UpdateDeliveryChannelsService {
   constructor(
     @Inject(USER_REPOSITORY_TOKEN)
     private readonly userRepository: IUserRepository,
+    @Inject(NOTIFICATION_SERVICE_CLIENT_TOKEN)
+    private readonly notificationServiceClient: INotificationServiceClient,
+    private readonly userNotificationProfileService: UserNotificationProfileService,
   ) {}
 
-  async execute(command: UpdateDeliveryChannelsCommand): Promise<User> {
+  async execute(
+    command: UpdateDeliveryChannelsCommand,
+  ): Promise<UserWithNotificationProfile> {
     const user = await this.userRepository.findById(command.userId);
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    if (command.deliveryChannels.telegram?.chatId !== undefined) {
-      user.configureTelegramDelivery(command.deliveryChannels.telegram.chatId);
-    }
+    const notificationProfile =
+      await this.notificationServiceClient.updateDeliveryChannels({
+        userId: command.userId,
+        deliveryChannels: command.deliveryChannels,
+      });
 
-    await this.userRepository.save(user);
-
-    return user;
+    return this.userNotificationProfileService.withRemoteProfile(
+      user,
+      notificationProfile,
+    );
   }
 }

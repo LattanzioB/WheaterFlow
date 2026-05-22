@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { AlertType } from '@api/modules/measurements/domain/value-objects/alert-type.enum';
+import { AlertType } from '@contracts';
 import { TelegramAlertNotifierAdapter } from './telegram-alert-notifier.adapter';
 
 describe('TelegramAlertNotifierAdapter', () => {

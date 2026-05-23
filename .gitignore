@@ -4,6 +4,7 @@ _bmad-output/
 .claude/
 .codex
 .env
+.env.integration
 node_modules/
 dist/
 coverage/

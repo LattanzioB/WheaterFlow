@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-describe('S-06.5 sequence diagram documentation', () => {
+describe('S-02.8 sequence diagram documentation', () => {
   const projectRoot = process.cwd();
   const sequenceDir = join(projectRoot, 'docs', 'architecture', 'sequences');
 
@@ -35,11 +35,13 @@ describe('S-06.5 sequence diagram documentation', () => {
     );
   });
 
-  it('captures the preference-aware alert detection and delivery flow', () => {
+  it('captures the distributed alert publication and delivery flow', () => {
     const source = read('record-measurement-alert-sequence.mmd');
 
     expect(source).toContain('Measurement.create(..., alertSettings)');
-    expect(source).toContain('emit(MeasurementAlertDetectedEvent)');
+    expect(source).toContain('publishClimateAlert(ClimateAlertDetectedMessage)');
+    expect(source).toContain('RabbitMqAlertPublisherAdapter');
+    expect(source).toContain('RabbitMqClimateAlertConsumerAdapter');
     expect(source).toContain('Filter subscribers by station and alert type');
     expect(source).toContain(
       'resolve delivery targets before any channel call',
@@ -60,16 +62,19 @@ describe('S-06.5 sequence diagram documentation', () => {
       'findWithFilters(normalizedFilters)',
     );
     expect(read('query-measurements-sequence.mmd')).toContain(
-      'Resolve matching station IDs from station names',
+      'resolve matching station IDs from station names',
+    );
+    expect(read('query-measurements-sequence.mmd')).toContain(
+      'GET /weather-stations?name=central',
     );
   });
 
   it('exports SVG files that embed the main use-case labels', () => {
     expect(read('record-measurement-alert-sequence.svg')).toContain(
-      'MeasurementAlertDetectedEvent',
+      'ClimateAlertDetectedMessage',
     );
     expect(read('manage-notification-preferences-sequence.svg')).toContain(
-      'UpdateDeliveryChannelsService',
+      'HttpNotificationServiceClient',
     );
     expect(read('query-measurements-sequence.svg')).toContain(
       'QueryMeasurementsService',

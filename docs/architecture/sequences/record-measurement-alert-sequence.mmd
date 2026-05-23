@@ -1,46 +1,54 @@
 sequenceDiagram
 autonumber
-actor StationOwner as User / Station owner
+actor StationOwner as User / station owner
+participant API as API service
 participant MeasurementsController
 participant GetStationByIdService
 participant StationRepository as IStationRepository / MongoWeatherStationRepository
 participant RecordMeasurementService
 participant MeasurementAggregate as Measurement aggregate
 participant MeasurementRepository as IMeasurementRepository / MongoMeasurementRepository
-participant EventBus as EventEmitter2
+participant Publisher as RabbitMqAlertPublisherAdapter
+participant RabbitMQ
+participant Consumer as RabbitMqClimateAlertConsumerAdapter
 participant NotificationService
-participant UserRepository as IUserRepository / MongoUserRepository
-participant AlertNotifier as AlertNotifier
-participant TelegramAdapter as TelegramAlertNotifierAdapter
+participant ProfileRepository as INotificationProfileRepository / MongoNotificationProfileRepository
+participant AlertNotifier as Composite/Log/Telegram AlertNotifier
 
-StationOwner->>MeasurementsController: POST /measurements
+StationOwner->>API: POST /measurements
+API->>MeasurementsController: route with JWT user
 MeasurementsController->>GetStationByIdService: execute({ stationId })
 GetStationByIdService->>StationRepository: findById(stationId)
 StationRepository-->>GetStationByIdService: station
 GetStationByIdService-->>MeasurementsController: station
+MeasurementsController->>MeasurementsController: ensure station owner matches JWT subject
 MeasurementsController->>RecordMeasurementService: execute(command)
 RecordMeasurementService->>StationRepository: findById(stationId)
-StationRepository-->>RecordMeasurementService: station
+StationRepository-->>RecordMeasurementService: station with alert settings
 RecordMeasurementService->>MeasurementAggregate: Measurement.create(..., alertSettings)
 MeasurementAggregate-->>RecordMeasurementService: measurement with evaluated alert
 RecordMeasurementService->>MeasurementRepository: save(measurement)
-MeasurementRepository-->>RecordMeasurementService: void
+MeasurementRepository-->>RecordMeasurementService: persisted measurement
 
 alt measurement has alert
-  RecordMeasurementService->>EventBus: emit(MeasurementAlertDetectedEvent)
-  EventBus->>NotificationService: handleAlert(event)
-  NotificationService->>MeasurementRepository: findById(measurementId)
-  MeasurementRepository-->>NotificationService: measurement
-  NotificationService->>StationRepository: findById(stationId)
-  StationRepository-->>NotificationService: station
-  NotificationService->>UserRepository: findSubscribersByStationId(stationId)
-  UserRepository-->>NotificationService: subscribers
-  Note over NotificationService: Filter subscribers by station and alert type\nthen resolve delivery targets before any channel call
+  RecordMeasurementService->>Publisher: publishClimateAlert(ClimateAlertDetectedMessage)
+  Publisher->>RabbitMQ: publish to weatherflow.alerts with alerts.climate.detected
+  RabbitMQ-->>Publisher: confirm publish
+  RabbitMQ->>Consumer: deliver ClimateAlertDetectedMessage
+  Consumer->>Consumer: validateClimateAlertDetectedMessage(payload)
+  Consumer->>NotificationService: handleClimateAlert(message)
+  NotificationService->>ProfileRepository: findSubscribersByStationId(stationId)
+  ProfileRepository-->>NotificationService: notification profiles
+  NotificationService->>NotificationService: Filter subscribers by station and alert type
+  NotificationService->>NotificationService: resolve delivery targets before any channel call
   loop each resolved notification
     NotificationService->>AlertNotifier: sendMeasurementAlert(notification)
-    AlertNotifier->>TelegramAdapter: sendMeasurementAlert(notification)
-    TelegramAdapter-->>AlertNotifier: Telegram Bot API request(s)
   end
+  AlertNotifier-->>NotificationService: delivery completed
+  NotificationService-->>Consumer: success
+  Consumer->>RabbitMQ: ack message
+else no alert
+  RecordMeasurementService-->>MeasurementsController: no message published
 end
 
 RecordMeasurementService-->>MeasurementsController: measurement

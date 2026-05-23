@@ -1,197 +1,164 @@
-# Hexagonal Architecture — WeatherFlow
+# Hexagonal Architecture - WeatherFlow
 
 ## Overview
 
-WeatherFlow uses **Ports & Adapters (Hexagonal) architecture** combined with **DDD**.
-The core rule: **dependencies always point inward**. The domain knows nothing about
-infrastructure, frameworks, or delivery mechanisms.
+WeatherFlow uses Ports and Adapters architecture with DDD inside both Delivery II
+services. The core rule remains the same: dependencies point inward toward
+domain and application contracts. Remote communication between services is
+treated as infrastructure behind ports.
 
-```
-┌─────────────────────────────────────────────────────┐
-│                  INFRASTRUCTURE                      │
-│  (Mongoose repos, TelegramAdapter, JWT, Controllers) │
-│                                                      │
-│   ┌─────────────────────────────────────────────┐   │
-│   │            APPLICATION LAYER                │   │
-│   │   (Services, Event handlers, Ports used)    │   │
-│   │                                             │   │
-│   │   ┌───────────────────────────────────┐     │   │
-│   │   │         DOMAIN LAYER              │     │   │
-│   │   │  (Entities, Value Objects,        │     │   │
-│   │   │   Domain Events, Port interfaces) │     │   │
-│   │   └───────────────────────────────────┘     │   │
-│   └─────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
+```text
+Driving adapters        Application           Domain             Driven adapters
+REST controllers  -->   use cases       -->   entities/ports --> MongoDB, RabbitMQ,
+Telegram webhook        orchestration         value objects      HTTP clients, Telegram
 ```
 
----
+## Service Boundaries
+
+| Service | Business responsibility | Primary adapters | Secondary adapters |
+|---|---|---|---|
+| API service (`apps/api`) | Auth, user identity facade, stations, measurements, alert detection | REST controllers, Swagger | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client |
+| Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier |
+
+The former Delivery I modular monolith is historical context. Delivery II keeps
+the same internal layer discipline, but the notification capability is now a
+separate NestJS application with its own REST and messaging boundaries.
 
 ## Layers
 
-### Domain Layer (`src/modules/*/domain/`)
+### Domain Layer
 
-**What lives here:**
-- Entities (`User`, `WeatherStation`, `Measurement`)
-- Value Objects (`Email`, `Location`, `Temperature`, `Humidity`, `Pressure`, `AlertType`)
-- Domain Events (`MeasurementAlertDetectedEvent`)
-- Repository Port interfaces (`IUserRepository`, `IStationRepository`, `IMeasurementRepository`)
+Domain code lives under each module's `domain` folder.
 
-**Rules:**
-- Zero imports from NestJS, Mongoose, or any infrastructure library
-- Pure TypeScript only
-- All business logic lives here — especially `Measurement.evaluateAlerts()`
-
-**Dependency direction:** Nothing — domain depends on nothing else.
-
----
-
-### Application Layer (`src/modules/*/application/`)
-
-**What lives here:**
-- Application Services (`CreateUserService`, `CreateMeasurementService`, etc.)
-- Notification port (`INotificationPort` in `notifications/application/ports/`)
-- Notification service (`NotificationService` — handles domain events)
+**Examples:**
+- API service: `User`, `WeatherStation`, `Measurement`, `Email`, `Location`,
+  `Temperature`, `Humidity`, `Pressure`.
+- Notification service: `UserNotificationProfile` with station alert
+  preferences and delivery channels.
+- Port interfaces such as `IStationRepository`, `IMeasurementRepository`, and
+  `INotificationProfileRepository`.
 
 **Rules:**
-- Imports domain types and port interfaces only
-- NestJS `@Injectable()` decorator allowed
-- Calls `IUserRepository`, `IStationRepository`, etc. — never the concrete implementation
-- Emits domain events via `EventEmitter2` when business rules fire
+- No NestJS, Mongoose, AMQP, Axios, or Telegram imports.
+- Business invariants and value-object validation stay here.
+- Domain ports describe what the application needs from the outside world.
 
-**Dependency direction:** Application → Domain (interfaces only)
+### Application Layer
 
----
+Application services orchestrate use cases and depend on domain contracts.
 
-### Infrastructure Layer (`src/modules/*/infrastructure/`)
+**Examples:**
+- `RecordMeasurementService` creates a `Measurement`, saves it, and calls the
+  `AlertPublisher` port when an alert exists.
+- `QueryMeasurementsService` validates and normalizes measurement filters.
+- Notification preference services update `UserNotificationProfile`.
+- `NotificationService` filters subscribers and resolves delivery targets after
+  a RabbitMQ message is consumed.
 
-**What lives here:**
-- Mongoose documents (`UserDocument`, `StationDocument`, `MeasurementDocument`)
-- Repository implementations (`MongoUserRepository`, `MongoStationRepository`, `MongoMeasurementRepository`)
-- Mappers (`UserMapper`, `StationMapper`, `MeasurementMapper`)
-- Telegram adapter (`TelegramAdapter`)
+### Interface Layer
 
-**Rules:**
-- Implements domain port interfaces
-- Can import Mongoose, Axios, any library
-- Never imported by domain or application layers
-- Registered in NestJS modules as providers behind injection tokens
+Interface adapters receive inbound requests and translate them into application
+commands.
 
-**Dependency direction:** Infrastructure → Domain (implements ports)
+**Examples:**
+- API service: `AuthController`, `WeatherStationsController`,
+  `MeasurementsController`, `UserNotificationPreferencesController`.
+- Notification service: `NotificationPreferencesController`,
+  `TelegramWebhookController`.
 
----
+Controllers validate DTOs, enforce HTTP/JWT access rules where applicable, and
+return response DTOs. They do not call repositories directly.
 
-### Interface Layer (`src/modules/*/interface/`)
+### Infrastructure Layer
 
-**What lives here:**
-- NestJS controllers (`UsersController`, `StationsController`, `MeasurementsController`)
-- DTOs (`CreateUserDto`, `UpdateUserDto`, `UserResponseDto`, etc.)
-- Swagger decorators
+Infrastructure adapters implement ports and communicate with external systems.
 
-**Rules:**
-- Calls application services only — never repositories directly
-- Validates input via `class-validator`
-- Translates HTTP request → application call → HTTP response
-- `JwtAuthGuard` applied at controller level
+**Examples:**
+- `MongoUserRepository`, `MongoWeatherStationRepository`,
+  `MongoMeasurementRepository`.
+- `MongoNotificationProfileRepository`.
+- `RabbitMqAlertPublisherAdapter`.
+- `RabbitMqClimateAlertConsumerAdapter`.
+- `HttpNotificationServiceClient`.
+- `LogAlertNotifierAdapter` and `TelegramAlertNotifierAdapter`.
 
-**Dependency direction:** Interface → Application
+## Ports and Adapters
 
----
+### Driving Adapters
 
-## Ports & Adapters
-
-### Driving Ports (Primary — left side)
-Initiated by external actors calling INTO the system.
-
-| Port | Adapter | Description |
+| Adapter | Service | Description |
 |---|---|---|
-| REST API | `UsersController` | HTTP requests for user management |
-| REST API | `StationsController` | HTTP requests for station management |
-| REST API | `MeasurementsController` | HTTP requests for measurement management |
-| REST API | `AuthController` | Login / register |
+| `AuthController` | API | Register and login users. |
+| `WeatherStationsController` | API | Manage and search stations. |
+| `MeasurementsController` | API | Record and filter measurements. |
+| `UserNotificationPreferencesController` | API | Authenticated facade for notification preferences. |
+| `NotificationPreferencesController` | Notification | Internal/local preference API owned by the Notification service. |
+| `TelegramWebhookController` | Notification | Receives Telegram link commands. |
+| `RabbitMqClimateAlertConsumerAdapter` | Notification | Consumes climate-alert messages from RabbitMQ. |
 
-### Driven Ports (Secondary — right side)
-Initiated by the application calling OUT to external systems.
+### Driven Adapters
 
-| Port Interface | Adapter | Description |
-|---|---|---|
-| `IUserRepository` | `MongoUserRepository` | User persistence in MongoDB |
-| `IStationRepository` | `MongoStationRepository` | Station persistence in MongoDB |
-| `IMeasurementRepository` | `MongoMeasurementRepository` | Measurement persistence in MongoDB |
-| `INotificationPort` | `TelegramAdapter` | Sends alert notifications via Telegram Bot API |
+| Port | Adapter | Service | Description |
+|---|---|---|---|
+| `IUserRepository` | `MongoUserRepository` | API | User identity persistence. |
+| `IStationRepository` | `MongoWeatherStationRepository` | API | Station persistence and search. |
+| `IMeasurementRepository` | `MongoMeasurementRepository` | API | Measurement persistence and filtering. |
+| `AlertPublisher` | `RabbitMqAlertPublisherAdapter` | API | Publishes alert messages after measurement persistence. |
+| `NotificationServiceClient` | `HttpNotificationServiceClient` | API | Calls the Notification service REST boundary. |
+| `INotificationProfileRepository` | `MongoNotificationProfileRepository` | Notification | Notification profile persistence. |
+| `AlertNotifier` | Composite, log, Telegram adapters | Notification | Sends resolved notifications. |
 
----
+## Data Flow: Alerting Measurement
+
+```text
+1. Client calls POST /measurements on the API service.
+2. MeasurementsController validates JWT ownership of the station.
+3. RecordMeasurementService loads station alert settings.
+4. Measurement.create(...) evaluates alert rules in the domain.
+5. MongoMeasurementRepository persists the measurement in MongoDB Atlas.
+6. RabbitMqAlertPublisherAdapter publishes ClimateAlertDetectedMessage.
+7. RabbitMQ delivers the message to the Notification service queue.
+8. RabbitMqClimateAlertConsumerAdapter validates the payload.
+9. NotificationService loads notification profiles by stationId.
+10. NotificationService filters by station and alert type.
+11. NotificationService resolves log/Telegram delivery targets.
+12. AlertNotifier adapters dispatch the notification and the consumer acks.
+```
+
+Measurement persistence and notification dispatch are intentionally separated.
+If RabbitMQ or the Notification service is temporarily unavailable, the
+measurement write has already completed and alert publication failure is logged
+at the API boundary.
 
 ## Dependency Injection
 
-Adapters are wired to ports via NestJS DI using injection tokens:
+Adapters are wired to ports through NestJS provider tokens in `libs/shared`.
 
 ```typescript
-// src/shared/tokens/injection-tokens.ts
-export const USER_REPOSITORY_TOKEN = 'IUserRepository';
-export const STATION_REPOSITORY_TOKEN = 'IStationRepository';
 export const MEASUREMENT_REPOSITORY_TOKEN = 'IMeasurementRepository';
-export const NOTIFICATION_PORT_TOKEN = 'INotificationPort';
+export const ALERT_PUBLISHER_TOKEN = 'AlertPublisher';
+export const ALERT_NOTIFIER_TOKEN = 'AlertNotifier';
+export const NOTIFICATION_SERVICE_CLIENT_TOKEN = 'INotificationServiceClient';
 ```
+
+Application services inject tokens instead of concrete infrastructure classes.
+This keeps use cases testable and keeps framework-specific code at the edge.
+
+## Anti-Patterns
 
 ```typescript
-// In module providers
-{
-  provide: USER_REPOSITORY_TOKEN,
-  useClass: MongoUserRepository,
-}
-
-// In application service constructor
-@Inject(USER_REPOSITORY_TOKEN)
-private readonly userRepository: IUserRepository
-```
-
----
-
-## Data Flow Example: Creating a Measurement with Alert
-
-```
-1. POST /measurements  (HTTP request with JSON body)
-        ↓
-2. MeasurementsController.create(dto)
-        ↓
-3. CreateMeasurementService.execute(command)
-        ↓
-4. Measurement.create(props)           ← Domain layer
-   measurement.evaluateAlerts()        ← Domain business logic
-        ↓
-5. IMeasurementRepository.save(measurement)
-        ↓
-6. MongoMeasurementRepository.save()   ← Infrastructure
-   MeasurementMapper.toPersistence()
-        ↓
-7. [if alert] EventEmitter2.emit('measurement.alert.detected')
-        ↓
-8. NotificationService.handleAlert()   ← Application layer
-        ↓
-9. INotificationPort.sendAlert()
-        ↓
-10. TelegramAdapter.sendAlert()        ← Infrastructure
-    HTTP POST → Telegram Bot API
-```
-
----
-
-## Anti-Patterns (DO NOT DO)
-
-```typescript
-// ❌ Domain importing NestJS
+// Domain importing NestJS or Mongoose
 import { Injectable } from '@nestjs/common';
-export class User { ... }
 
-// ❌ Controller calling repository directly
-constructor(private readonly userRepo: MongoUserRepository) {}
+// Controller calling a repository directly
+constructor(private readonly repo: MongoMeasurementRepository) {}
 
-// ❌ Business logic in controller
-if (temperature > 40) { alert = 'Calor Extremo'; }
+// API service mutating notification-profile collections directly
+await notificationProfileModel.updateOne(...);
 
-// ❌ Mongoose schema mixed with domain entity
-@Schema() export class User extends Document { ... }
+// Notification service importing API domain entities for preference logic
+import { WeatherStation } from '@api/modules/stations/domain/entities/...';
 
-// ❌ Infrastructure in application layer
-import { InjectModel } from '@nestjs/mongoose';
+// Application service depending on a concrete RabbitMQ or Telegram adapter
+constructor(private readonly publisher: RabbitMqAlertPublisherAdapter) {}
 ```

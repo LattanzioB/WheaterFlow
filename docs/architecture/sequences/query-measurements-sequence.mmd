@@ -1,19 +1,47 @@
 sequenceDiagram
 autonumber
-actor User
+actor Client as User / API client
+participant API as API service
+participant StationsController
+participant StationService as List station services
+participant StationRepository as IStationRepository / MongoWeatherStationRepository
 participant MeasurementsController
 participant QueryMeasurementsService
 participant MeasurementRepository as IMeasurementRepository / MongoMeasurementRepository
+participant Mongo as MongoDB Atlas
 
-User->>MeasurementsController: GET /measurements?stationName&tempMin&tempMax&alertOnly
-MeasurementsController->>QueryMeasurementsService: execute(filters)
-QueryMeasurementsService->>QueryMeasurementsService: validate tempMin <= tempMax
-QueryMeasurementsService->>MeasurementRepository: findWithFilters(normalizedFilters)
-
-alt stationName filter present
-  Note over MeasurementRepository: Resolve matching station IDs from station names\nbefore loading measurements
+alt search weather stations
+  Client->>API: GET /weather-stations?name=central
+  API->>StationsController: route with JWT user
+  StationsController->>StationService: execute({ ownerId, name })
+  StationService->>StationRepository: findByOwnerId(ownerId, { name })
+  StationRepository->>Mongo: query weather_stations by owner and partial name
+  Mongo-->>StationRepository: matching stations
+  StationRepository-->>StationService: WeatherStation[]
+  StationService-->>StationsController: stations
+  StationsController-->>Client: 200 StationResponse[]
+else search available stations
+  Client->>API: GET /weather-stations/available?name=central
+  API->>StationsController: route with JWT user
+  StationsController->>StationService: execute({ name })
+  StationService->>StationRepository: findAll({ name })
+  StationRepository->>Mongo: query weather_stations by partial name
+  Mongo-->>StationRepository: matching stations
+  StationRepository-->>StationService: WeatherStation[]
+  StationService-->>StationsController: stations
+  StationsController-->>Client: 200 StationResponse[]
+else filter measurements
+  Client->>API: GET /measurements?stationName&tempMin&tempMax&humidityMin&humidityMax&pressureMin&pressureMax&reportedFrom&reportedTo&alertOnly
+  API->>MeasurementsController: route with normalized query params
+  MeasurementsController->>QueryMeasurementsService: execute(filters)
+  QueryMeasurementsService->>QueryMeasurementsService: validate numeric and date ranges
+  QueryMeasurementsService->>MeasurementRepository: findWithFilters(normalizedFilters)
+  alt stationName filter present
+    MeasurementRepository->>Mongo: resolve matching station IDs from station names
+  end
+  MeasurementRepository->>Mongo: query measurements by station IDs, ranges, dates, alert state
+  Mongo-->>MeasurementRepository: matching measurements
+  MeasurementRepository-->>QueryMeasurementsService: Measurement[]
+  QueryMeasurementsService-->>MeasurementsController: measurements
+  MeasurementsController-->>Client: 200 MeasurementResponse[]
 end
-
-MeasurementRepository-->>QueryMeasurementsService: measurements
-QueryMeasurementsService-->>MeasurementsController: measurements
-MeasurementsController-->>User: 200 MeasurementResponse[]

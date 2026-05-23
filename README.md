@@ -70,6 +70,7 @@ Docker Compose starts RabbitMQ plus separate API and Notification service contai
 | `npm run lint` | Run ESLint |
 | `npm run test` | Run unit tests |
 | `npm run test:e2e` | Run end-to-end tests |
+| `npm run test:integration` | Run cross-service API, Notification service, RabbitMQ, and MongoDB Atlas integration tests |
 | `npm run test:cov` | Run tests with coverage |
 | `npm run format` | Format source and test files with Prettier |
 
@@ -78,41 +79,25 @@ Docker Compose starts RabbitMQ plus separate API and Notification service contai
 The project follows a hexagonal structure inside each business module.
 
 ```text
-src/
-|-- main.ts
-|-- app.module.ts
-|-- app.controller.ts
-|-- app.service.ts
-|-- modules/
-|   |-- auth/
-|   |   |-- auth.module.ts
-|   |   |-- domain/
-|   |   |-- application/
-|   |   |-- infrastructure/
-|   |   `-- interface/
-|   |-- users/
-|   |   |-- users.module.ts
-|   |   |-- domain/
-|   |   |-- application/
-|   |   |-- infrastructure/
-|   |   `-- interface/
-|   |-- stations/
-|   |   |-- stations.module.ts
-|   |   |-- domain/
-|   |   |-- application/
-|   |   |-- infrastructure/
-|   |   `-- interface/
-|   |-- measurements/
-|   |   |-- measurements.module.ts
-|   |   |-- domain/
-|   |   |-- application/
-|   |   |-- infrastructure/
-|   |   `-- interface/
-|   `-- notifications/
-|       |-- notifications.module.ts
-|       |-- domain/
-|       |-- application/
-|       `-- infrastructure/
+apps/
+|-- api/
+|   `-- src/
+|       |-- modules/
+|       |   |-- auth/
+|       |   |-- users/
+|       |   |-- stations/
+|       |   `-- measurements/
+|       |-- app.module.ts
+|       `-- main.ts
+`-- notifications/
+    `-- src/
+        |-- modules/
+        |   |-- notification-preferences/
+        |   `-- notifications/
+        |-- notifications-app.module.ts
+        `-- main.ts
+libs/
+|-- contracts/
 `-- shared/
     |-- config/
     |-- exceptions/
@@ -157,7 +142,12 @@ Open `http://localhost:15672` and sign in with `RABBITMQ_DEFAULT_USER` / `RABBIT
 npm run lint
 npm run test
 npm run test:e2e
+npm run test:integration
 ```
+
+`npm run test:integration` requires the dedicated `.env.integration` settings
+described in `docs/testing/integration-tests.md`, including a disposable
+MongoDB Atlas database and a reachable RabbitMQ broker.
 
 ### Mock Data
 

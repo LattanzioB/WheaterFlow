@@ -20,7 +20,7 @@
       "@api/*": ["apps/api/src/*"],
       "@notifications/*": ["apps/notifications/src/*"],
       "@shared/*": ["libs/shared/src/*"],
-      "@contracts": ["libs/contracts/src/index.ts"],
+      "@contracts": ["libs/contracts/src/index"],
       "@contracts/*": ["libs/contracts/src/*"]
     },
     "types": ["jest", "node"],

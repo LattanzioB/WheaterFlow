@@ -2,6 +2,7 @@
 
 Base URL: `http://localhost:3000`
 Swagger UI: `http://localhost:3000/api/docs`
+Notification service local URL: `http://localhost:3001`
 
 All protected endpoints require `Authorization: Bearer <token>`.
 
@@ -75,8 +76,20 @@ Persistence: `user_notification_profiles` collection in MongoDB (Notification se
 
 ---
 
+### `GET /users/:id/subscriptions`
+**Auth required.** Lists stations the user is subscribed to for alerts. The API combines station data from the API service with notification profile data from the Notification service.
+
+**Query params (optional):**
+| Param | Type | Description |
+|---|---|---|
+| `activeAlertOnly` | boolean | If `true`, return only subscriptions whose latest measurement currently has an active alert |
+
+**Response `200`:** array of subscribed Station objects plus alert preference metadata.
+
+---
+
 ### `POST /users/:id/subscriptions/:stationId`
-**Auth required.** Subscribes the user to the station and selected alert types. Proxied to the Notification service.
+**Auth required.** Subscribes the user to the station and selected alert types. Proxied to the Notification service. Returns `201` when the subscription is created.
 
 **Body (optional):**
 ```json
@@ -341,7 +354,7 @@ Alert fields (`alertStatus`, `alertType`) are set automatically by domain logic 
 | humidity > 90% | `"Humedad Critica"` |
 | none | `"Ninguna"` |
 
-When an alert is detected, the application filters users by station subscription and selected alert type, then forwards the alert to the configured delivery targets. Telegram is the current delivery mechanism.
+When an alert is detected, the API service persists the measurement and publishes a `ClimateAlertDetectedMessage` to RabbitMQ. The Notification service consumes the message, filters notification profiles by station subscription and selected alert type, resolves delivery targets, and dispatches through log or Telegram adapters.
 
 ---
 

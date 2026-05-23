@@ -112,9 +112,14 @@ npm run start:notifications:prod
 npm run test
 npm run test:watch
 npm run test:cov
+npm run test:integration
 ```
 
 Focus unit tests on domain entities, value objects, application services, and infrastructure wiring that can be verified deterministically.
+
+`npm run test:integration` exercises the Delivery II remote boundaries. It
+requires `.env.integration`, a disposable MongoDB Atlas database, RabbitMQ, and
+explicit cleanup consent. See `docs/testing/integration-tests.md`.
 
 ---
 

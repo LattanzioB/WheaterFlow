@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-describe('S-06.1 C4 architecture documentation', () => {
+describe('S-02.8 distributed C4 architecture documentation', () => {
   const projectRoot = process.cwd();
   const c4Dir = join(projectRoot, 'docs', 'architecture', 'c4');
 
@@ -16,8 +16,11 @@ describe('S-06.1 C4 architecture documentation', () => {
   it('documents the required actors and external boundaries in the context diagram source', () => {
     const source = read('weatherflow-context.mmd');
 
-    expect(source).toContain('User');
+    expect(source).toContain('User and API clients');
     expect(source).toContain('WeatherFlow System Boundary');
+    expect(source).toContain('API service');
+    expect(source).toContain('Notification service');
+    expect(source).toContain('RabbitMQ');
     expect(source).toContain('Telegram Bot API');
     expect(source).toContain('MongoDB Atlas');
   });
@@ -27,13 +30,13 @@ describe('S-06.1 C4 architecture documentation', () => {
     expect(existsSync(join(c4Dir, 'weatherflow-container.svg'))).toBe(true);
   });
 
-  it('documents the NestJS monolith, core modules, and integrations in the container diagram source', () => {
+  it('documents the distributed services, broker, and managed database in the container diagram source', () => {
     const source = read('weatherflow-container.mmd');
 
-    expect(source).toContain('NestJS Monolith');
-    expect(source).toContain(
-      'Auth, Users, Stations, Measurements, Notifications',
-    );
+    expect(source).toContain('API service');
+    expect(source).toContain('Notification service');
+    expect(source).toContain('RabbitMQ');
+    expect(source).toContain('ClimateAlertDetectedMessage');
     expect(source).toContain('MongoDB Atlas');
     expect(source).toContain('Telegram Bot API');
   });
@@ -43,8 +46,11 @@ describe('S-06.1 C4 architecture documentation', () => {
     const containerSvg = read('weatherflow-container.svg');
 
     expect(contextSvg).toContain('WeatherFlow');
+    expect(contextSvg).toContain('API service');
+    expect(contextSvg).toContain('Notification service');
     expect(contextSvg).toContain('Telegram Bot API');
-    expect(containerSvg).toContain('NestJS Monolith');
+    expect(containerSvg).toContain('RabbitMQ');
+    expect(containerSvg).toContain('Notification service');
     expect(containerSvg).toContain('MongoDB Atlas');
   });
 });

@@ -1,5 +1,10 @@
 # Informe de Desarrollo y Aplicacion de DDD en WeatherFlow
 
+> Nota de alcance: este informe documenta Delivery I, cuando WeatherFlow era un
+> monolito modular. La topologia actual de Delivery II esta descrita en
+> `docs/architecture-overview.md` y separa la API service de la Notification
+> service con RabbitMQ y limites REST.
+
 ## 1. Introduccion
 
 WeatherFlow es una plataforma de servicios meteorologicos desarrollada como un monolito en NestJS con persistencia en MongoDB. El objetivo del trabajo fue modelar e implementar una solucion capaz de gestionar usuarios, estaciones meteorologicas y mediciones climaticas, incorporando reglas de negocio para la deteccion de alertas y documentando la arquitectura de forma consistente.

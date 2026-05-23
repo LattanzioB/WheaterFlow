@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-describe('S-06.2 C4 component documentation', () => {
+describe('S-02.8 distributed C4 component documentation', () => {
   const projectRoot = process.cwd();
   const c4Dir = join(projectRoot, 'docs', 'architecture', 'c4');
 
@@ -13,30 +13,34 @@ describe('S-06.2 C4 component documentation', () => {
     expect(existsSync(join(c4Dir, 'weatherflow-component.svg'))).toBe(true);
   });
 
-  it('documents all requested internal modules in the component diagram source', () => {
+  it('documents API and Notification service component boundaries', () => {
     const source = read('weatherflow-component.mmd');
 
-    expect(source).toContain('Auth module');
-    expect(source).toContain('Users module');
-    expect(source).toContain('Stations module');
-    expect(source).toContain('Measurements module');
-    expect(source).toContain('Notifications module');
+    expect(source).toContain('API service - apps/api');
+    expect(source).toContain('Notification service - apps/notifications');
+    expect(source).toContain('AuthController');
+    expect(source).toContain('WeatherStationsController');
+    expect(source).toContain('MeasurementsController');
+    expect(source).toContain('NotificationPreferencesController');
   });
 
-  it('captures the preference-resolution flow before Telegram delivery', () => {
+  it('captures ports and adapters across the distributed notification flow', () => {
     const source = read('weatherflow-component.mmd');
 
-    expect(source).toContain('Preference resolution flow');
-    expect(source).toContain('filter by station + alert type');
-    expect(source).toContain('resolve delivery targets');
-    expect(source).toContain('TelegramAlertNotifierAdapter');
+    expect(source).toContain('HttpNotificationServiceClient');
+    expect(source).toContain('RabbitMqAlertPublisherAdapter');
+    expect(source).toContain('RabbitMqClimateAlertConsumerAdapter');
+    expect(source).toContain('Filter subscribers by station + alert type');
+    expect(source).toContain('Resolve delivery targets');
+    expect(source).toContain('Telegram adapters');
   });
 
   it('exports an SVG that includes the notification orchestration labels', () => {
     const svg = read('weatherflow-component.svg');
 
     expect(svg).toContain('NotificationService');
-    expect(svg).toContain('Preference resolution flow');
+    expect(svg).toContain('RabbitMqClimateAlertConsumerAdapter');
+    expect(svg).toContain('HttpNotificationServiceClient');
     expect(svg).toContain('Telegram Bot API');
   });
 });

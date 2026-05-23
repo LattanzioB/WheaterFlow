@@ -1,32 +1,56 @@
 sequenceDiagram
 autonumber
 actor User
+participant API as API service
 participant PreferencesController as UserNotificationPreferencesController
+participant AccessCheck as JWT access check
 participant NotificationClient as HttpNotificationServiceClient
-participant NotificationService as Notification service REST API
-participant NotificationProfileRepo as INotificationProfileRepository
+participant NotificationsAPI as Notification service REST API
+participant PreferenceService as Notification preference application service
+participant NotificationProfile as UserNotificationProfile aggregate
+participant NotificationProfileRepo as INotificationProfileRepository / MongoNotificationProfileRepository
 participant TelegramWebhook as TelegramWebhookController
-participant StationRepository as IStationRepository
 
-alt update station alert preferences via API proxy
-  User->>PreferencesController: PATCH /users/:id/subscriptions/:stationId
-  PreferencesController->>PreferencesController: ensureOwnUserAccess()
-  PreferencesController->>NotificationClient: updateAlertPreferences(...)
-  NotificationClient->>NotificationService: PATCH /notification-preferences/users/:userId/subscriptions/:stationId
-  NotificationService->>NotificationProfileRepo: save(profile)
-  NotificationProfileRepo-->>NotificationService: void
-  NotificationService-->>NotificationClient: NotificationProfileResponse
+alt update station alert preferences through API facade
+  User->>API: PATCH /users/:id/subscriptions/:stationId
+  API->>PreferencesController: route with JWT user
+  PreferencesController->>AccessCheck: ensureOwnUserAccess()
+  AccessCheck-->>PreferencesController: allowed
+  PreferencesController->>NotificationClient: updateAlertPreferences(userId, stationId, alertTypes)
+  NotificationClient->>NotificationsAPI: PATCH /notification-preferences/users/:userId/subscriptions/:stationId
+  NotificationsAPI->>PreferenceService: update station alert preferences
+  PreferenceService->>NotificationProfileRepo: findByUserId(userId)
+  NotificationProfileRepo-->>PreferenceService: profile
+  PreferenceService->>NotificationProfile: replace selected alert types
+  PreferenceService->>NotificationProfileRepo: save(profile)
+  NotificationProfileRepo-->>PreferenceService: saved profile
+  PreferenceService-->>NotificationsAPI: NotificationProfileResponse
+  NotificationsAPI-->>NotificationClient: 200 NotificationProfileResponse
   NotificationClient-->>PreferencesController: profile
-  PreferencesController-->>User: 200 UserResponse
-else link Telegram without knowing chat id
-  User->>PreferencesController: POST /users/:id/delivery-channels/telegram/link-code
+  PreferencesController-->>User: 200 UserResponse-compatible profile
+else update delivery channels through API facade
+  User->>API: PATCH /users/:id/delivery-channels
+  API->>PreferencesController: route with JWT user
+  PreferencesController->>AccessCheck: ensureOwnUserAccess()
+  PreferencesController->>NotificationClient: updateDeliveryChannels(userId, deliveryChannels)
+  NotificationClient->>NotificationsAPI: PATCH /notification-preferences/users/:userId/delivery-channels
+  NotificationsAPI->>PreferenceService: update delivery channels
+  PreferenceService->>NotificationProfileRepo: save(profile)
+  NotificationsAPI-->>PreferencesController: NotificationProfileResponse
+  PreferencesController-->>User: 200 UserResponse-compatible profile
+else link Telegram without manually entering chat id
+  User->>API: POST /users/:id/delivery-channels/telegram/link-code
+  API->>PreferencesController: route with JWT user
   PreferencesController->>NotificationClient: createTelegramLinkCode(userId)
-  NotificationClient->>NotificationService: POST .../delivery-channels/telegram/link-code
-  NotificationService->>NotificationProfileRepo: save(profile with link code)
-  NotificationService-->>PreferencesController: TelegramLinkCodeResponse
+  NotificationClient->>NotificationsAPI: POST /notification-preferences/users/:userId/delivery-channels/telegram/link-code
+  NotificationsAPI->>PreferenceService: create Telegram link code
+  PreferenceService->>NotificationProfileRepo: save(profile with link code)
+  NotificationsAPI-->>PreferencesController: TelegramLinkCodeResponse
+  PreferencesController-->>User: 200 code and bot instructions
 
   User->>TelegramWebhook: Telegram bot sends /link <code>
   TelegramWebhook->>NotificationProfileRepo: findByTelegramLinkCode(code)
   NotificationProfileRepo-->>TelegramWebhook: profile
+  TelegramWebhook->>NotificationProfile: attach Telegram chat id
   TelegramWebhook->>NotificationProfileRepo: save(linked profile)
 end

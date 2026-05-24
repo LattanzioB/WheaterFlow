@@ -48,11 +48,13 @@ docker compose up --build
 # Or run each NestJS app directly in watch mode
 npm run start:api:dev
 npm run start:notifications:dev
+npm run start:web:dev
 ```
 
 Docker Compose starts RabbitMQ plus separate API and Notification service containers. MongoDB is not run locally; both services connect to MongoDB Atlas through `MONGODB_URI`.
 
 - API base URL: `http://localhost:3000`
+- Web UI (extra): `http://localhost:5174` (dev) or `http://localhost:8080` (Docker)
 - Swagger UI: `http://localhost:3000/api/docs`
 - OpenAPI JSON: `http://localhost:3000/api/docs-json`
 - Notification service health: `http://localhost:3001/health`
@@ -64,6 +66,8 @@ Docker Compose starts RabbitMQ plus separate API and Notification service contai
 |---|---|
 | `npm run start:api:dev` | Start the API service with hot reload |
 | `npm run start:notifications:dev` | Start the Notification service with hot reload |
+| `npm run start:web:dev` | Start the Web UI (Vite) on port 5174 |
+| `npm run build:web` | Build the Web UI for production |
 | `npm run build` | Compile the production build |
 | `npm run start:api:prod` | Run the compiled API service |
 | `npm run start:notifications:prod` | Run the compiled Notification service |
@@ -115,6 +119,7 @@ Copy `.env.example` to `.env` and configure the following values:
 | `MONGODB_URI` | MongoDB Atlas connection string | `mongodb+srv://.../weatherflow` |
 | `JWT_SECRET` | JWT signing secret | `your-secret-key` |
 | `JWT_EXPIRES_IN` | JWT expiration window | `7d` |
+| `CORS_ORIGINS` | Allowed browser origins for the Web UI | `http://localhost:5174,http://localhost:8080` |
 | `NOTIFICATION_SERVICE_URL` | Internal URL the API uses for synchronous calls to notifications | `http://notifications:3001` |
 | `RABBITMQ_DEFAULT_USER` | Local RabbitMQ username created by Compose | `weatherflow` |
 | `RABBITMQ_DEFAULT_PASS` | Local RabbitMQ password created by Compose | `weatherflow` |

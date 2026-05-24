@@ -31,6 +31,7 @@ services:
       MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI to your MongoDB Atlas connection string}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local API auth}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5174,http://localhost:8080}
       NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notifications:3001}
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://weatherflow:weatherflow@rabbitmq:5672}
       RABBITMQ_ALERT_EXCHANGE: ${RABBITMQ_ALERT_EXCHANGE:-weatherflow.alerts}
@@ -85,4 +86,18 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    restart: unless-stopped
+
+  web:
+    container_name: weatherflow-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:3000
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped

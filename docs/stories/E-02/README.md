@@ -38,6 +38,7 @@ The notification capability is extracted because it is already modeled as suppor
 | S-02.6 | Complete station and measurement search filters | draft |
 | S-02.7 | Add cross-service integration tests | draft |
 | S-02.8 | Update distributed architecture documentation | draft |
+| S-02.9 | Build web UI for use cases (extra) | done |
 
 ## Definition of Done
 
@@ -49,3 +50,4 @@ The notification capability is extracted because it is already modeled as suppor
 6. Unit tests exist for the new Notification service behavior.
 7. Integration tests verify real service boundaries without Postman/manual simulation.
 8. Architecture docs include diagrams, responsibilities, sequence diagrams, and technical justification.
+9. _(Optional — S-02.9)_ Web UI executes main use cases against the API for demo and assignment extra credit.

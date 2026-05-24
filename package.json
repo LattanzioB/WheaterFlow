@@ -6,9 +6,11 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "npm run build:api && npm run build:notifications",
+    "build": "npm run build:api && npm run build:notifications && npm run build:web",
     "build:api": "nest build api",
     "build:notifications": "nest build notifications",
+    "build:web": "npm run build --prefix apps/web",
+    "start:web:dev": "npm run dev --prefix apps/web",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\" \"test/**/*.ts\"",
     "graphify:ddd": "node scripts/enrich-graphify-ddd.js",
     "seed:swagger-mock-data": "node scripts/seed-swagger-mock-data.js",

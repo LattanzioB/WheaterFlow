@@ -25,10 +25,12 @@ import {
 interface NotificationsContextValue {
   notifications: Notification[];
   unreadCount: number;
+  nextCursor: string | null;
   latestLiveArrival: LiveArrival | null;
   markRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
   refresh: () => Promise<void>;
+  loadMore: () => Promise<void>;
   clearLatestLiveArrival: () => void;
 }
 
@@ -134,8 +136,20 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   const markAllRead = useCallback(async () => {
     await markAllNotificationsRead();
-    await refresh();
-  }, [refresh]);
+    dispatch({ type: 'markAllRead', readAt: new Date().toISOString() });
+  }, []);
+
+  const loadMore = useCallback(async () => {
+    if (!userRef.current || !state.nextCursor) {
+      return;
+    }
+
+    const page = await fetchNotifications({
+      limit: 20,
+      cursor: state.nextCursor,
+    });
+    dispatch({ type: 'appendPage', page });
+  }, [state.nextCursor]);
 
   const clearLatestLiveArrival = useCallback(() => {
     dispatch({ type: 'clearLatestLiveArrival' });
@@ -145,18 +159,22 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     () => ({
       notifications: state.notifications,
       unreadCount: state.unreadCount,
+      nextCursor: state.nextCursor,
       latestLiveArrival: state.latestLiveArrival,
       markRead,
       markAllRead,
       refresh,
+      loadMore,
       clearLatestLiveArrival,
     }),
     [
       clearLatestLiveArrival,
+      loadMore,
       markAllRead,
       markRead,
       refresh,
       state.latestLiveArrival,
+      state.nextCursor,
       state.notifications,
       state.unreadCount,
     ],

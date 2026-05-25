@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { NOTIFICATION_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
 import { Notification } from '../../domain/entities/notification.entity';
 import type { INotificationRepository } from '../../domain/ports/notification-repository.port';
@@ -22,7 +22,7 @@ export class MarkNotificationReadService {
     );
 
     if (!notification) {
-      throw new Error('Notification not found');
+      throw new NotFoundException('Notification not found');
     }
 
     return notification;

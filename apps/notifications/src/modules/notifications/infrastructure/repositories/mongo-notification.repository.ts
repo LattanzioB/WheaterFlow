@@ -92,6 +92,12 @@ export class MongoNotificationRepository
     };
   }
 
+  async countUnread(userId: string): Promise<number> {
+    return this.notificationModel
+      .countDocuments({ userId, readAt: null })
+      .exec();
+  }
+
   async markRead(id: string, userId: string): Promise<Notification | null> {
     const document = await this.notificationModel
       .findOneAndUpdate(

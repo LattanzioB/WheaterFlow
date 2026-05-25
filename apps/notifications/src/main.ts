@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NotificationsAppModule } from './notifications-app.module';
 
 function resolveCorsOrigins(): string[] {
@@ -61,6 +62,26 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('WeatherFlow Notifications API')
+    .setDescription('Notification history, read-state, and delivery endpoints.')
+    .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description:
+          'Paste the access_token returned by the authentication endpoints.',
+      },
+      'bearer',
+    )
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+
+  SwaggerModule.setup('api/docs', app, swaggerDocument, {
+    jsonDocumentUrl: 'api/docs-json',
+  });
 
   await app.listen(process.env.NOTIFICATIONS_PORT ?? 3001);
 }

@@ -1,14 +1,21 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  NotFoundException,
+} from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
+import request from 'supertest';
 import { AlertType } from '@contracts';
 import { Notification } from '../../domain/entities/notification.entity';
-import { GetNotificationsService } from '../../application/services/get-notifications.service';
+import { ListUserNotificationsService } from '../../application/services/list-user-notifications.service';
 import { MarkAllNotificationsReadService } from '../../application/services/mark-all-notifications-read.service';
 import { MarkNotificationReadService } from '../../application/services/mark-notification-read.service';
 import { NotificationsController } from './notifications.controller';
 
 describe('NotificationsController', () => {
   const notification = Notification.create({
-    id: 'notification-1',
+    id: '4d9784cb-c6a1-4a5d-9c58-fd824f9dbf25',
     userId: 'user-1',
     stationId: 'station-1',
     stationName: 'Central',
@@ -22,9 +29,9 @@ describe('NotificationsController', () => {
   });
 
   const buildController = () => {
-    const getNotificationsService = {
+    const listUserNotificationsService = {
       execute: jest.fn(),
-    } as unknown as jest.Mocked<GetNotificationsService>;
+    } as unknown as jest.Mocked<ListUserNotificationsService>;
     const markNotificationReadService = {
       execute: jest.fn(),
     } as unknown as jest.Mocked<MarkNotificationReadService>;
@@ -32,42 +39,44 @@ describe('NotificationsController', () => {
       execute: jest.fn(),
     } as unknown as jest.Mocked<MarkAllNotificationsReadService>;
     const controller = new NotificationsController(
-      getNotificationsService,
+      listUserNotificationsService,
       markNotificationReadService,
       markAllNotificationsReadService,
     );
 
     return {
       controller,
-      getNotificationsService,
+      listUserNotificationsService,
       markNotificationReadService,
       markAllNotificationsReadService,
     };
   };
 
-  const request = { user: { userId: 'user-1', email: 'user@example.com' } };
+  const authRequest = { user: { userId: 'user-1', email: 'user@example.com' } };
 
   it('returns the authenticated user notification page', async () => {
-    const { controller, getNotificationsService } = buildController();
+    const { controller, listUserNotificationsService } = buildController();
 
-    getNotificationsService.execute.mockResolvedValue({
+    listUserNotificationsService.execute.mockResolvedValue({
       notifications: [notification],
       nextCursor: 'next',
+      unreadCount: 2,
     });
 
     await expect(
-      controller.list(request as any, { unreadOnly: true, limit: 10 }),
+      controller.list(authRequest as any, { unreadOnly: true, limit: 10 }),
     ).resolves.toEqual({
-      notifications: [
+      items: [
         expect.objectContaining({
-          id: 'notification-1',
+          id: '4d9784cb-c6a1-4a5d-9c58-fd824f9dbf25',
           userId: 'user-1',
           readAt: null,
         }),
       ],
       nextCursor: 'next',
+      unreadCount: 2,
     });
-    expect(getNotificationsService.execute).toHaveBeenCalledWith({
+    expect(listUserNotificationsService.execute).toHaveBeenCalledWith({
       userId: 'user-1',
       unreadOnly: true,
       limit: 10,
@@ -81,10 +90,13 @@ describe('NotificationsController', () => {
     markNotificationReadService.execute.mockResolvedValue(notification);
 
     await expect(
-      controller.markRead('notification-1', request as any),
-    ).resolves.toEqual(expect.objectContaining({ id: 'notification-1' }));
+      controller.markRead(
+        { id: '4d9784cb-c6a1-4a5d-9c58-fd824f9dbf25' },
+        authRequest as any,
+      ),
+    ).resolves.toBeUndefined();
     expect(markNotificationReadService.execute).toHaveBeenCalledWith({
-      id: 'notification-1',
+      id: '4d9784cb-c6a1-4a5d-9c58-fd824f9dbf25',
       userId: 'user-1',
     });
   });
@@ -97,7 +109,10 @@ describe('NotificationsController', () => {
     );
 
     await expect(
-      controller.markRead('missing', request as any),
+      controller.markRead(
+        { id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' },
+        authRequest as any,
+      ),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
@@ -106,9 +121,9 @@ describe('NotificationsController', () => {
 
     markAllNotificationsReadService.execute.mockResolvedValue(4);
 
-    await expect(controller.markAllRead(request as any)).resolves.toEqual({
-      modifiedCount: 4,
-    });
+    await expect(
+      controller.markAllRead(authRequest as any),
+    ).resolves.toBeUndefined();
     expect(markAllNotificationsReadService.execute).toHaveBeenCalledWith(
       'user-1',
     );
@@ -120,5 +135,35 @@ describe('NotificationsController', () => {
     await expect(controller.list({} as any, {})).rejects.toBeInstanceOf(
       BadRequestException,
     );
+  });
+
+  it('returns 401 before handlers when authentication is missing', async () => {
+    const { listUserNotificationsService } = buildController();
+    const moduleRef = await Test.createTestingModule({
+      controllers: [NotificationsController],
+      providers: [
+        {
+          provide: ListUserNotificationsService,
+          useValue: listUserNotificationsService,
+        },
+        {
+          provide: MarkNotificationReadService,
+          useValue: { execute: jest.fn() },
+        },
+        {
+          provide: MarkAllNotificationsReadService,
+          useValue: { execute: jest.fn() },
+        },
+        {
+          provide: JwtService,
+          useValue: { verify: jest.fn() },
+        },
+      ],
+    }).compile();
+    const app: INestApplication = moduleRef.createNestApplication();
+
+    await app.init();
+    await request(app.getHttpServer()).get('/notifications').expect(401);
+    await app.close();
   });
 });

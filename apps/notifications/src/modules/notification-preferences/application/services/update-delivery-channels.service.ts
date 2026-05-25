@@ -35,6 +35,10 @@ export class UpdateDeliveryChannelsService {
       profile.configureLogDelivery(command.deliveryChannels.log.enabled);
     }
 
+    if (command.deliveryChannels.inApp !== undefined) {
+      profile.configureInAppDelivery(command.deliveryChannels.inApp);
+    }
+
     await this.profileRepository.save(profile);
 
     return profile;

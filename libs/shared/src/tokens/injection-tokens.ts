@@ -7,4 +7,5 @@ export const TOKEN_SERVICE_TOKEN = 'TokenService';
 export const ALERT_NOTIFIER_TOKEN = 'AlertNotifier';
 export const NOTIFICATION_PROFILE_REPOSITORY_TOKEN =
   'INotificationProfileRepository';
+export const NOTIFICATION_REPOSITORY_TOKEN = 'INotificationRepository';
 export const NOTIFICATION_SERVICE_CLIENT_TOKEN = 'INotificationServiceClient';

@@ -55,6 +55,7 @@ describe('NotificationService', () => {
           log: {
             enabled: false,
           },
+          inApp: false,
         },
       }),
       UserNotificationProfile.create({
@@ -72,6 +73,7 @@ describe('NotificationService', () => {
           log: {
             enabled: false,
           },
+          inApp: false,
         },
       }),
       UserNotificationProfile.create({
@@ -89,6 +91,7 @@ describe('NotificationService', () => {
           log: {
             enabled: true,
           },
+          inApp: true,
         },
       }),
     ]);
@@ -102,6 +105,7 @@ describe('NotificationService', () => {
     expect(alertNotifier.sendMeasurementAlert.mock.calls[0][0]).toEqual({
       userId: 'user-1',
       deliveryTargets: [{ channel: 'telegram', destination: 'telegram-1' }],
+      messageId: 'message-1',
       measurementId: 'measurement-1',
       stationId: 'station-1',
       stationName: 'Central',
@@ -143,7 +147,71 @@ describe('NotificationService', () => {
     expect(alertNotifier.sendMeasurementAlert).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'user-1',
-        deliveryTargets: [{ channel: 'log', destination: 'user-1' }],
+        deliveryTargets: [
+          { channel: 'log', destination: 'user-1' },
+          { channel: 'in-app', destination: 'user-1' },
+        ],
+      }),
+    );
+  });
+
+  it('emits in-app targets for enabled subscribers', async () => {
+    const alertNotifier = buildAlertNotifier();
+    const notificationProfileRepository = buildNotificationProfileRepository();
+    const service = new NotificationService(
+      alertNotifier,
+      notificationProfileRepository,
+    );
+
+    notificationProfileRepository.findSubscribersByStationId.mockResolvedValue([
+      UserNotificationProfile.create({
+        userId: 'user-1',
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.STORM],
+          },
+        ],
+        deliveryChannels: {
+          telegram: {
+            chatId: 'telegram-1',
+          },
+          log: {
+            enabled: false,
+          },
+          inApp: true,
+        },
+      }),
+      UserNotificationProfile.create({
+        userId: 'user-2',
+        notificationPreferences: [
+          {
+            stationId: 'station-1',
+            alertTypes: [AlertType.STORM],
+          },
+        ],
+        deliveryChannels: {
+          telegram: {
+            chatId: null,
+          },
+          log: {
+            enabled: false,
+          },
+          inApp: false,
+        },
+      }),
+    ]);
+
+    await service.handleClimateAlert(message);
+
+    expect(alertNotifier.sendMeasurementAlert.mock.calls).toHaveLength(1);
+    expect(alertNotifier.sendMeasurementAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        deliveryTargets: [
+          { channel: 'telegram', destination: 'telegram-1' },
+          { channel: 'in-app', destination: 'user-1' },
+        ],
       }),
     );
   });

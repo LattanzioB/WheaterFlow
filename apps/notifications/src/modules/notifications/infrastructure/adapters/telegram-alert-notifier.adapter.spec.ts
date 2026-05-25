@@ -15,6 +15,7 @@ describe('TelegramAlertNotifierAdapter', () => {
         destination: 'ignored@example.com',
       },
     ],
+    messageId: 'message-1',
     measurementId: 'measurement-1',
     stationId: 'station-1',
     stationName: 'Central',

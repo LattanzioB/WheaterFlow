@@ -43,6 +43,9 @@ export class NotificationDeliveryChannelsDocument {
     default: () => ({ enabled: true }),
   })
   log!: LogDeliveryChannelDocument;
+
+  @Prop({ type: Boolean, required: true, default: true })
+  inApp!: boolean;
 }
 
 @Schema({ _id: false, id: false })
@@ -76,6 +79,7 @@ export class UserNotificationProfilePersistenceModel {
     default: () => ({
       telegram: { chatId: null },
       log: { enabled: true },
+      inApp: true,
     }),
   })
   deliveryChannels!: NotificationDeliveryChannelsDocument;
@@ -104,6 +108,7 @@ export interface UserNotificationProfilePersistence {
     log: {
       enabled: boolean;
     };
+    inApp: boolean;
   };
   telegramLinking: {
     code: string | null;

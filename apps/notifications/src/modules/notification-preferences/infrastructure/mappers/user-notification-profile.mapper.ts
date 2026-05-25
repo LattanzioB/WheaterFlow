@@ -36,6 +36,7 @@ export class UserNotificationProfileMapper {
         log: {
           enabled: document.deliveryChannels.log?.enabled ?? true,
         },
+        inApp: document.deliveryChannels.inApp ?? true,
       },
       telegramLinking: {
         code: document.telegramLinking?.code ?? null,

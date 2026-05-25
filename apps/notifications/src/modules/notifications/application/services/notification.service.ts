@@ -41,6 +41,7 @@ export class NotificationService {
       .map<MeasurementAlertNotification>(({ subscriber, deliveryTargets }) => ({
         userId: subscriber.getUserId(),
         deliveryTargets,
+        messageId: message.messageId,
         measurementId: message.measurementId,
         stationId: message.stationId,
         stationName: message.stationName,
@@ -72,6 +73,13 @@ export class NotificationService {
     if (deliveryChannels.log?.enabled) {
       deliveryTargets.push({
         channel: 'log',
+        destination: profile.getUserId(),
+      });
+    }
+
+    if (deliveryChannels.inApp) {
+      deliveryTargets.push({
+        channel: 'in-app',
         destination: profile.getUserId(),
       });
     }

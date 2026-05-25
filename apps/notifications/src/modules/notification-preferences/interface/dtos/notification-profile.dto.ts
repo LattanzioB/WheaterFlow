@@ -37,6 +37,9 @@ export class NotificationDeliveryChannelsDto {
 
   @ApiProperty({ type: LogDeliveryChannelDto })
   log!: LogDeliveryChannelDto;
+
+  @ApiProperty({ example: true })
+  inApp!: boolean;
 }
 
 export class NotificationProfileResponseDto {
@@ -103,6 +106,11 @@ export class DeliveryChannelsInputDto {
   @ValidateNested()
   @Type(() => UpdateLogDeliveryChannelDto)
   log?: UpdateLogDeliveryChannelDto;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  inApp?: boolean;
 }
 
 export class UpdateDeliveryChannelsDto {
@@ -111,6 +119,7 @@ export class UpdateDeliveryChannelsDto {
     example: {
       telegram: { chatId: '12345' },
       log: { enabled: true },
+      inApp: true,
     },
   })
   @ValidateNested()

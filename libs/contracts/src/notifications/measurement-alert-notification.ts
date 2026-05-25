@@ -8,6 +8,7 @@ export interface NotificationDeliveryTarget {
 export interface MeasurementAlertNotification {
   userId: string;
   deliveryTargets: NotificationDeliveryTarget[];
+  messageId: string;
   measurementId: string;
   stationId: string;
   stationName: string;

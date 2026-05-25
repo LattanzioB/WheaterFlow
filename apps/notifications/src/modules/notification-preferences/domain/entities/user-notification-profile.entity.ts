@@ -12,6 +12,7 @@ export interface DeliveryChannels {
   log: {
     enabled: boolean;
   };
+  inApp: boolean;
 }
 
 export interface DeliveryChannelsInput {
@@ -21,6 +22,7 @@ export interface DeliveryChannelsInput {
   log?: {
     enabled?: boolean;
   };
+  inApp?: boolean;
 }
 
 export interface TelegramLinking {
@@ -43,15 +45,15 @@ export class UserNotificationProfile {
     private telegramLinking: TelegramLinking,
   ) {}
 
-  static create(props: CreateNotificationProfileProps): UserNotificationProfile {
+  static create(
+    props: CreateNotificationProfileProps,
+  ): UserNotificationProfile {
     return new UserNotificationProfile(
       UserNotificationProfile.normalizeReference(props.userId, 'User id'),
       UserNotificationProfile.normalizeAlertPreferences(
         props.notificationPreferences,
       ),
-      UserNotificationProfile.normalizeDeliveryChannels(
-        props.deliveryChannels,
-      ),
+      UserNotificationProfile.normalizeDeliveryChannels(props.deliveryChannels),
       UserNotificationProfile.normalizeTelegramLinking(props.telegramLinking),
     );
   }
@@ -75,6 +77,7 @@ export class UserNotificationProfile {
       log: {
         enabled: this.deliveryChannels.log.enabled,
       },
+      inApp: this.deliveryChannels.inApp,
     };
   }
 
@@ -101,6 +104,10 @@ export class UserNotificationProfile {
 
   configureLogDelivery(enabled: boolean): void {
     this.deliveryChannels.log.enabled = enabled;
+  }
+
+  configureInAppDelivery(enabled: boolean): void {
+    this.deliveryChannels.inApp = enabled;
   }
 
   startTelegramLinking(code: string, expiresAt: Date): void {
@@ -214,7 +221,8 @@ export class UserNotificationProfile {
   hasDeliveryChannelConfigured(): boolean {
     return (
       this.deliveryChannels.telegram.chatId !== null ||
-      this.deliveryChannels.log.enabled
+      this.deliveryChannels.log.enabled ||
+      this.deliveryChannels.inApp
     );
   }
 
@@ -281,6 +289,7 @@ export class UserNotificationProfile {
       log: {
         enabled: deliveryChannels?.log?.enabled ?? true,
       },
+      inApp: deliveryChannels?.inApp ?? true,
     };
   }
 

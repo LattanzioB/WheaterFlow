@@ -41,6 +41,40 @@ describe('notificationsReducer', () => {
 
     expect(state.notifications).toHaveLength(2);
     expect(state.unreadCount).toBe(7);
+    expect(state.nextCursor).toBe('cursor-1');
+  });
+
+  it('appends the next REST page without duplicating already loaded notifications', () => {
+    const hydrated = notificationsReducer(initialNotificationsState, {
+      type: 'hydrate',
+      page: {
+        items: [
+          notification({ id: 'notification-1' }),
+          notification({ id: 'notification-2' }),
+        ],
+        nextCursor: 'cursor-1',
+        unreadCount: 4,
+      },
+    });
+    const state = notificationsReducer(hydrated, {
+      type: 'appendPage',
+      page: {
+        items: [
+          notification({ id: 'notification-2' }),
+          notification({ id: 'notification-3' }),
+        ],
+        nextCursor: 'cursor-2',
+        unreadCount: 5,
+      },
+    });
+
+    expect(state.notifications.map((item) => item.id)).toEqual([
+      'notification-1',
+      'notification-2',
+      'notification-3',
+    ]);
+    expect(state.unreadCount).toBe(5);
+    expect(state.nextCursor).toBe('cursor-2');
   });
 
   it('prepends live notifications, increments unread count, and records arrival sequence', () => {

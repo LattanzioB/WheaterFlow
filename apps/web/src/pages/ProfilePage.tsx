@@ -2,26 +2,39 @@ import { ALERT_TYPE_LABELS } from '../api/types';
 import { updateDeliveryChannels } from '../api/weatherflow';
 import { useAuth, useApiErrorMessage } from '../auth/AuthContext';
 import { ErrorBanner } from '../components/ErrorBanner';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
+  const [inAppEnabled, setInAppEnabled] = useState(
+    user?.deliveryChannels.inApp ?? true,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      setInAppEnabled(user.deliveryChannels.inApp);
+    }
+  }, [user]);
 
   if (!user) {
     return null;
   }
 
   const handleInAppToggle = async () => {
+    const previous = inAppEnabled;
+    const next = !previous;
+    setInAppEnabled(next);
     setSaving(true);
     setError(null);
     try {
       await updateDeliveryChannels(user.id, {
-        inApp: !user.deliveryChannels.inApp,
+        inApp: next,
       });
       await refreshUser();
     } catch (err) {
+      setInAppEnabled(previous);
       setError(useApiErrorMessage(err));
     } finally {
       setSaving(false);
@@ -55,7 +68,7 @@ export function ProfilePage() {
           </span>
           <input
             type="checkbox"
-            checked={user.deliveryChannels.inApp}
+            checked={inAppEnabled}
             disabled={saving}
             onChange={handleInAppToggle}
           />

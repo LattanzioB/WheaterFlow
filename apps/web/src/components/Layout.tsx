@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useNotifications } from '../notifications/NotificationsContext';
 import { NotificationsBell } from './NotificationsBell';
 import { ToastHost } from './ToastHost';
 
@@ -15,6 +16,7 @@ const navItems = [
 
 export function Layout() {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -49,7 +51,17 @@ export function Layout() {
                 isActive ? 'nav-link active' : 'nav-link'
               }
             >
-              {item.label}
+              <span className="nav-link-content">
+                {item.to === '/notifications' ? (
+                  <BellIcon />
+                ) : null}
+                <span>{item.label}</span>
+              </span>
+              {item.to === '/notifications' && unreadCount > 0 ? (
+                <span className="nav-badge">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              ) : null}
             </NavLink>
           ))}
           <p className="nav-hint">
@@ -62,5 +74,25 @@ export function Layout() {
         </main>
       </div>
     </div>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="nav-icon"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
   );
 }

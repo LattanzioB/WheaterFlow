@@ -12,7 +12,7 @@ export interface NotificationDeliveryChannels {
   log: {
     enabled: boolean;
   };
-  inApp?: boolean;
+  inApp: boolean;
 }
 
 export interface NotificationProfileResponse {

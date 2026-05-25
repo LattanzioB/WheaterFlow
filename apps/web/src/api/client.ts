@@ -6,6 +6,10 @@ export function getApiBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 }
 
+export function getNotificationsBaseUrl(): string {
+  return import.meta.env.VITE_NOTIFICATIONS_BASE_URL ?? 'http://localhost:3001';
+}
+
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -42,6 +46,21 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  return requestJson<T>(getApiBaseUrl(), path, options);
+}
+
+export async function notificationsRequest<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return requestJson<T>(getNotificationsBaseUrl(), path, options);
+}
+
+async function requestJson<T>(
+  baseUrl: string,
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
   const headers = new Headers(options.headers);
   if (!headers.has('Content-Type') && options.body) {
     headers.set('Content-Type', 'application/json');
@@ -52,7 +71,7 @@ export async function apiRequest<T>(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers,
   });

@@ -10,6 +10,10 @@ describe('UpdateDeliveryChannelsDto', () => {
         telegram: {
           chatId: '12345',
         },
+        log: {
+          enabled: true,
+        },
+        inApp: true,
       },
     });
 
@@ -26,5 +30,21 @@ describe('UpdateDeliveryChannelsDto', () => {
     });
 
     await expect(validate(dto)).resolves.toEqual([]);
+  });
+
+  it('rejects non-boolean in-app toggles', async () => {
+    const dto = plainToInstance(UpdateDeliveryChannelsDto, {
+      deliveryChannels: {
+        inApp: 'yes',
+      },
+    });
+
+    await expect(validate(dto)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          property: 'deliveryChannels',
+        }),
+      ]),
+    );
   });
 });

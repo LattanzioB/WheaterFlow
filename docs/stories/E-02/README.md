@@ -28,23 +28,23 @@ The notification capability is extracted because it is already modeled as suppor
 
 ## Stories
 
-| ID | Title | Status |
-|---|---|---|
-| S-02.1 | Restructure repository into two NestJS apps | draft |
-| S-02.2 | Add Dockerized local distributed environment | draft |
-| S-02.3 | Define shared contracts and alert publisher | draft |
-| S-02.4 | Extract notification service APIs and persistence | draft |
-| S-02.5 | Consume alert messages and dispatch notifications | draft |
-| S-02.6 | Complete station and measurement search filters | draft |
-| S-02.7 | Add cross-service integration tests | draft |
-| S-02.8 | Update distributed architecture documentation | draft |
-| S-02.9 | Build web UI for use cases (extra) | done |
-| S-02.10 | In-app notification persistence and adapter (extra) | draft |
-| S-02.11 | In-app notifications — REST history endpoints (extra) | draft |
-| S-02.12 | In-app notifications — SSE live stream (extra) | draft |
-| S-02.13 | Web — NotificationsContext, header bell, and toast (extra) | draft |
-| S-02.14 | Web — Notifications page and profile toggle (extra) | draft |
-| S-02.15 | In-app notifications — integration test and architecture docs (extra) | draft |
+| ID      | Title                                                                 | Status |
+| ------- | --------------------------------------------------------------------- | ------ |
+| S-02.1  | Restructure repository into two NestJS apps                           | draft  |
+| S-02.2  | Add Dockerized local distributed environment                          | draft  |
+| S-02.3  | Define shared contracts and alert publisher                           | draft  |
+| S-02.4  | Extract notification service APIs and persistence                     | draft  |
+| S-02.5  | Consume alert messages and dispatch notifications                     | draft  |
+| S-02.6  | Complete station and measurement search filters                       | draft  |
+| S-02.7  | Add cross-service integration tests                                   | draft  |
+| S-02.8  | Update distributed architecture documentation                         | draft  |
+| S-02.9  | Build web UI for use cases (extra)                                    | done   |
+| S-02.10 | In-app notification persistence and adapter (extra)                   | done   |
+| S-02.11 | In-app notifications — REST history endpoints (extra)                 | done   |
+| S-02.12 | In-app notifications — SSE live stream (extra)                        | done   |
+| S-02.13 | Web — NotificationsContext, header bell, and toast (extra)            | done   |
+| S-02.14 | Web — Notifications page and profile toggle (extra)                   | done   |
+| S-02.15 | In-app notifications — integration test and architecture docs (extra) | draft  |
 
 ### S-02.10–S-02.15: In-App Realtime Alert Notifications
 
@@ -56,14 +56,14 @@ S-02.10 ──┬──> S-02.11 ──┐
                                                       └──> S-02.15
 ```
 
-| Slice | Estimate | Demonstrable outcome |
-|---|---|---|
-| S-02.10 | 10h | Alert persisted in new `notifications` collection per `in-app` subscriber; Telegram unaffected. |
-| S-02.11 | 3h  | Authenticated REST: list/paginate, mark read, mark all read. |
-| S-02.12 | 3h  | Authenticated SSE: live event in <2s after RabbitMQ publish. |
-| S-02.13 | 6h  | Web header bell + badge + dropdown + live toast. |
-| S-02.14 | 5h  | `/notifications` page with filters; profile toggle for `inApp` channel. |
-| S-02.15 | 6h  | Cross-boundary integration test + refreshed C4/sequence/ER/API docs. |
+| Slice   | Estimate | Demonstrable outcome                                                                            |
+| ------- | -------- | ----------------------------------------------------------------------------------------------- |
+| S-02.10 | 10h      | Alert persisted in new `notifications` collection per `in-app` subscriber; Telegram unaffected. |
+| S-02.11 | 3h       | Authenticated REST: list/paginate, mark read, mark all read.                                    |
+| S-02.12 | 3h       | Authenticated SSE: live event in <2s after RabbitMQ publish.                                    |
+| S-02.13 | 6h       | Web header bell + badge + dropdown + live toast.                                                |
+| S-02.14 | 5h       | `/notifications` page with filters; profile toggle for `inApp` channel.                         |
+| S-02.15 | 6h       | Cross-boundary integration test + refreshed C4/sequence/ER/API docs.                            |
 
 ## Definition of Done
 

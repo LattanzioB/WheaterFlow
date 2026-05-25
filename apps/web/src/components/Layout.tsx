@@ -1,5 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { NotificationToast } from './NotificationToast';
+import { NotificationsBell } from './NotificationsBell';
 
 const navItems = [
   { to: '/', label: 'Inicio', end: true },
@@ -8,6 +10,7 @@ const navItems = [
   { to: '/stations/available', label: 'Estaciones disponibles' },
   { to: '/measurements', label: 'Mediciones' },
   { to: '/subscriptions', label: 'Suscripciones' },
+  { to: '/notifications', label: 'Notificaciones' },
 ];
 
 export function Layout() {
@@ -26,6 +29,7 @@ export function Layout() {
           WeatherFlow
         </Link>
         <div className="session">
+          <NotificationsBell />
           <span>
             {user?.name} {user?.lastName}
           </span>
@@ -54,6 +58,7 @@ export function Layout() {
         </nav>
         <main className="content">
           <Outlet />
+          <NotificationToast />
         </main>
       </div>
     </div>

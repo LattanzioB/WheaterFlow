@@ -37,12 +37,20 @@ export class NotificationJwtAuthGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify<JwtPayload>(token);
+      if (typeof payload.sub !== 'string' || !payload.sub.trim()) {
+        throw new UnauthorizedException('Invalid authentication token');
+      }
+
       request.user = {
         userId: payload.sub,
-        email: payload.email,
+        email: typeof payload.email === 'string' ? payload.email : '',
       };
       return true;
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
       throw new UnauthorizedException('Invalid authentication token');
     }
   }

@@ -1,5 +1,10 @@
+import { INestApplication } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { JwtService } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
 import { AlertType } from '@contracts';
+import { EventEmitter } from 'events';
+import request from 'supertest';
 import {
   NOTIFICATION_DELIVERED_EVENT,
   NotificationDeliveredEvent,
@@ -8,6 +13,11 @@ import { Notification } from '../../domain/entities/notification.entity';
 import { NotificationStreamController } from './notification-stream.controller';
 
 describe('NotificationStreamController', () => {
+  const buildRequest = (userId = 'user-1') =>
+    Object.assign(new EventEmitter(), {
+      user: { userId, email: `${userId}@example.com` },
+    });
+
   const buildNotification = (userId: string) =>
     Notification.create({
       id: `notification-${userId}`,
@@ -27,9 +37,7 @@ describe('NotificationStreamController', () => {
     const controller = new NotificationStreamController(eventEmitter);
     const messages: unknown[] = [];
     const subscription = controller
-      .stream({
-        user: { userId: 'user-1', email: 'user@example.com' },
-      } as any)
+      .stream(buildRequest('user-1') as any)
       .subscribe((message) => messages.push(message));
     const event: NotificationDeliveredEvent = {
       userId: 'user-1',
@@ -59,9 +67,7 @@ describe('NotificationStreamController', () => {
     const eventEmitter = new EventEmitter2();
     const controller = new NotificationStreamController(eventEmitter);
     const subscription = controller
-      .stream({
-        user: { userId: 'user-1', email: 'user@example.com' },
-      } as any)
+      .stream(buildRequest('user-1') as any)
       .subscribe();
 
     expect(eventEmitter.listenerCount(NOTIFICATION_DELIVERED_EVENT)).toBe(1);
@@ -78,9 +84,7 @@ describe('NotificationStreamController', () => {
     const controller = new NotificationStreamController(eventEmitter);
     const messages: unknown[] = [];
     const subscription = controller
-      .stream({
-        user: { userId: 'user-1', email: 'user@example.com' },
-      } as any)
+      .stream(buildRequest('user-1') as any)
       .subscribe((message) => messages.push(message));
 
     jest.advanceTimersByTime(25_000);
@@ -88,5 +92,61 @@ describe('NotificationStreamController', () => {
     jest.useRealTimers();
 
     expect(messages).toContainEqual({ type: 'ping', data: 'ping' });
+  });
+
+  it('cleans up listeners and timers when the request closes', () => {
+    jest.useFakeTimers();
+
+    const eventEmitter = new EventEmitter2();
+    const controller = new NotificationStreamController(eventEmitter);
+    const req = buildRequest('user-1');
+    const messages: unknown[] = [];
+    const subscription = controller
+      .stream(req as any)
+      .subscribe((message) => messages.push(message));
+
+    expect(eventEmitter.listenerCount(NOTIFICATION_DELIVERED_EVENT)).toBe(1);
+
+    req.emit('close');
+    jest.advanceTimersByTime(50_000);
+    subscription.unsubscribe();
+    jest.useRealTimers();
+
+    expect(eventEmitter.listenerCount(NOTIFICATION_DELIVERED_EVENT)).toBe(0);
+    expect(messages).toEqual([]);
+  });
+
+  it('does not leak listeners across repeated reconnects', () => {
+    const eventEmitter = new EventEmitter2();
+    const controller = new NotificationStreamController(eventEmitter);
+    const baseline = eventEmitter.listenerCount(NOTIFICATION_DELIVERED_EVENT);
+
+    for (let index = 0; index < 5; index += 1) {
+      const req = buildRequest('user-1');
+      controller.stream(req as any).subscribe();
+      req.emit('close');
+    }
+
+    expect(eventEmitter.listenerCount(NOTIFICATION_DELIVERED_EVENT)).toBe(
+      baseline,
+    );
+  });
+
+  it('returns 401 before opening the stream when authentication is missing', async () => {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [NotificationStreamController],
+      providers: [
+        EventEmitter2,
+        {
+          provide: JwtService,
+          useValue: { verify: jest.fn() },
+        },
+      ],
+    }).compile();
+    const app: INestApplication = moduleRef.createNestApplication();
+
+    await app.init();
+    await request(app.getHttpServer()).get('/notifications/stream').expect(401);
+    await app.close();
   });
 });

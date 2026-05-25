@@ -53,19 +53,64 @@ describe('NotificationJwtAuthGuard', () => {
     expect(jwtService.verify).toHaveBeenCalledWith('stream-token');
   });
 
-  it('rejects missing or invalid tokens', () => {
+  it('prefers bearer tokens over query tokens when both are present', () => {
     const jwtService = {
-      verify: jest.fn(() => {
-        throw new Error('bad token');
+      verify: jest.fn().mockReturnValue({
+        sub: 'user-1',
+        email: 'user@example.com',
       }),
+    } as unknown as jest.Mocked<JwtService>;
+    const guard = new NotificationJwtAuthGuard(jwtService);
+
+    expect(
+      guard.canActivate(
+        buildContext({
+          authorization: 'Bearer header-token',
+          query: { token: 'query-token' },
+        }),
+      ),
+    ).toBe(true);
+    expect(jwtService.verify).toHaveBeenCalledWith('header-token');
+  });
+
+  it('rejects missing tokens', () => {
+    const jwtService = {
+      verify: jest.fn(),
     } as unknown as jest.Mocked<JwtService>;
     const guard = new NotificationJwtAuthGuard(jwtService);
 
     expect(() => guard.canActivate(buildContext({}))).toThrow(
       UnauthorizedException,
     );
+    expect(jwtService.verify).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['invalid signature', new Error('invalid signature')],
+    ['expired token', new Error('jwt expired')],
+  ])('rejects %s', (_caseName, verificationError) => {
+    const jwtService = {
+      verify: jest.fn(() => {
+        throw verificationError;
+      }),
+    } as unknown as jest.Mocked<JwtService>;
+    const guard = new NotificationJwtAuthGuard(jwtService);
+
     expect(() =>
       guard.canActivate(buildContext({ authorization: 'Bearer bad' })),
+    ).toThrow(UnauthorizedException);
+  });
+
+  it('rejects tokens without a subject', () => {
+    const jwtService = {
+      verify: jest.fn().mockReturnValue({
+        email: 'user@example.com',
+      }),
+    } as unknown as jest.Mocked<JwtService>;
+    const guard = new NotificationJwtAuthGuard(jwtService);
+
+    expect(() =>
+      guard.canActivate(buildContext({ authorization: 'Bearer no-sub' })),
     ).toThrow(UnauthorizedException);
   });
 });

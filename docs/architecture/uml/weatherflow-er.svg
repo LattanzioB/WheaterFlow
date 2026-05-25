@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="780" viewBox="0 0 1160 780" role="img" aria-labelledby="title desc">
+  <title id="title">WeatherFlow MongoDB entity relationship diagram</title>
+  <desc id="desc">MongoDB collections, key fields, indexes, and relationships including notifications and deliveryChannels.inApp.</desc>
+  <style>
+    .entity { fill: #f8fafc; stroke: #334155; stroke-width: 2; rx: 8; }
+    .new { fill: #f0fdf4; stroke: #15803d; }
+    .label { font: 14px Arial, sans-serif; fill: #0f172a; }
+    .small { font: 12px Arial, sans-serif; fill: #334155; }
+    .title { font: 18px Arial, sans-serif; font-weight: 700; fill: #0f172a; }
+    .line { stroke: #475569; stroke-width: 2; marker-end: url(#arrow); fill: none; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569" />
+    </marker>
+  </defs>
+
+  <text x="36" y="36" class="title">WeatherFlow MongoDB ER diagram</text>
+
+  <rect x="40" y="80" width="210" height="170" class="entity" />
+  <text x="58" y="110" class="label">users</text>
+  <text x="58" y="136" class="small">_id PK</text>
+  <text x="58" y="156" class="small">email unique</text>
+  <text x="58" y="176" class="small">name, lastName</text>
+  <text x="58" y="196" class="small">passwordHash, role</text>
+  <text x="58" y="216" class="small">createdAt</text>
+
+  <rect x="330" y="80" width="250" height="190" class="entity" />
+  <text x="348" y="110" class="label">weather_stations</text>
+  <text x="348" y="136" class="small">_id PK; ownerId FK</text>
+  <text x="348" y="156" class="small">name, sensorModel, status</text>
+  <text x="348" y="176" class="small">location.latitude / longitude</text>
+  <text x="348" y="196" class="small">alertSettings.extremeHeat</text>
+  <text x="348" y="216" class="small">alertSettings.frost / storm</text>
+  <text x="348" y="236" class="small">alertSettings.criticalHumidity</text>
+
+  <rect x="660" y="80" width="225" height="170" class="entity" />
+  <text x="678" y="110" class="label">measurements</text>
+  <text x="678" y="136" class="small">_id PK; stationId FK</text>
+  <text x="678" y="156" class="small">temperature, humidity, pressure</text>
+  <text x="678" y="176" class="small">reportedAt, createdAt</text>
+  <text x="678" y="196" class="small">alertStatus</text>
+  <text x="678" y="216" class="small">alertType</text>
+
+  <rect x="40" y="380" width="285" height="225" class="entity new" />
+  <text x="58" y="410" class="label">user_notification_profiles</text>
+  <text x="58" y="436" class="small">_id PK (userId)</text>
+  <text x="58" y="456" class="small">notificationPreferences[]</text>
+  <text x="58" y="476" class="small">deliveryChannels.telegram.chatId</text>
+  <text x="58" y="496" class="small">deliveryChannels.log.enabled</text>
+  <text x="58" y="516" class="small">deliveryChannels.inApp</text>
+  <text x="58" y="536" class="small">telegramLinking.code / expiresAt</text>
+  <text x="58" y="566" class="small">indexes: notificationPreferences.stationId</text>
+  <text x="58" y="586" class="small">telegramLinking.code</text>
+
+  <rect x="455" y="360" width="320" height="265" class="entity new" />
+  <text x="473" y="390" class="label">notifications</text>
+  <text x="473" y="416" class="small">_id PK; userId FK; stationId FK</text>
+  <text x="473" y="436" class="small">stationName, alertType</text>
+  <text x="473" y="456" class="small">temperature, humidity, pressure</text>
+  <text x="473" y="476" class="small">reportedAt, createdAt</text>
+  <text x="473" y="496" class="small">readAt nullable</text>
+  <text x="473" y="516" class="small">messageId</text>
+  <text x="473" y="550" class="small">index: { userId: 1, createdAt: -1 }</text>
+  <text x="473" y="570" class="small">unique partial index:</text>
+  <text x="473" y="590" class="small">{ userId: 1, messageId: 1 }</text>
+
+  <path d="M250 160 H330" class="line" />
+  <text x="262" y="150" class="small">owns</text>
+  <path d="M580 160 H660" class="line" />
+  <text x="596" y="150" class="small">records</text>
+  <path d="M145 250 V380" class="line" />
+  <text x="154" y="320" class="small">has profile</text>
+  <path d="M325 490 H455" class="line" />
+  <text x="350" y="480" class="small">in-app target</text>
+  <path d="M615 360 C615 300 455 300 455 270" class="line" />
+  <text x="632" y="318" class="small">stationId</text>
+  <path d="M250 190 C390 320 455 350 455 410" class="line" />
+  <text x="286" y="294" class="small">userId receives</text>
+  <path d="M325 430 C360 360 410 300 455 270" class="line" />
+  <text x="344" y="352" class="small">subscribes to stationId</text>
+</svg>

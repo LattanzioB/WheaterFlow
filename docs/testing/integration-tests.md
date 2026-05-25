@@ -10,7 +10,7 @@ The suite starts test instances of the API and Notification Nest applications in
 the Jest process, each bound to an ephemeral localhost port. It connects those
 apps to real remote boundaries:
 
-- MongoDB Atlas through `MONGODB_URI`
+- MongoDB through `MONGODB_URI` (local Compose Mongo by default)
 - RabbitMQ through `RABBITMQ_URL`
 - API-to-Notification HTTP through the API proxy client
 - Notification alert delivery through an injected fake notifier
@@ -21,7 +21,7 @@ Copy `.env.integration.example` to `.env.integration` and fill in disposable
 test resources:
 
 ```bash
-MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/weatherflow_integration
+MONGODB_URI=mongodb://127.0.0.1:27017/weatherflow_integration
 WEATHERFLOW_INTEGRATION_ALLOW_DB_CLEANUP=true
 RABBITMQ_URL=amqp://weatherflow:weatherflow@localhost:5672
 RABBITMQ_ALERT_EXCHANGE=weatherflow.integration.alerts
@@ -41,9 +41,10 @@ cleans these test collections before and after each test:
 - `weather_stations`
 - `measurements`
 - `user_notification_profiles`
+- `notifications`
 
-Use a dedicated Atlas test database. Do not point this suite at a development or
-production database.
+Use the local Compose Mongo service, or a dedicated remote test database. Do not
+point this suite at a development or production database.
 
 RabbitMQ queues and exchanges are suffixed with a per-test UUID. The harness
 purges them before each test and deletes them after the applications shut down.
@@ -58,6 +59,12 @@ alert-producing measurement, and asserts two remote effects:
   `ClimateAlertDetectedMessage`
 - the Notification service consumer receives the RabbitMQ message and invokes
   the fake notifier with the expected log delivery target
+
+The in-app fanout test starts the Notification service with the real RabbitMQ
+consumer and `MongoNotificationRepository`, opens
+`GET /notifications/stream?token=<jwt>`, publishes a
+`ClimateAlertDetectedMessage`, and asserts notification persistence, SSE
+delivery, and idempotency for duplicate `messageId` values.
 
 The REST test calls the API delivery-channel route and then reads the
 Notification service directly to verify that the API-to-Notification HTTP

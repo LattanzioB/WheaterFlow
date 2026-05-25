@@ -1,28 +1,27 @@
 # WeatherFlow
 
-WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**, **MongoDB Atlas**, and **RabbitMQ**. The repository contains two independently runnable applications: the API service for weather data and alert detection, and the Notification service for notification delivery workflows.
+WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**, **MongoDB**, and **RabbitMQ**. The repository contains two independently runnable applications: the API service for weather data and alert detection, and the Notification service for notification delivery workflows.
 
 ## Tech Stack
 
-| Technology | Purpose |
-|---|---|
-| NestJS 11 | Application framework |
-| TypeScript (strict) | Type-safe backend development |
-| MongoDB Atlas + Mongoose | Managed document database access |
-| RabbitMQ | Asynchronous alert messaging |
-| Swagger / OpenAPI | Interactive API documentation |
-| Docker Compose | Local API, Notification service, and RabbitMQ infrastructure |
-| Jest + SWC | Unit and e2e testing |
-| ESLint + Prettier | Linting and formatting |
+| Technology          | Purpose                                                      |
+| ------------------- | ------------------------------------------------------------ |
+| NestJS 11           | Application framework                                        |
+| TypeScript (strict) | Type-safe backend development                                |
+| MongoDB + Mongoose  | Document database access                                     |
+| RabbitMQ            | Asynchronous alert messaging                                 |
+| Swagger / OpenAPI   | Interactive API documentation                                |
+| Docker Compose      | Local API, Notification service, and RabbitMQ infrastructure |
+| Jest + SWC          | Unit and e2e testing                                         |
+| ESLint + Prettier   | Linting and formatting                                       |
 
 ## Prerequisites
 
-| Tool | Version |
-|---|---|
-| [Node.js](https://nodejs.org/) | 20+ |
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest |
-| MongoDB Atlas | Free tier is enough |
-| npm | Bundled with Node.js |
+| Tool                                                              | Version              |
+| ----------------------------------------------------------------- | -------------------- |
+| [Node.js](https://nodejs.org/)                                    | 20+                  |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest               |
+| npm                                                               | Bundled with Node.js |
 
 ## Installation
 
@@ -51,7 +50,7 @@ npm run start:notifications:dev
 npm run start:web:dev
 ```
 
-Docker Compose starts RabbitMQ plus separate API and Notification service containers. MongoDB is not run locally; both services connect to MongoDB Atlas through `MONGODB_URI`.
+Docker Compose starts MongoDB, RabbitMQ, and separate API, Notification service, and Web UI containers. Set `MONGODB_URI` only when you want to override the local Compose Mongo database.
 
 - API base URL: `http://localhost:3000`
 - Web UI (extra): `http://localhost:5174` (dev) or `http://localhost:8080` (Docker)
@@ -62,21 +61,22 @@ Docker Compose starts RabbitMQ plus separate API and Notification service contai
 
 ## Available Scripts
 
-| Script | Description |
-|---|---|
-| `npm run start:api:dev` | Start the API service with hot reload |
-| `npm run start:notifications:dev` | Start the Notification service with hot reload |
-| `npm run start:web:dev` | Start the Web UI (Vite) on port 5174 |
-| `npm run build:web` | Build the Web UI for production |
-| `npm run build` | Compile the production build |
-| `npm run start:api:prod` | Run the compiled API service |
-| `npm run start:notifications:prod` | Run the compiled Notification service |
-| `npm run lint` | Run ESLint |
-| `npm run test` | Run unit tests |
-| `npm run test:e2e` | Run end-to-end tests |
-| `npm run test:integration` | Run cross-service API, Notification service, RabbitMQ, and MongoDB Atlas integration tests |
-| `npm run test:cov` | Run tests with coverage |
-| `npm run format` | Format source and test files with Prettier |
+| Script                             | Description                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| `npm run start:api:dev`            | Start the API service with hot reload                                                |
+| `npm run start:notifications:dev`  | Start the Notification service with hot reload                                       |
+| `npm run start:web:dev`            | Start the Web UI (Vite) on port 5174                                                 |
+| `npm run build:web`                | Build the Web UI for production                                                      |
+| `npm run build`                    | Compile the production build                                                         |
+| `npm run start:api:prod`           | Run the compiled API service                                                         |
+| `npm run start:notifications:prod` | Run the compiled Notification service                                                |
+| `npm run lint`                     | Run ESLint                                                                           |
+| `npm run test`                     | Run unit tests                                                                       |
+| `npm run test:e2e`                 | Run end-to-end tests                                                                 |
+| `npm run test:integration`         | Run cross-service API, Notification service, RabbitMQ, and MongoDB integration tests |
+| `npm run test:int:notifications`   | Run the in-app notification fanout integration test                                  |
+| `npm run test:cov`                 | Run tests with coverage                                                              |
+| `npm run format`                   | Format source and test files with Prettier                                           |
 
 ## Project Structure
 
@@ -112,25 +112,25 @@ libs/
 
 Copy `.env.example` to `.env` and configure the following values:
 
-| Variable | Description | Example |
-|---|---|---|
-| `PORT` | HTTP server port | `3000` |
-| `NOTIFICATIONS_PORT` | Notification service HTTP port | `3001` |
-| `MONGODB_URI` | MongoDB Atlas connection string | `mongodb+srv://.../weatherflow` |
-| `JWT_SECRET` | JWT signing secret | `your-secret-key` |
-| `JWT_EXPIRES_IN` | JWT expiration window | `7d` |
-| `CORS_ORIGINS` | Allowed browser origins for the Web UI | `http://localhost:5174,http://localhost:8080` |
-| `NOTIFICATION_SERVICE_URL` | Internal URL the API uses for synchronous calls to notifications | `http://notifications:3001` |
-| `RABBITMQ_DEFAULT_USER` | Local RabbitMQ username created by Compose | `weatherflow` |
-| `RABBITMQ_DEFAULT_PASS` | Local RabbitMQ password created by Compose | `weatherflow` |
-| `RABBITMQ_URL` | AMQP connection string used by both services | `amqp://weatherflow:weatherflow@rabbitmq:5672` |
-| `RABBITMQ_ALERT_EXCHANGE` | Alert exchange name | `weatherflow.alerts` |
-| `RABBITMQ_ALERT_QUEUE` | Notification alert queue name | `weatherflow.notifications.alerts` |
-| `RABBITMQ_ALERT_ROUTING_KEY` | Climate alert routing key | `alerts.climate.detected` |
-| `NOTIFICATION_DELIVERY_MODE` | Notification runtime mode for local delivery | `log` |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token used for alert delivery and Telegram account linking | `your-bot-token` |
-| `TELEGRAM_BOT_USERNAME` | Optional bot username shown to users when generating a Telegram link code | `weatherflow_bot` |
-| `TELEGRAM_WEBHOOK_SECRET` | Optional secret validated on Telegram webhook requests | `your-webhook-secret` |
+| Variable                     | Description                                                               | Example                                        |
+| ---------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
+| `PORT`                       | HTTP server port                                                          | `3000`                                         |
+| `NOTIFICATIONS_PORT`         | Notification service HTTP port                                            | `3001`                                         |
+| `MONGODB_URI`                | MongoDB connection string; Compose defaults to local Mongo when unset     | `mongodb://mongo:27017/weatherflow`            |
+| `JWT_SECRET`                 | JWT signing secret                                                        | `your-secret-key`                              |
+| `JWT_EXPIRES_IN`             | JWT expiration window                                                     | `7d`                                           |
+| `CORS_ORIGINS`               | Allowed browser origins for the Web UI                                    | `http://localhost:5174,http://localhost:8080`  |
+| `NOTIFICATION_SERVICE_URL`   | Internal URL the API uses for synchronous calls to notifications          | `http://notifications:3001`                    |
+| `RABBITMQ_DEFAULT_USER`      | Local RabbitMQ username created by Compose                                | `weatherflow`                                  |
+| `RABBITMQ_DEFAULT_PASS`      | Local RabbitMQ password created by Compose                                | `weatherflow`                                  |
+| `RABBITMQ_URL`               | AMQP connection string used by both services                              | `amqp://weatherflow:weatherflow@rabbitmq:5672` |
+| `RABBITMQ_ALERT_EXCHANGE`    | Alert exchange name                                                       | `weatherflow.alerts`                           |
+| `RABBITMQ_ALERT_QUEUE`       | Notification alert queue name                                             | `weatherflow.notifications.alerts`             |
+| `RABBITMQ_ALERT_ROUTING_KEY` | Climate alert routing key                                                 | `alerts.climate.detected`                      |
+| `NOTIFICATION_DELIVERY_MODE` | Notification runtime mode for local delivery                              | `log`                                          |
+| `TELEGRAM_BOT_TOKEN`         | Telegram bot token used for alert delivery and Telegram account linking   | `your-bot-token`                               |
+| `TELEGRAM_BOT_USERNAME`      | Optional bot username shown to users when generating a Telegram link code | `weatherflow_bot`                              |
+| `TELEGRAM_WEBHOOK_SECRET`    | Optional secret validated on Telegram webhook requests                    | `your-webhook-secret`                          |
 
 ## Local Smoke Checks
 
@@ -152,7 +152,8 @@ npm run test:integration
 
 `npm run test:integration` requires the dedicated `.env.integration` settings
 described in `docs/testing/integration-tests.md`, including a disposable
-MongoDB Atlas database and a reachable RabbitMQ broker.
+MongoDB database and a reachable RabbitMQ broker. For the in-app fanout slice,
+`docker compose up mongo rabbitmq` is enough for the local dependencies.
 
 ### Mock Data
 
@@ -190,13 +191,13 @@ This repository uses a feature-branch workflow with `main` as the integration br
 
 ### Branch Naming
 
-| Prefix | Purpose | Example |
-|---|---|---|
-| `feature/` | New functionality | `feature/user-authentication` |
-| `bugfix/` | Non-urgent bug fixes | `bugfix/fix-login-redirect` |
-| `hotfix/` | Urgent production fixes | `hotfix/patch-security-vuln` |
-| `docs/` | Documentation-only changes | `docs/update-api-readme` |
-| `chore/` | Maintenance or tooling | `chore/upgrade-nestjs` |
+| Prefix     | Purpose                    | Example                       |
+| ---------- | -------------------------- | ----------------------------- |
+| `feature/` | New functionality          | `feature/user-authentication` |
+| `bugfix/`  | Non-urgent bug fixes       | `bugfix/fix-login-redirect`   |
+| `hotfix/`  | Urgent production fixes    | `hotfix/patch-security-vuln`  |
+| `docs/`    | Documentation-only changes | `docs/update-api-readme`      |
+| `chore/`   | Maintenance or tooling     | `chore/upgrade-nestjs`        |
 
 ### Pull Request Rules
 

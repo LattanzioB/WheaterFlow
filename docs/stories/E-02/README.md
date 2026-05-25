@@ -44,7 +44,7 @@ The notification capability is extracted because it is already modeled as suppor
 | S-02.12 | In-app notifications — SSE live stream (extra)                        | done   |
 | S-02.13 | Web — NotificationsContext, header bell, and toast (extra)            | done   |
 | S-02.14 | Web — Notifications page and profile toggle (extra)                   | done   |
-| S-02.15 | In-app notifications — integration test and architecture docs (extra) | draft  |
+| S-02.15 | In-app notifications — integration test and architecture docs (extra) | done   |
 
 ### S-02.10–S-02.15: In-App Realtime Alert Notifications
 

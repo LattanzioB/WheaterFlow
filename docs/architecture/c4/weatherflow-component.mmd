@@ -1,0 +1,43 @@
+flowchart LR
+  web["Web UI\nNotificationsContext, bell, toast, /notifications"]
+  api["API service - apps/api\nRabbitMqAlertPublisherAdapter"]
+
+  subgraph notifications["Notification service - apps/notifications"]
+    prefs["NotificationPreferencesController"]
+    history["NotificationsController\nGET /notifications\nPATCH read / read-all"]
+    stream["NotificationStreamController\nGET /notifications/stream"]
+    consumer["RabbitMqClimateAlertConsumerAdapter"]
+    service["NotificationService\nFilter subscribers by station + alert type\nResolve delivery targets"]
+    composite["CompositeAlertNotifierAdapter"]
+    inApp["InAppAlertNotifierAdapter\nPersist + emit notification.delivered"]
+    log["LogAlertNotifierAdapter"]
+    telegram["Telegram adapters"]
+    notificationRepo["MongoNotificationRepository"]
+    profileRepo["MongoNotificationProfileRepository"]
+    eventBus["EventEmitter2"]
+  end
+
+  rabbit[("RabbitMQ\nClimateAlertDetectedMessage")]
+  profiles[("user_notification_profiles\ndeliveryChannels.inApp")]
+  notificationsCollection[("notifications collection\nindex userId+createdAt\nunique userId+messageId")]
+  telegramApi["Telegram Bot API"]
+
+  web -->|"HTTP history/read state"| history
+  web -->|"SSE notification events"| stream
+  api -->|"publishClimateAlert"| rabbit
+  api -->|"preference proxy REST"| prefs
+  rabbit --> consumer
+  consumer --> service
+  service --> profileRepo
+  service --> composite
+  composite --> log
+  composite --> telegram
+  composite --> inApp
+  inApp --> notificationRepo
+  inApp --> eventBus
+  eventBus --> stream
+  history --> notificationRepo
+  prefs --> profileRepo
+  profileRepo --> profiles
+  notificationRepo --> notificationsCollection
+  telegram --> telegramApi

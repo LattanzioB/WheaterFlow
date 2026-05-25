@@ -17,46 +17,46 @@ for climate-alert delivery.
 
 ## Runtime Stack
 
-| Concern | Technology |
-|---|---|
-| Runtime | Node.js 20 + TypeScript strict mode |
-| Framework | NestJS 11 |
-| API | REST + Swagger through the API service |
-| Authentication | JWT with Passport in the API service |
-| Database | MongoDB Atlas through Mongoose ODM |
-| Messaging | RabbitMQ topic exchange for climate alerts |
-| Notifications | Log delivery for local/test runs, Telegram adapter when configured |
-| Local orchestration | Docker Compose for API, Notification service, and RabbitMQ |
-| Testing | Jest unit tests plus cross-service integration tests |
+| Concern             | Technology                                                         |
+| ------------------- | ------------------------------------------------------------------ |
+| Runtime             | Node.js 20 + TypeScript strict mode                                |
+| Framework           | NestJS 11                                                          |
+| API                 | REST + Swagger through the API service                             |
+| Authentication      | JWT with Passport in the API service                               |
+| Database            | MongoDB Atlas through Mongoose ODM                                 |
+| Messaging           | RabbitMQ topic exchange for climate alerts                         |
+| Notifications       | Log delivery for local/test runs, Telegram adapter when configured |
+| Local orchestration | Docker Compose for API, Notification service, and RabbitMQ         |
+| Testing             | Jest unit tests plus cross-service integration tests               |
 
 ## Delivery II Components
 
-| Component | Owns | Exposes | Depends on |
-|---|---|---|---|
-| API service (`apps/api`) | Auth, user identity, station catalog, measurement recording, measurement search, alert detection | Public REST API on port `3000`, Swagger at `/api/docs` | MongoDB Atlas, RabbitMQ, Notification service REST API |
+| Component                                   | Owns                                                                                                                         | Exposes                                                                   | Depends on                                             |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| API service (`apps/api`)                    | Auth, user identity, station catalog, measurement recording, measurement search, alert detection                             | Public REST API on port `3000`, Swagger at `/api/docs`                    | MongoDB Atlas, RabbitMQ, Notification service REST API |
 | Notification service (`apps/notifications`) | Notification profiles, station subscriptions, alert-type preferences, delivery channels, Telegram link codes, alert dispatch | Internal/local REST API on port `3001`, Telegram webhook, health endpoint | MongoDB Atlas, RabbitMQ, Telegram Bot API when enabled |
-| RabbitMQ | Durable alert exchange, notification queue, routing key binding | AMQP on `5672`, management UI on `15672` | None inside the app boundary |
-| MongoDB Atlas | Persistent collections for users, stations, measurements, and notification profiles | Managed MongoDB endpoint | External managed dependency |
-| Clients | Users, Swagger/manual callers, station data publishers | HTTPS/JSON requests to the API service | API service |
+| RabbitMQ                                    | Durable alert exchange, notification queue, routing key binding                                                              | AMQP on `5672`, management UI on `15672`                                  | None inside the app boundary                           |
+| MongoDB Atlas                               | Persistent collections for users, stations, measurements, and notification profiles                                          | Managed MongoDB endpoint                                                  | External managed dependency                            |
+| Clients                                     | Users, Swagger/manual callers, station data publishers                                                                       | HTTPS/JSON requests to the API service                                    | API service                                            |
 
 ## Communication Boundaries
 
-| Flow | Boundary | Reason |
-|---|---|---|
-| User registration, login, station CRUD, measurement queries | Client to API REST | User-facing workflows stay behind one authenticated API facade. |
-| Preference reads and writes from API routes | API to Notification REST | Preferences are owned by the Notification service, while the API preserves the public Delivery I route shape. |
-| Measurement alert publication | API to RabbitMQ | Alert dispatch does not block measurement persistence and can be retried or observed independently. |
-| Alert consumption and delivery | RabbitMQ to Notification service | Notification processing can scale or fail separately from measurement recording. |
-| Telegram account linking | Telegram webhook to Notification service | Chat IDs belong to the notification boundary, not the weather-data API. |
+| Flow                                                        | Boundary                                 | Reason                                                                                                        |
+| ----------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| User registration, login, station CRUD, measurement queries | Client to API REST                       | User-facing workflows stay behind one authenticated API facade.                                               |
+| Preference reads and writes from API routes                 | API to Notification REST                 | Preferences are owned by the Notification service, while the API preserves the public Delivery I route shape. |
+| Measurement alert publication                               | API to RabbitMQ                          | Alert dispatch does not block measurement persistence and can be retried or observed independently.           |
+| Alert consumption and delivery                              | RabbitMQ to Notification service         | Notification processing can scale or fail separately from measurement recording.                              |
+| Telegram account linking                                    | Telegram webhook to Notification service | Chat IDs belong to the notification boundary, not the weather-data API.                                       |
 
 ## Technical Split Justification
 
 The split follows three granularity breakers.
 
-| Breaker | Decision |
-|---|---|
-| Business capability | Weather data capture/search and notification delivery evolve at different speeds. The API service keeps the meteorological core, while the Notification service owns subscriber targeting and channel delivery. |
-| Data ownership | Measurement and station writes belong to the API service. Notification profiles, delivery channels, and Telegram link codes belong to the Notification service in the `user_notification_profiles` collection. |
+| Breaker              | Decision                                                                                                                                                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Business capability  | Weather data capture/search and notification delivery evolve at different speeds. The API service keeps the meteorological core, while the Notification service owns subscriber targeting and channel delivery.                              |
+| Data ownership       | Measurement and station writes belong to the API service. Notification profiles, delivery channels, and Telegram link codes belong to the Notification service in the `user_notification_profiles` collection.                               |
 | Transaction boundary | Recording a measurement must remain successful even if notification delivery is unavailable. The API persists the measurement first, then publishes a durable `ClimateAlertDetectedMessage`; notification dispatch is eventually consistent. |
 
 This keeps the API focused on authenticated weather workflows and keeps the
@@ -153,16 +153,19 @@ repeatable regression check.
 
 Índice narrativo en español: [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md).
 
-| Diagram | Source |
-|---|---|
-| C4 (todos los niveles) | [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md) |
-| C4 context | `docs/architecture/c4/c4_level_1_context.plantuml` |
-| C4 container | `docs/architecture/c4/c4_level_2_container.plantuml` |
-| C4 component (API) | `docs/architecture/c4/c4_level_3_api.plantuml` |
-| C4 component (Notifications) | `docs/architecture/c4/c4_level_3_notifications.plantuml` |
-| Measurement search/filter sequence | `docs/architecture/sequences/query-measurements-sequence.mmd` |
-| Alert publication and consumption sequence | `docs/architecture/sequences/record-measurement-alert-sequence.mmd` |
-| Notification preference sequence | `docs/architecture/sequences/manage-notification-preferences-sequence.mmd` |
+| Diagram                                      | Source                                                                      |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| C4 (todos los niveles)                       | [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md) |
+| C4 context                                   | `docs/architecture/c4/c4_level_1_context.plantuml`                          |
+| C4 container                                 | `docs/architecture/c4/c4_level_2_container.plantuml`                        |
+| C4 component (API)                           | `docs/architecture/c4/c4_level_3_api.plantuml`                              |
+| C4 component (Notifications)                 | `docs/architecture/c4/c4_level_3_notifications.plantuml`                    |
+| C4 component (distributed notification flow) | `docs/architecture/c4/weatherflow-component.mmd`                            |
+| Measurement search/filter sequence           | `docs/architecture/sequences/query-measurements-sequence.mmd`               |
+| Alert publication and consumption sequence   | `docs/architecture/sequences/record-measurement-alert-sequence.mmd`         |
+| Climate alert to in-app delivery sequence    | `docs/architecture/sequences/climate-alert-in-app-delivery-sequence.mmd`    |
+| Notification preference sequence             | `docs/architecture/sequences/manage-notification-preferences-sequence.mmd`  |
+| MongoDB ER diagram                           | `docs/architecture/uml/weatherflow-er.mmd`                                  |
 
 ## Delivery I Historical Material
 

@@ -35,6 +35,12 @@ export const envValidationSchema = Joi.object({
 export const notificationsEnvValidationSchema = Joi.object({
   NOTIFICATIONS_PORT: Joi.number().default(3001),
   ...commonEnvValidationSchema,
+  JWT_SECRET: Joi.string().required().min(8).messages({
+    'any.required':
+      'JWT_SECRET is required so Notification service can authenticate SSE and history requests.',
+    'string.min': 'JWT_SECRET must be at least 8 characters long.',
+  }),
+  JWT_EXPIRES_IN: Joi.string().default('7d'),
   NOTIFICATION_DELIVERY_MODE: Joi.string()
     .valid('log', 'telegram')
     .default('log'),

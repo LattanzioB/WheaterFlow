@@ -15,15 +15,16 @@ describe('UpdateDeliveryChannelsService', () => {
     findAll: jest.fn(),
   });
 
-  const buildNotificationClient = (): jest.Mocked<INotificationServiceClient> => ({
-    getProfile: jest.fn(),
-    listSubscriptions: jest.fn(),
-    subscribe: jest.fn(),
-    unsubscribe: jest.fn(),
-    updateAlertPreferences: jest.fn(),
-    updateDeliveryChannels: jest.fn(),
-    createTelegramLinkCode: jest.fn(),
-  });
+  const buildNotificationClient =
+    (): jest.Mocked<INotificationServiceClient> => ({
+      getProfile: jest.fn(),
+      listSubscriptions: jest.fn(),
+      subscribe: jest.fn(),
+      unsubscribe: jest.fn(),
+      updateAlertPreferences: jest.fn(),
+      updateDeliveryChannels: jest.fn(),
+      createTelegramLinkCode: jest.fn(),
+    });
 
   const buildUser = () =>
     User.create({
@@ -56,6 +57,7 @@ describe('UpdateDeliveryChannelsService', () => {
       deliveryChannels: {
         telegram: { chatId: '98765' },
         log: { enabled: true },
+        inApp: false,
       },
     });
 
@@ -71,8 +73,52 @@ describe('UpdateDeliveryChannelsService', () => {
     expect(result.notificationProfile.deliveryChannels).toEqual({
       telegram: { chatId: '98765' },
       log: { enabled: true },
+      inApp: false,
+    });
+    expect(notificationClient.updateDeliveryChannels).toHaveBeenCalledWith({
+      userId: 'user-1',
+      deliveryChannels: {
+        telegram: {
+          chatId: '98765',
+        },
+      },
     });
     expect(userRepository.save.mock.calls).toHaveLength(0);
+  });
+
+  it('forwards in-app channel updates to the Notification service', async () => {
+    const userRepository = buildUserRepository();
+    const notificationClient = buildNotificationClient();
+    const service = new UpdateDeliveryChannelsService(
+      userRepository,
+      notificationClient,
+      new UserNotificationProfileService(notificationClient),
+    );
+
+    userRepository.findById.mockResolvedValue(buildUser());
+    notificationClient.updateDeliveryChannels.mockResolvedValue({
+      userId: 'user-1',
+      notificationPreferences: [],
+      deliveryChannels: {
+        telegram: { chatId: null },
+        log: { enabled: true },
+        inApp: true,
+      },
+    });
+
+    await service.execute({
+      userId: 'user-1',
+      deliveryChannels: {
+        inApp: true,
+      },
+    });
+
+    expect(notificationClient.updateDeliveryChannels).toHaveBeenCalledWith({
+      userId: 'user-1',
+      deliveryChannels: {
+        inApp: true,
+      },
+    });
   });
 
   it('rejects unknown users', async () => {

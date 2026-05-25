@@ -187,6 +187,8 @@ describe('notificationsEnvValidationSchema', () => {
   const validEnv: Partial<EnvShape> = {
     NOTIFICATIONS_PORT: '3001',
     MONGODB_URI: 'mongodb+srv://user:pass@cluster.mongodb.net/weatherflow',
+    JWT_SECRET: 'super-secret-key-12345',
+    JWT_EXPIRES_IN: '7d',
     RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
     RABBITMQ_ALERT_EXCHANGE: 'weatherflow.alerts',
     RABBITMQ_ALERT_QUEUE: 'weatherflow.notifications.alerts',
@@ -199,9 +201,18 @@ describe('notificationsEnvValidationSchema', () => {
   ): EnvValidationResult =>
     notificationsEnvValidationSchema.validate(env) as EnvValidationResult;
 
-  it('should pass without API-only JWT or service URL settings', () => {
+  it('should pass without API-only service URL settings', () => {
     const { error } = validateNotificationsEnv(validEnv);
     expect(error).toBeUndefined();
+  });
+
+  it('should require JWT_SECRET for notification history and SSE auth', () => {
+    const { JWT_SECRET, ...env } = validEnv;
+    const { error } = validateNotificationsEnv(env);
+
+    expect(JWT_SECRET).toBe('super-secret-key-12345');
+    expect(error).toBeDefined();
+    expect(error!.message).toContain('JWT_SECRET');
   });
 
   it('should default NOTIFICATIONS_PORT to 3001', () => {

@@ -1,9 +1,11 @@
-import { apiRequest, buildQuery } from './client';
+import { apiRequest, buildQuery, notificationsRequest } from './client';
 import type {
   AlertType,
+  AppNotification,
   AuthResponse,
   Measurement,
   MeasurementFilters,
+  NotificationsPageResult,
   SubscribedStationSummary,
   UserProfile,
   WeatherStation,
@@ -146,5 +148,47 @@ export function unsubscribeFromStation(
 ): Promise<UserProfile> {
   return apiRequest(`/users/${userId}/subscriptions/${stationId}`, {
     method: 'DELETE',
+  });
+}
+
+export function updateDeliveryChannels(
+  userId: string,
+  deliveryChannels: {
+    telegram?: { chatId?: string | null };
+    log?: { enabled?: boolean };
+    inApp?: boolean;
+  },
+): Promise<UserProfile> {
+  return apiRequest(`/users/${userId}/delivery-channels`, {
+    method: 'PATCH',
+    body: JSON.stringify({ deliveryChannels }),
+  });
+}
+
+export function fetchNotifications(
+  filters: {
+    unreadOnly?: boolean;
+    limit?: number;
+    cursor?: string;
+  } = {},
+): Promise<NotificationsPageResult> {
+  return notificationsRequest(
+    `/notifications${buildQuery({
+      unreadOnly: filters.unreadOnly,
+      limit: filters.limit,
+      cursor: filters.cursor,
+    })}`,
+  );
+}
+
+export function markNotificationRead(id: string): Promise<AppNotification> {
+  return notificationsRequest(`/notifications/${id}/read`, {
+    method: 'PATCH',
+  });
+}
+
+export function markAllNotificationsRead(): Promise<{ modifiedCount: number }> {
+  return notificationsRequest('/notifications/read-all', {
+    method: 'PATCH',
   });
 }

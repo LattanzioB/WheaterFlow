@@ -39,6 +39,15 @@ export interface UserProfile {
     stationId: string;
     alertTypes: AlertType[];
   }[];
+  deliveryChannels: {
+    telegram: {
+      chatId: string | null;
+    };
+    log: {
+      enabled: boolean;
+    };
+    inApp: boolean;
+  };
   createdAt: string;
 }
 
@@ -88,4 +97,24 @@ export interface MeasurementFilters {
   reportedFrom?: string;
   reportedTo?: string;
   alertOnly?: boolean;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  stationId: string;
+  stationName: string;
+  alertType: AlertType;
+  temperature: number;
+  humidity: number;
+  pressure: number;
+  reportedAt: string;
+  createdAt: string;
+  readAt: string | null;
+  messageId: string;
+}
+
+export interface NotificationsPageResult {
+  notifications: AppNotification[];
+  nextCursor: string | null;
 }

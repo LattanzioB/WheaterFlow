@@ -18,6 +18,7 @@ export interface INotificationRepository {
   findByUserId(
     query: FindNotificationsByUserIdQuery,
   ): Promise<FindNotificationsByUserIdResult>;
+  countUnread(userId: string): Promise<number>;
   markRead(id: string, userId: string): Promise<Notification | null>;
   markAllRead(userId: string): Promise<number>;
 }

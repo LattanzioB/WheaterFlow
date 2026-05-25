@@ -16,6 +16,7 @@ describe('MongoNotificationRepository', () => {
       replaceOne: jest.fn(),
       findById: jest.fn(),
       find: jest.fn(),
+      countDocuments: jest.fn(),
       findOneAndUpdate: jest.fn(),
       updateMany: jest.fn(),
     }) as any;
@@ -145,6 +146,19 @@ describe('MongoNotificationRepository', () => {
     });
   });
 
+  it('counts unread notifications for the user', async () => {
+    const model = buildModel();
+    const repository = new MongoNotificationRepository(model);
+
+    model.countDocuments.mockReturnValue(buildQuery(5));
+
+    await expect(repository.countUnread('user-1')).resolves.toBe(5);
+    expect(model.countDocuments).toHaveBeenCalledWith({
+      userId: 'user-1',
+      readAt: null,
+    });
+  });
+
   it('rejects invalid pagination cursors', async () => {
     const model = buildModel();
     const repository = new MongoNotificationRepository(model);
@@ -223,6 +237,15 @@ describe('MongoNotificationRepository', () => {
     );
     const modifiedCount = await repository.markAllRead('user-1');
 
+    expect(model.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'notification-1', userId: 'user-1' },
+      { $set: { readAt: expect.any(Date) } },
+      { new: true },
+    );
+    expect(model.updateMany).toHaveBeenCalledWith(
+      { userId: 'user-1', readAt: null },
+      { $set: { readAt: expect.any(Date) } },
+    );
     expect(readNotification?.getReadAt()).toEqual(readDocument.readAt);
     expect(modifiedCount).toBe(3);
   });

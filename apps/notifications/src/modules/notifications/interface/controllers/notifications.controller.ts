@@ -2,6 +2,8 @@ import {
   BadRequestException,
   Controller,
   Get,
+  HttpCode,
+  HttpException,
   NotFoundException,
   Param,
   Patch,
@@ -11,43 +13,43 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiOkResponse,
   ApiOperation,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { GetNotificationsService } from '../../application/services/get-notifications.service';
+import { ListUserNotificationsService } from '../../application/services/list-user-notifications.service';
 import { MarkAllNotificationsReadService } from '../../application/services/mark-all-notifications-read.service';
 import { MarkNotificationReadService } from '../../application/services/mark-notification-read.service';
 import {
   ListNotificationsQueryDto,
-  ListNotificationsResponseDto,
-  MarkAllNotificationsReadResponseDto,
-  NotificationResponseDto,
+  NotificationIdParamDto,
+  NotificationsPageDto,
 } from '../dtos/notification.dto';
 import { NotificationJwtAuthGuard } from '../guards/notification-jwt-auth.guard';
 import type { AuthenticatedNotificationRequest } from '../guards/notification-jwt-auth.guard';
 import { NotificationResponseMapper } from '../mappers/notification-response.mapper';
 
-@ApiTags('notifications')
+@ApiTags('Notifications')
 @ApiBearerAuth('bearer')
 @Controller('notifications')
 @UseGuards(NotificationJwtAuthGuard)
 export class NotificationsController {
   constructor(
-    private readonly getNotificationsService: GetNotificationsService,
+    private readonly listUserNotificationsService: ListUserNotificationsService,
     private readonly markNotificationReadService: MarkNotificationReadService,
     private readonly markAllNotificationsReadService: MarkAllNotificationsReadService,
   ) {}
 
   @Get()
   @ApiOperation({ summary: 'List authenticated user notifications' })
-  @ApiOkResponse({ type: ListNotificationsResponseDto })
+  @ApiResponse({ status: 200, type: NotificationsPageDto })
+  @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   async list(
     @Req() req: AuthenticatedNotificationRequest,
     @Query() query: ListNotificationsQueryDto,
-  ): Promise<ListNotificationsResponseDto> {
+  ): Promise<NotificationsPageDto> {
     try {
-      const result = await this.getNotificationsService.execute({
+      const result = await this.listUserNotificationsService.execute({
         userId: this.getUserId(req),
         limit: query.limit,
         cursor: query.cursor,
@@ -55,10 +57,11 @@ export class NotificationsController {
       });
 
       return {
-        notifications: result.notifications.map((notification) =>
+        items: result.notifications.map((notification) =>
           NotificationResponseMapper.toResponse(notification),
         ),
         nextCursor: result.nextCursor,
+        unreadCount: result.unreadCount,
       };
     } catch (error) {
       throw this.mapError(error);
@@ -66,36 +69,38 @@ export class NotificationsController {
   }
 
   @Patch(':id/read')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Mark one notification as read' })
-  @ApiOkResponse({ type: NotificationResponseDto })
+  @ApiResponse({ status: 204, description: 'Notification marked as read.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
+  @ApiResponse({ status: 404, description: 'Notification not found.' })
   async markRead(
-    @Param('id') id: string,
+    @Param() params: NotificationIdParamDto,
     @Req() req: AuthenticatedNotificationRequest,
-  ): Promise<NotificationResponseDto> {
+  ): Promise<void> {
     try {
-      const notification = await this.markNotificationReadService.execute({
-        id,
+      await this.markNotificationReadService.execute({
+        id: params.id,
         userId: this.getUserId(req),
       });
-
-      return NotificationResponseMapper.toResponse(notification);
     } catch (error) {
       throw this.mapError(error);
     }
   }
 
   @Patch('read-all')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Mark every unread notification as read' })
-  @ApiOkResponse({ type: MarkAllNotificationsReadResponseDto })
+  @ApiResponse({
+    status: 204,
+    description: 'All unread notifications marked as read.',
+  })
+  @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
   async markAllRead(
     @Req() req: AuthenticatedNotificationRequest,
-  ): Promise<MarkAllNotificationsReadResponseDto> {
+  ): Promise<void> {
     try {
-      return {
-        modifiedCount: await this.markAllNotificationsReadService.execute(
-          this.getUserId(req),
-        ),
-      };
+      await this.markAllNotificationsReadService.execute(this.getUserId(req));
     } catch (error) {
       throw this.mapError(error);
     }
@@ -110,6 +115,10 @@ export class NotificationsController {
   }
 
   private mapError(error: unknown): Error {
+    if (error instanceof HttpException) {
+      return error;
+    }
+
     if (error instanceof Error && error.message === 'Notification not found') {
       return new NotFoundException(error.message);
     }

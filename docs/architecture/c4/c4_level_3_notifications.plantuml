@@ -1,0 +1,56 @@
+@startuml c4_level_3_notifications
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+AddRelTag("async", $lineStyle=DashedLine())
+
+LAYOUT_TOP_DOWN()
+
+Person(usuarioTelegram, "Usuario de Telegram", "Vincula su cuenta al sistema y recibe alertas climáticas a través del bot.")
+
+System_Ext(telegram, "Telegram Bot API", "Canal externo para vincular cuentas y entregar alertas al usuario.")
+
+Container(api, "API service", "NestJS", "Proxy REST de preferencias desde rutas /users/:id/...")
+
+Container_Boundary(notifications, "Notification service (apps/notifications)") {
+  Component(prefsController, "NotificationPreferencesController", "NestJS", "API REST de perfiles y suscripciones.")
+  Component(telegramWebhook, "TelegramWebhookController", "NestJS", "Webhook /link y vinculación de chat.")
+  Component(preferenceServices, "Preference services", "Application", "Subscribe/unsubscribe, canales, códigos Telegram.")
+  Component(notificationService, "NotificationService", "Application", "Filtra suscriptores y resuelve targets.")
+  Component(profileAggregate, "UserNotificationProfile", "Domain", "Preferencias por estación y canales.")
+  Component(notificationEntity, "Notification", "Domain", "Historial in-app persistido.")
+  Component(profileRepository, "MongoNotificationProfileRepository", "Infrastructure", "user_notification_profiles")
+  Component(notificationRepository, "MongoNotificationRepository", "Infrastructure", "notifications")
+  Component(consumer, "RabbitMqClimateAlertConsumerAdapter", "Infrastructure", "Consume, valida, ack/nack.")
+  Component(compositeNotifier, "CompositeAlertNotifierAdapter", "Infrastructure", "Orquesta Log, Telegram e InApp según modo.")
+  Component(logNotifier, "LogAlertNotifierAdapter", "Infrastructure", "Entrega local/test.")
+  Component(telegramNotifier, "TelegramAlertNotifierAdapter", "Infrastructure", "sendMessage.")
+  Component(inAppNotifier, "InAppAlertNotifierAdapter", "Infrastructure", "Persiste notificación in-app.")
+}
+
+ContainerDb_Ext(mongoAtlas, "MongoDB Atlas", "MongoDB", "user_notification_profiles, notifications")
+ContainerQueue(rabbit, "RabbitMQ", "AMQP", "Cola de alertas climáticas")
+
+Rel(api, prefsController, "Proxy REST preferencias", "HTTP")
+Rel(telegram, telegramWebhook, "Webhook", "HTTPS")
+Rel(usuarioTelegram, telegram, "Interactúa con el bot", "HTTPS")
+
+Rel(prefsController, preferenceServices, "Delega")
+Rel(preferenceServices, profileAggregate, "Orquesta")
+Rel(preferenceServices, profileRepository, "Persiste")
+Rel(telegramWebhook, profileRepository, "Actualiza chatId")
+
+Rel(rabbit, consumer, "AMQP", $tags="async")
+Rel(consumer, notificationService, "Entrega mensaje")
+Rel(notificationService, profileRepository, "Carga perfiles")
+Rel(notificationService, compositeNotifier, "Despacha")
+Rel(compositeNotifier, logNotifier, "Modo log")
+Rel(compositeNotifier, telegramNotifier, "Modo telegram")
+Rel(compositeNotifier, inAppNotifier, "Canal inApp")
+Rel(inAppNotifier, notificationRepository, "Persiste")
+Rel(inAppNotifier, notificationEntity, "Crea")
+
+Rel(profileRepository, mongoAtlas, "Lee y escribe documentos", "Mongoose / TLS")
+Rel(notificationRepository, mongoAtlas, "Lee y escribe documentos", "Mongoose / TLS")
+Rel(telegramNotifier, telegram, "HTTPS")
+
+@enduml

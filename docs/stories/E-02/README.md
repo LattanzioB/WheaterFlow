@@ -39,6 +39,31 @@ The notification capability is extracted because it is already modeled as suppor
 | S-02.7 | Add cross-service integration tests | draft |
 | S-02.8 | Update distributed architecture documentation | draft |
 | S-02.9 | Build web UI for use cases (extra) | done |
+| S-02.10 | In-app notification persistence and adapter (extra) | draft |
+| S-02.11 | In-app notifications — REST history endpoints (extra) | draft |
+| S-02.12 | In-app notifications — SSE live stream (extra) | draft |
+| S-02.13 | Web — NotificationsContext, header bell, and toast (extra) | draft |
+| S-02.14 | Web — Notifications page and profile toggle (extra) | draft |
+| S-02.15 | In-app notifications — integration test and architecture docs (extra) | draft |
+
+### S-02.10–S-02.15: In-App Realtime Alert Notifications
+
+These six stories deliver **Option E (Hybrid: Persist + Stream)** — validated 2026-05-24 — so subscribed users receive weather alerts inside the Web app in real time, in parallel with the existing Telegram delivery. The slices are vertically demonstrable and have the following dependency graph:
+
+```
+S-02.10 ──┬──> S-02.11 ──┐
+          └──> S-02.12 ──┴──> S-02.13 ──> S-02.14 ──┐
+                                                      └──> S-02.15
+```
+
+| Slice | Estimate | Demonstrable outcome |
+|---|---|---|
+| S-02.10 | 10h | Alert persisted in new `notifications` collection per `in-app` subscriber; Telegram unaffected. |
+| S-02.11 | 3h  | Authenticated REST: list/paginate, mark read, mark all read. |
+| S-02.12 | 3h  | Authenticated SSE: live event in <2s after RabbitMQ publish. |
+| S-02.13 | 6h  | Web header bell + badge + dropdown + live toast. |
+| S-02.14 | 5h  | `/notifications` page with filters; profile toggle for `inApp` channel. |
+| S-02.15 | 6h  | Cross-boundary integration test + refreshed C4/sequence/ER/API docs. |
 
 ## Definition of Done
 
@@ -51,3 +76,4 @@ The notification capability is extracted because it is already modeled as suppor
 7. Integration tests verify real service boundaries without Postman/manual simulation.
 8. Architecture docs include diagrams, responsibilities, sequence diagrams, and technical justification.
 9. _(Optional — S-02.9)_ Web UI executes main use cases against the API for demo and assignment extra credit.
+10. _(Optional — S-02.10–S-02.15)_ Web UI receives weather alerts in real time (in-app notifications + history + profile toggle) for subscribed users via SSE, persisting a history alongside the existing Telegram delivery.

@@ -99,7 +99,7 @@ export interface MeasurementFilters {
   alertOnly?: boolean;
 }
 
-export interface AppNotification {
+export interface Notification {
   id: string;
   userId: string;
   stationId: string;
@@ -114,7 +114,11 @@ export interface AppNotification {
   messageId: string;
 }
 
-export interface NotificationsPageResult {
-  notifications: AppNotification[];
+export interface NotificationsPage {
+  items: Notification[];
   nextCursor: string | null;
+  unreadCount: number;
 }
+
+export type AppNotification = Notification;
+export type NotificationsPageResult = NotificationsPage;

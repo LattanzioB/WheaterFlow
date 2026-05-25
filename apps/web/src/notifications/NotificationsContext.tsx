@@ -4,8 +4,8 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
-  useState,
   type ReactNode,
 } from 'react';
 import { getNotificationsBaseUrl, getStoredToken } from '../api/client';
@@ -14,17 +14,22 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../api/weatherflow';
-import type { AppNotification } from '../api/types';
+import type { Notification } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import {
+  initialNotificationsState,
+  notificationsReducer,
+  type LiveArrival,
+} from './notifications-state';
 
 interface NotificationsContextValue {
-  notifications: AppNotification[];
+  notifications: Notification[];
   unreadCount: number;
-  latestLiveNotification: AppNotification | null;
+  latestLiveArrival: LiveArrival | null;
   markRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
   refresh: () => Promise<void>;
-  clearLatestLiveNotification: () => void;
+  clearLatestLiveArrival: () => void;
 }
 
 const BACKOFF_MS = [1000, 2000, 5000, 15000];
@@ -35,31 +40,28 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [latestLiveNotification, setLatestLiveNotification] =
-    useState<AppNotification | null>(null);
+  const [state, dispatch] = useReducer(
+    notificationsReducer,
+    initialNotificationsState,
+  );
   const eventSourceRef = useRef<EventSource | null>(null);
   const retryTimerRef = useRef<number | null>(null);
   const retryAttemptRef = useRef(0);
+  const userRef = useRef(user);
 
-  const mergeNotification = useCallback((notification: AppNotification) => {
-    setNotifications((current) => {
-      const withoutDuplicate = current.filter(
-        (item) => item.id !== notification.id,
-      );
-      return [notification, ...withoutDuplicate].slice(0, 50);
-    });
-  }, []);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const refresh = useCallback(async () => {
-    if (!user) {
-      setNotifications([]);
+    if (!userRef.current) {
+      dispatch({ type: 'reset' });
       return;
     }
 
-    const result = await fetchNotifications({ unreadOnly: true, limit: 20 });
-    setNotifications(result.notifications);
-  }, [user]);
+    const page = await fetchNotifications({ limit: 20 });
+    dispatch({ type: 'hydrate', page });
+  }, []);
 
   const closeStream = useCallback(() => {
     eventSourceRef.current?.close();
@@ -72,7 +74,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   const openStream = useCallback(() => {
     const token = getStoredToken();
-    if (!user || !token || eventSourceRef.current) {
+    if (!userRef.current || !token || eventSourceRef.current) {
       return;
     }
 
@@ -86,67 +88,78 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     };
 
     eventSource.addEventListener('notification', (event) => {
-      const notification = JSON.parse(event.data) as AppNotification;
-      mergeNotification(notification);
-      setLatestLiveNotification(notification);
+      const notification = JSON.parse(event.data) as Notification;
+      dispatch({ type: 'liveReceived', notification });
     });
 
     eventSource.onerror = () => {
       eventSource.close();
       eventSourceRef.current = null;
+
       const delay =
         BACKOFF_MS[Math.min(retryAttemptRef.current, BACKOFF_MS.length - 1)];
       retryAttemptRef.current += 1;
-      retryTimerRef.current = window.setTimeout(openStream, delay);
+      retryTimerRef.current = window.setTimeout(() => {
+        retryTimerRef.current = null;
+        void refresh()
+          .catch(() => undefined)
+          .finally(openStream);
+      }, delay);
     };
-  }, [mergeNotification, user]);
-
-  useEffect(() => {
-    void refresh();
   }, [refresh]);
 
   useEffect(() => {
     closeStream();
     retryAttemptRef.current = 0;
 
-    if (user) {
-      openStream();
+    if (!user) {
+      dispatch({ type: 'reset' });
+      return closeStream;
     }
 
+    void refresh();
+    openStream();
+
     return closeStream;
-  }, [closeStream, openStream, user]);
+  }, [closeStream, openStream, refresh, user]);
 
   const markRead = useCallback(async (id: string) => {
-    const updated = await markNotificationRead(id);
-    setNotifications((current) =>
-      current.map((notification) =>
-        notification.id === id ? updated : notification,
-      ),
-    );
+    await markNotificationRead(id);
+    dispatch({
+      type: 'markRead',
+      id,
+      readAt: new Date().toISOString(),
+    });
   }, []);
 
   const markAllRead = useCallback(async () => {
     await markAllNotificationsRead();
-    setNotifications((current) =>
-      current.map((notification) => ({
-        ...notification,
-        readAt: notification.readAt ?? new Date().toISOString(),
-      })),
-    );
+    await refresh();
+  }, [refresh]);
+
+  const clearLatestLiveArrival = useCallback(() => {
+    dispatch({ type: 'clearLatestLiveArrival' });
   }, []);
 
   const value = useMemo(
     () => ({
-      notifications,
-      unreadCount: notifications.filter((notification) => !notification.readAt)
-        .length,
-      latestLiveNotification,
+      notifications: state.notifications,
+      unreadCount: state.unreadCount,
+      latestLiveArrival: state.latestLiveArrival,
       markRead,
       markAllRead,
       refresh,
-      clearLatestLiveNotification: () => setLatestLiveNotification(null),
+      clearLatestLiveArrival,
     }),
-    [latestLiveNotification, markAllRead, markRead, notifications, refresh],
+    [
+      clearLatestLiveArrival,
+      markAllRead,
+      markRead,
+      refresh,
+      state.latestLiveArrival,
+      state.notifications,
+      state.unreadCount,
+    ],
   );
 
   return (

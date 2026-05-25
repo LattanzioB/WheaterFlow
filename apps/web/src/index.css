@@ -80,7 +80,7 @@ h3 {
   position: absolute;
   top: -0.35rem;
   right: -0.35rem;
-  min-width: 1.2rem;
+  min-width: 1.25rem;
   height: 1.2rem;
   padding: 0 0.25rem;
   border-radius: 999px;
@@ -109,6 +109,11 @@ h3 {
   z-index: 20;
 }
 
+.notifications-empty {
+  margin: 0;
+  padding: 0.9rem 1rem;
+}
+
 .notifications-menu-header,
 .page-heading {
   display: flex;
@@ -129,10 +134,7 @@ h3 {
 }
 
 .notifications-list li {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: 0;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -140,16 +142,50 @@ h3 {
   background: #fff7ed;
 }
 
-.notifications-list a {
+.notification-row {
+  width: 100%;
+  min-height: 4.75rem;
+  display: grid;
+  grid-template-columns: 0.5rem 1fr;
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.75rem 1rem;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: 400;
+}
+
+.notification-row:hover,
+.notification-row:focus-visible {
+  background: #f8fafc;
+}
+
+.notification-row > span:last-child {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  color: inherit;
-  text-decoration: none;
+}
+
+.unread-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: 0.45rem;
+  border-radius: 999px;
+  background: #f97316;
+}
+
+.unread-dot.hidden {
+  background: transparent;
 }
 
 .notifications-list small {
   color: #64748b;
+}
+
+.notifications-menu-footer {
+  padding: 0.75rem 1rem;
 }
 
 .notification-toast {
@@ -166,13 +202,16 @@ h3 {
   z-index: 30;
 }
 
-.notification-toast a {
+.toast-body {
   flex: 1;
   padding: 0.9rem 1rem;
+  border-radius: 8px 0 0 8px;
+  background: transparent;
   color: inherit;
-  text-decoration: none;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
 }
 
 .toast-close {

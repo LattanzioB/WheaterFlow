@@ -1,11 +1,10 @@
 import { apiRequest, buildQuery, notificationsRequest } from './client';
 import type {
   AlertType,
-  AppNotification,
   AuthResponse,
   Measurement,
   MeasurementFilters,
-  NotificationsPageResult,
+  NotificationsPage,
   SubscribedStationSummary,
   UserProfile,
   WeatherStation,
@@ -171,7 +170,7 @@ export function fetchNotifications(
     limit?: number;
     cursor?: string;
   } = {},
-): Promise<NotificationsPageResult> {
+): Promise<NotificationsPage> {
   return notificationsRequest(
     `/notifications${buildQuery({
       unreadOnly: filters.unreadOnly,
@@ -181,13 +180,13 @@ export function fetchNotifications(
   );
 }
 
-export function markNotificationRead(id: string): Promise<AppNotification> {
+export function markNotificationRead(id: string): Promise<void> {
   return notificationsRequest(`/notifications/${id}/read`, {
     method: 'PATCH',
   });
 }
 
-export function markAllNotificationsRead(): Promise<{ modifiedCount: number }> {
+export function markAllNotificationsRead(): Promise<void> {
   return notificationsRequest('/notifications/read-all', {
     method: 'PATCH',
   });

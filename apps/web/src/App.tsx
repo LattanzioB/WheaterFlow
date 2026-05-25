@@ -17,8 +17,8 @@ import { SubscriptionsPage } from './pages/SubscriptionsPage';
 export function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <NotificationsProvider>
+      <NotificationsProvider>
+        <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -39,8 +39,8 @@ export function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </NotificationsProvider>
-      </BrowserRouter>
+        </BrowserRouter>
+      </NotificationsProvider>
     </AuthProvider>
   );
 }

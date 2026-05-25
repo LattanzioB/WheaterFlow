@@ -33,10 +33,21 @@ class UserRole["UserRole (Enumeration)"] {
 
 class UserDeliveryChannels["UserDeliveryChannels (ValueObject)"] {
   +telegram
+  +log
+  +inApp
 }
 
 class TelegramDeliveryChannel["TelegramDeliveryChannel (ValueObject)"] {
   +chatId
+}
+
+class Notification["Notification (AggregateRoot)"] {
+  +create(props)
+  +markRead(readAt)
+  +getUserId()
+  +getStationId()
+  +getAlertType()
+  +getMessageId()
 }
 
 class UserTelegramLinking["UserTelegramLinking (ValueObject)"] {
@@ -127,6 +138,8 @@ User --> UserRole : role
 UserNotificationProfile *-- UserDeliveryChannels : delivery channels
 UserDeliveryChannels *-- TelegramDeliveryChannel : telegram
 UserNotificationProfile *-- UserTelegramLinking : telegram linking
+User --> Notification : receives
+Notification --> AlertType : alert type
 WeatherStation *-- Location : location
 WeatherStation *-- StationAlertSettings : alert settings
 WeatherStation --> StationStatus : status

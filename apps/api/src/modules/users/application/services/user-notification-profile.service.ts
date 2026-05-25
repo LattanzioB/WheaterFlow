@@ -45,6 +45,7 @@ export class UserNotificationProfileService {
       deliveryChannels: {
         telegram: { chatId: null },
         log: { enabled: true },
+        inApp: true,
       },
     };
   }

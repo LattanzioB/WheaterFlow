@@ -1,4 +1,6 @@
 import { AlertType } from '@contracts';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_DELIVERED_EVENT } from '../../application/events/notification-delivered.event';
 import { INotificationRepository } from '../../domain/ports/notification-repository.port';
 import { InAppAlertNotifierAdapter } from './in-app-alert-notifier.adapter';
 
@@ -11,6 +13,10 @@ describe('InAppAlertNotifierAdapter', () => {
       markRead: jest.fn(),
       markAllRead: jest.fn(),
     });
+
+  const buildEventEmitter = (): jest.Mocked<Pick<EventEmitter2, 'emit'>> => ({
+    emit: jest.fn(),
+  });
 
   const notification = {
     userId: 'user-1',
@@ -37,18 +43,33 @@ describe('InAppAlertNotifierAdapter', () => {
 
   it('persists exactly one notification per in-app target', async () => {
     const repository = buildNotificationRepository();
-    const adapter = new InAppAlertNotifierAdapter(repository);
+    const eventEmitter = buildEventEmitter();
+    const adapter = new InAppAlertNotifierAdapter(
+      repository,
+      eventEmitter as EventEmitter2,
+    );
 
     await adapter.sendMeasurementAlert(notification);
 
     expect(repository.save).toHaveBeenCalledTimes(1);
     expect(repository.save.mock.calls[0][0].getUserId()).toBe('user-1');
     expect(repository.save.mock.calls[0][0].getMessageId()).toBe('message-1');
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      NOTIFICATION_DELIVERED_EVENT,
+      {
+        userId: 'user-1',
+        notification: repository.save.mock.calls[0][0],
+      },
+    );
   });
 
   it('ignores notifications without in-app targets', async () => {
     const repository = buildNotificationRepository();
-    const adapter = new InAppAlertNotifierAdapter(repository);
+    const eventEmitter = buildEventEmitter();
+    const adapter = new InAppAlertNotifierAdapter(
+      repository,
+      eventEmitter as EventEmitter2,
+    );
 
     await adapter.sendMeasurementAlert({
       ...notification,
@@ -56,16 +77,22 @@ describe('InAppAlertNotifierAdapter', () => {
     });
 
     expect(repository.save).not.toHaveBeenCalled();
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
 
   it('isolates repository errors', async () => {
     const repository = buildNotificationRepository();
-    const adapter = new InAppAlertNotifierAdapter(repository);
+    const eventEmitter = buildEventEmitter();
+    const adapter = new InAppAlertNotifierAdapter(
+      repository,
+      eventEmitter as EventEmitter2,
+    );
 
     repository.save.mockRejectedValue(new Error('database unavailable'));
 
     await expect(
       adapter.sendMeasurementAlert(notification),
     ).resolves.toBeUndefined();
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
 });

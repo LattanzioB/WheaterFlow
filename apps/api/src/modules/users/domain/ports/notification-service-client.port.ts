@@ -27,6 +27,7 @@ export interface UpdateDeliveryChannelsRequest {
   deliveryChannels: {
     telegram?: { chatId?: string | null };
     log?: { enabled?: boolean };
+    inApp?: boolean;
   };
 }
 

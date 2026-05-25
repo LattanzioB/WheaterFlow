@@ -29,20 +29,22 @@ function readCompose(): ComposeFile {
 describe('docker-compose distributed environment', () => {
   const compose = readCompose();
 
-  it('should define API, notifications, and RabbitMQ without a MongoDB container', () => {
+  it('should define API, notifications, web, and RabbitMQ without a MongoDB container', () => {
     expect(Object.keys(compose.services).sort()).toEqual([
       'api',
       'notifications',
       'rabbitmq',
+      'web',
     ]);
     expect(compose.services).not.toHaveProperty('mongodb');
   });
 
-  it('should build API and notifications from separate Dockerfiles', () => {
+  it('should build API, notifications, and web from separate Dockerfiles', () => {
     expect(compose.services.api.build?.dockerfile).toBe('apps/api/Dockerfile');
     expect(compose.services.notifications.build?.dockerfile).toBe(
       'apps/notifications/Dockerfile',
     );
+    expect(compose.services.web.build?.dockerfile).toBe('apps/web/Dockerfile');
   });
 
   it('should start the compiled entrypoint for each Nest application image', () => {
@@ -66,6 +68,7 @@ describe('docker-compose distributed environment', () => {
   it('should expose separate HTTP ports and RabbitMQ management UI', () => {
     expect(compose.services.api.ports).toContain('3000:3000');
     expect(compose.services.notifications.ports).toContain('3001:3001');
+    expect(compose.services.web.ports).toContain('8080:80');
     expect(compose.services.rabbitmq.ports).toEqual(
       expect.arrayContaining(['5672:5672', '15672:15672']),
     );

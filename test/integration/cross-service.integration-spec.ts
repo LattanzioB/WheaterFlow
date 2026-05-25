@@ -141,7 +141,10 @@ describeIntegration('WeatherFlow cross-service integration', () => {
       stationId: station.id,
       stationName: station.name,
       alertType: AlertType.EXTREME_HEAT,
-      deliveryTargets: [{ channel: 'log', destination: user.userId }],
+      deliveryTargets: expect.arrayContaining([
+        { channel: 'log', destination: user.userId },
+        { channel: 'in-app', destination: user.userId },
+      ]),
     });
   });
 

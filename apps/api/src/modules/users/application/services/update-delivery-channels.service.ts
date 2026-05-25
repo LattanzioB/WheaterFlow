@@ -11,6 +11,7 @@ export interface DeliveryChannelsInput {
   log?: {
     enabled?: boolean;
   };
+  inApp?: boolean;
 }
 import type { IUserRepository } from '../../domain/ports/user-repository.port';
 import {

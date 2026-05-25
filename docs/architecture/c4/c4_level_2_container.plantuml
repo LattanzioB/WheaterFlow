@@ -1,0 +1,33 @@
+@startuml c4_level_2_container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+AddRelTag("async", $lineStyle=DashedLine())
+
+LAYOUT_LEFT_RIGHT()
+
+Person(usuario, "Usuario", "Utiliza la Web UI para registrarse, gestionar estaciones y mediciones, configurar suscripciones a alertas y consultar el historial de notificaciones.")
+Person(usuarioTelegram, "Usuario de Telegram", "Vincula su cuenta al sistema y recibe alertas climáticas a través del bot.")
+
+System_Ext(telegram, "Telegram Bot API", "Canal externo para vincular cuentas y entregar alertas al usuario.")
+ContainerDb_Ext(mongoAtlas, "MongoDB Atlas", "MongoDB", "Colecciones: users, weather_stations, measurements, user_notification_profiles, notifications.")
+
+System_Boundary(weatherflow, "WeatherFlow") {
+  Container(web, "Web UI", "React / Vite / nginx", "Interfaz web: autenticación, estaciones, mediciones, suscripciones y notificaciones in-app.")
+  Container(api, "API service", "NestJS / Node 20", "Puerto 3000. Auth JWT, estaciones, mediciones, detección de alertas, publicador RabbitMQ y proxy REST al servicio de notificaciones.")
+  Container(notifications, "Notification service", "NestJS / Node 20", "Puerto 3001. Perfiles, webhook Telegram, consumidor RabbitMQ, historial in-app y despacho de alertas.")
+  ContainerDb(rabbit, "RabbitMQ", "Broker AMQP", "Exchange weatherflow.alerts, cola weatherflow.notifications.alerts, routing key alerts.climate.detected.")
+}
+
+Rel(api, mongoAtlas, "Lee y escribe", "Mongoose / TLS")
+Rel(notifications, mongoAtlas, "Lee y escribe perfiles e historial in-app", "Mongoose / TLS")
+
+Rel(usuario, usuarioTelegram, "Vincula su cuenta en Telegram", "")
+Rel(usuario, web, "Utiliza", "HTTPS")
+Rel(web, api, "Consume API REST", "HTTPS / JSON + JWT")
+Rel(api, notifications, "Proxy de preferencias", "HTTP REST")
+Rel(api, rabbit, "Publica ClimateAlertDetectedMessage", "AMQP", $tags="async")
+Rel(rabbit, notifications, "Consume alertas climáticas", "AMQP", $tags="async")
+Rel(notifications, telegram, "Envía alertas y recibe webhooks", "HTTPS")
+Rel(usuarioTelegram, telegram, "Interactúa con el bot", "HTTPS")
+
+@enduml

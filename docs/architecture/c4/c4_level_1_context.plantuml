@@ -1,0 +1,18 @@
+@startuml c4_level_1_context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_LEFT_RIGHT()
+
+Person(usuario, "Usuario", "Utiliza la Web UI para registrarse, gestionar estaciones y mediciones, configurar suscripciones a alertas y consultar el historial de notificaciones.")
+Person(usuarioTelegram, "Usuario de Telegram", "Vincula su cuenta al sistema y recibe alertas climáticas a través del bot.")
+
+System(weatherflow, "WeatherFlow", "Plataforma de servicios meteorológicos: gestión de usuarios, estaciones, mediciones, suscripciones, detección de alertas y notificaciones.")
+
+System_Ext(telegram, "Telegram Bot API", "Canal externo para vincular cuentas y entregar alertas al usuario.")
+
+Rel(usuario, usuarioTelegram, "Vincula su cuenta en Telegram", "")
+Rel(usuario, weatherflow, "Utiliza la Web UI", "HTTPS")
+Rel(weatherflow, telegram, "Envía alertas y recibe webhooks", "HTTPS")
+Rel(usuarioTelegram, telegram, "Interactúa con el bot", "HTTPS")
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml c4_level_3_api
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+AddRelTag("async", $lineStyle=DashedLine())
+
+LAYOUT_TOP_DOWN()
+
+Person(usuario, "Usuario", "Utiliza la Web UI para los casos de uso del sistema.")
+
+Container(web, "Web UI", "React / Vite", "Interfaz del usuario; consume únicamente la API pública.")
+
+Container_Boundary(api, "API service (apps/api)") {
+  Component(authController, "AuthController", "NestJS", "Registro e inicio de sesión.")
+  Component(prefsController, "UserNotificationPreferencesController", "NestJS", "Fachada JWT de preferencias hacia Notification service.")
+  Component(stationsController, "WeatherStationsController", "NestJS", "CRUD y búsqueda de estaciones.")
+  Component(measurementsController, "MeasurementsController", "NestJS", "Registro y consulta de mediciones.")
+
+  Component(authServices, "RegisterUserService / LoginUserService", "Application", "Casos de uso de identidad.")
+  Component(stationServices, "Station services", "Application", "Crear, listar, obtener, actualizar y eliminar estaciones.")
+  Component(queryService, "QueryMeasurementsService", "Application", "Filtros por estación, rangos, fechas y estado de alerta.")
+  Component(recordService, "RecordMeasurementService", "Application", "Persiste medición y publica alerta si aplica.")
+
+  Component(weatherDomain, "WeatherStation / Measurement aggregates", "Domain", "Reglas de alerta y value objects.")
+  Component(apiRepositories, "Mongo repositories", "Infrastructure", "User, WeatherStation, Measurement.")
+  Component(notificationClient, "HttpNotificationServiceClient", "Infrastructure", "Puerto REST hacia Notification service.")
+  Component(alertPublisher, "RabbitMqAlertPublisherAdapter", "Infrastructure", "Puerto AlertPublisher → RabbitMQ.")
+}
+
+ContainerDb_Ext(mongoAtlas, "MongoDB Atlas", "MongoDB", "users, weather_stations, measurements")
+ContainerQueue(rabbit, "RabbitMQ", "AMQP", "weatherflow.alerts")
+Container(notifications, "Notification service", "NestJS", "REST interno de preferencias y despacho de alertas")
+
+Rel(usuario, web, "Utiliza", "HTTPS")
+Rel(web, authController, "REST", "HTTPS / JSON + JWT")
+Rel(web, prefsController, "REST", "HTTPS / JSON + JWT")
+Rel(web, stationsController, "REST", "HTTPS / JSON + JWT")
+Rel(web, measurementsController, "REST", "HTTPS / JSON + JWT")
+
+Rel(authController, authServices, "Delega")
+Rel(stationsController, stationServices, "Delega")
+Rel(measurementsController, queryService, "Consulta")
+Rel(measurementsController, recordService, "Registra")
+Rel(prefsController, notificationClient, "Proxy")
+
+Rel(authServices, apiRepositories, "Persiste")
+Rel(stationServices, weatherDomain, "Orquesta")
+Rel(stationServices, apiRepositories, "Persiste")
+Rel(recordService, weatherDomain, "Evalúa alertas")
+Rel(recordService, apiRepositories, "Persiste")
+Rel(recordService, alertPublisher, "Publica")
+Rel(queryService, apiRepositories, "Consulta")
+Rel(notificationClient, notifications, "HTTP REST")
+
+Rel(apiRepositories, mongoAtlas, "Lee y escribe documentos", "Mongoose / TLS")
+Rel(alertPublisher, rabbit, "AMQP", $tags="async")
+
+@enduml

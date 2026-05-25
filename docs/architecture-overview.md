@@ -151,11 +151,15 @@ repeatable regression check.
 
 ## Diagrams
 
-| Diagram | Mermaid source |
+Índice narrativo en español: [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md).
+
+| Diagram | Source |
 |---|---|
-| C4 context | `docs/architecture/c4/weatherflow-context.mmd` |
-| C4 container | `docs/architecture/c4/weatherflow-container.mmd` |
-| C4 component | `docs/architecture/c4/weatherflow-component.mmd` |
+| C4 (todos los niveles) | [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md) |
+| C4 context | `docs/architecture/c4/c4_level_1_context.plantuml` |
+| C4 container | `docs/architecture/c4/c4_level_2_container.plantuml` |
+| C4 component (API) | `docs/architecture/c4/c4_level_3_api.plantuml` |
+| C4 component (Notifications) | `docs/architecture/c4/c4_level_3_notifications.plantuml` |
 | Measurement search/filter sequence | `docs/architecture/sequences/query-measurements-sequence.mmd` |
 | Alert publication and consumption sequence | `docs/architecture/sequences/record-measurement-alert-sequence.mmd` |
 | Notification preference sequence | `docs/architecture/sequences/manage-notification-preferences-sequence.mmd` |

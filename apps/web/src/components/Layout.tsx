@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { NotificationToast } from './NotificationToast';
 import { NotificationsBell } from './NotificationsBell';
+import { ToastHost } from './ToastHost';
 
 const navItems = [
   { to: '/', label: 'Inicio', end: true },
@@ -58,7 +58,7 @@ export function Layout() {
         </nav>
         <main className="content">
           <Outlet />
-          <NotificationToast />
+          <ToastHost />
         </main>
       </div>
     </div>

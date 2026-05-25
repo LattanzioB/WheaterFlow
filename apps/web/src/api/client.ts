@@ -7,7 +7,11 @@ export function getApiBaseUrl(): string {
 }
 
 export function getNotificationsBaseUrl(): string {
-  return import.meta.env.VITE_NOTIFICATIONS_BASE_URL ?? 'http://localhost:3001';
+  return (
+    import.meta.env.VITE_API_NOTIFICATIONS_BASE_URL ??
+    import.meta.env.VITE_NOTIFICATIONS_BASE_URL ??
+    'http://localhost:3001'
+  );
 }
 
 export function getStoredToken(): string | null {

@@ -33,7 +33,7 @@ export function NotificationsPage() {
     setError(null);
     try {
       const result = await fetchNotifications({ limit: 100 });
-      setNotifications(result.notifications);
+      setNotifications(result.items);
     } catch (err) {
       setError(useApiErrorMessage(err));
     } finally {
@@ -62,10 +62,12 @@ export function NotificationsPage() {
   );
 
   async function handleMarkRead(notificationId: string) {
-    const updated = await markNotificationRead(notificationId);
+    await markNotificationRead(notificationId);
     setNotifications((current) =>
       current.map((notification) =>
-        notification.id === notificationId ? updated : notification,
+        notification.id === notificationId
+          ? { ...notification, readAt: new Date().toISOString() }
+          : notification,
       ),
     );
     await refresh();

@@ -76,9 +76,13 @@ Direct Notification service routes (no JWT on the service boundary; intended for
 | `PATCH`  | `/notification-preferences/users/:userId/subscriptions/:stationId`             |
 | `PATCH`  | `/notification-preferences/users/:userId/delivery-channels`                    |
 | `POST`   | `/notification-preferences/users/:userId/delivery-channels/telegram/link-code` |
+| `GET`    | `/notifications`                                                               |
+| `PATCH`  | `/notifications/:id/read`                                                      |
+| `PATCH`  | `/notifications/read-all`                                                      |
+| `GET`    | `/notifications/stream`                                                        |
 | `POST`   | `/notifications/telegram/webhook`                                              |
 
-Persistence: `user_notification_profiles` collection in MongoDB (Notification service).
+Persistence: `user_notification_profiles` and `notifications` collections in MongoDB (Notification service).
 
 ---
 
@@ -216,11 +220,11 @@ Persistence: `user_notification_profiles` collection in MongoDB (Notification se
 
 ---
 
-## In-App Notifications (SSE)
+## In-app notifications
 
 Base URL: `http://localhost:3001`
 
-These endpoints live on the Notification service and require the same JWT issued by the API service. REST calls use `Authorization: Bearer <token>`. Native browser `EventSource` cannot set custom headers, so the stream also accepts `?token=<JWT>`.
+These endpoints live on the Notification service and require the same JWT issued by the API service. REST calls use `Authorization: Bearer <token>`. Native browser `EventSource` cannot set custom headers, so `GET /notifications/stream` also accepts `?token=<JWT>`.
 
 ### `GET /notifications`
 
@@ -237,7 +241,7 @@ These endpoints live on the Notification service and require the same JWT issued
 
 ```json
 {
-  "notifications": [
+  "items": [
     {
       "id": "notification-uuid",
       "userId": "user-uuid",
@@ -253,27 +257,28 @@ These endpoints live on the Notification service and require the same JWT issued
       "messageId": "climate-alert-message-id"
     }
   ],
-  "nextCursor": null
+  "nextCursor": null,
+  "unreadCount": 1
 }
 ```
+
+Response DTO: `NotificationsPageDto` with `items: NotificationResponseDto[]`, `nextCursor: string | null`, and `unreadCount: number`. `NotificationResponseDto` contains `id`, `userId`, `stationId`, `stationName`, `alertType`, `temperature`, `humidity`, `pressure`, `reportedAt`, `createdAt`, `readAt`, and `messageId`.
 
 ### `PATCH /notifications/:id/read`
 
 **Auth required.** Marks one owned notification as read. Returns `404` when the notification does not belong to the authenticated user.
 
+**Response `204`:** empty body.
+
 ### `PATCH /notifications/read-all`
 
 **Auth required.** Marks every unread notification for the authenticated user as read.
 
-**Response `200`:**
+**Response `204`:** empty body.
 
-```json
-{ "modifiedCount": 3 }
-```
+### `GET /notifications/stream`
 
-### `GET /notifications/stream?token=<JWT>`
-
-**Auth required.** Opens an SSE stream for the authenticated user.
+**Auth required.** Opens an SSE stream for the authenticated user. Use `Authorization: Bearer <token>` when the client can send headers, or `GET /notifications/stream?token=<JWT>` for native `EventSource`.
 
 **Response headers:** `Content-Type: text/event-stream`
 
@@ -281,10 +286,12 @@ These endpoints live on the Notification service and require the same JWT issued
 
 ```text
 event: notification
-data: {"id":"notification-uuid","stationId":"station-uuid","alertType":"STORM"}
+data: {"id":"notification-uuid","userId":"user-uuid","stationId":"station-uuid","stationName":"Estacion Central","alertType":"STORM","temperature":22.1,"humidity":92,"pressure":970,"reportedAt":"2026-05-24T14:00:00.000Z","createdAt":"2026-05-24T14:00:01.000Z","readAt":null,"messageId":"climate-alert-message-id"}
 ```
 
 **Heartbeat:** the service emits `event: ping` with `data: ping` every 25 seconds so clients and proxies keep the foreground connection alive.
+
+**Reconnect expectations:** browsers auto-reconnect `EventSource` streams. On every successful initial connect or reconnect, clients should rehydrate state with `GET /notifications` so any alerts persisted while disconnected are visible.
 
 Persistence: `notifications` collection in MongoDB with `{ userId: 1, createdAt: -1 }` and unique `{ userId: 1, messageId: 1 }` indexes.
 

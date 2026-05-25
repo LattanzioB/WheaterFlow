@@ -1,30 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="220" viewBox="0 0 960 220" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="720" viewBox="0 0 1160 720" role="img" aria-labelledby="title desc">
   <title id="title">Climate alert to in-app delivery sequence</title>
-  <desc id="desc">A climate alert is persisted as a Notification and streamed to the authenticated browser through SSE.</desc>
-  <rect width="960" height="220" fill="#ffffff"/>
-  <text x="24" y="36" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Climate alert to in-app delivery</text>
-  <g font-family="Arial, sans-serif" font-size="13" fill="#0f172a">
-    <rect x="24" y="70" width="120" height="44" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
-    <text x="45" y="96">Web browser</text>
-    <rect x="180" y="70" width="140" height="44" rx="6" fill="#fef7e0" stroke="#f29900"/>
-    <text x="203" y="96">SSE stream</text>
-    <rect x="356" y="70" width="120" height="44" rx="6" fill="#fce8e6" stroke="#d93025"/>
-    <text x="387" y="96">RabbitMQ</text>
-    <rect x="512" y="70" width="148" height="44" rx="6" fill="#e6f4ea" stroke="#188038"/>
-    <text x="533" y="96">NotificationService</text>
-    <rect x="696" y="70" width="124" height="44" rx="6" fill="#fef7e0" stroke="#f29900"/>
-    <text x="716" y="96">Mongo history</text>
-  </g>
-  <g stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arrow)">
-    <path d="M144 92 H180"/>
-    <path d="M476 92 H512"/>
-    <path d="M660 92 H696"/>
-    <path d="M696 125 C520 176 340 176 180 125"/>
-  </g>
-  <text x="184" y="142" font-family="Arial, sans-serif" font-size="12" fill="#475569">event: notification, event: ping every 25s</text>
+  <desc id="desc">Sequence diagram for API measurement alert publication through RabbitMQ, Notification service in-app persistence, and SSE delivery to the browser.</desc>
+  <style>
+    .label { font: 13px Arial, sans-serif; fill: #0f172a; }
+    .small { font: 12px Arial, sans-serif; fill: #334155; }
+    .head { fill: #eef6ff; stroke: #1d4ed8; stroke-width: 1.5; rx: 6; }
+    .life { stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 4 5; }
+    .msg { stroke: #475569; stroke-width: 1.6; marker-end: url(#arrow); }
+    .return { stroke: #475569; stroke-width: 1.4; stroke-dasharray: 5 5; marker-end: url(#arrow); }
+  </style>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 Z" fill="#334155"/>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569" />
     </marker>
   </defs>
+
+  <text x="36" y="34" class="label" style="font-size:18px;font-weight:700">Climate alert to in-app delivery</text>
+
+  <g>
+    <rect x="30" y="62" width="95" height="42" class="head" /><text x="48" y="88" class="label">Browser</text>
+    <rect x="150" y="62" width="95" height="42" class="head" /><text x="183" y="88" class="label">API</text>
+    <rect x="270" y="62" width="100" height="42" class="head" /><text x="288" y="88" class="label">Publisher</text>
+    <rect x="395" y="62" width="100" height="42" class="head" /><text x="416" y="88" class="label">RabbitMQ</text>
+    <rect x="520" y="62" width="100" height="42" class="head" /><text x="542" y="88" class="label">Consumer</text>
+    <rect x="645" y="62" width="130" height="42" class="head" /><text x="660" y="88" class="label">NotificationService</text>
+    <rect x="800" y="62" width="105" height="42" class="head" /><text x="824" y="88" class="label">Profiles</text>
+    <rect x="930" y="62" width="90" height="42" class="head" /><text x="946" y="88" class="label">InApp</text>
+    <rect x="1045" y="62" width="90" height="42" class="head" /><text x="1058" y="88" class="label">SSE</text>
+  </g>
+
+  <g>
+    <line x1="77" y1="104" x2="77" y2="680" class="life" />
+    <line x1="197" y1="104" x2="197" y2="680" class="life" />
+    <line x1="320" y1="104" x2="320" y2="680" class="life" />
+    <line x1="445" y1="104" x2="445" y2="680" class="life" />
+    <line x1="570" y1="104" x2="570" y2="680" class="life" />
+    <line x1="710" y1="104" x2="710" y2="680" class="life" />
+    <line x1="852" y1="104" x2="852" y2="680" class="life" />
+    <line x1="975" y1="104" x2="975" y2="680" class="life" />
+    <line x1="1090" y1="104" x2="1090" y2="680" class="life" />
+  </g>
+
+  <line x1="77" y1="130" x2="1090" y2="130" class="msg" /><text x="390" y="122" class="small">GET /notifications/stream?token=JWT; bind stream to userId</text>
+  <line x1="77" y1="175" x2="197" y2="175" class="msg" /><text x="86" y="167" class="small">POST /measurements</text>
+  <line x1="197" y1="220" x2="320" y2="220" class="msg" /><text x="207" y="212" class="small">publishClimateAlert(ClimateAlertDetectedMessage)</text>
+  <line x1="320" y1="265" x2="445" y2="265" class="msg" /><text x="330" y="257" class="small">publish exchange/routing key</text>
+  <line x1="445" y1="310" x2="570" y2="310" class="return" /><text x="456" y="302" class="small">ClimateAlertDetectedMessage</text>
+  <line x1="570" y1="355" x2="710" y2="355" class="msg" /><text x="580" y="347" class="small">handleClimateAlert(message)</text>
+  <line x1="710" y1="400" x2="852" y2="400" class="msg" /><text x="720" y="392" class="small">findSubscribersByStationId(stationId)</text>
+  <line x1="852" y1="445" x2="710" y2="445" class="return" /><text x="728" y="437" class="small">UserNotificationProfile[]</text>
+  <line x1="710" y1="490" x2="710" y2="490" class="msg" /><text x="724" y="486" class="small">Filter subscribers; resolve deliveryChannels.inApp targets</text>
+  <line x1="710" y1="535" x2="975" y2="535" class="msg" /><text x="730" y="527" class="small">CompositeAlertNotifierAdapter -> InAppAlertNotifierAdapter</text>
+  <line x1="975" y1="580" x2="975" y2="580" class="msg" /><text x="990" y="576" class="small">save Notification; ignore duplicate userId+messageId</text>
+  <line x1="975" y1="625" x2="1090" y2="625" class="msg" /><text x="983" y="617" class="small">emit notification.delivered</text>
+  <line x1="1090" y1="660" x2="77" y2="660" class="return" /><text x="390" y="652" class="small">event: notification + NotificationResponseDto; event: ping every 25s</text>
 </svg>

@@ -39,6 +39,7 @@ const testCollections = [
   'weather_stations',
   'measurements',
   'user_notification_profiles',
+  'notifications',
 ];
 
 describeIntegration('WeatherFlow cross-service integration', () => {

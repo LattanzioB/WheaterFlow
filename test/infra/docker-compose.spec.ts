@@ -29,14 +29,15 @@ function readCompose(): ComposeFile {
 describe('docker-compose distributed environment', () => {
   const compose = readCompose();
 
-  it('should define API, notifications, web, and RabbitMQ without a MongoDB container', () => {
+  it('should define API, notifications, web, RabbitMQ, and local MongoDB', () => {
     expect(Object.keys(compose.services).sort()).toEqual([
       'api',
+      'mongo',
       'notifications',
       'rabbitmq',
       'web',
     ]);
-    expect(compose.services).not.toHaveProperty('mongodb');
+    expect(compose.services.mongo.image).toBe('mongo:7');
   });
 
   it('should build API, notifications, and web from separate Dockerfiles', () => {
@@ -67,6 +68,7 @@ describe('docker-compose distributed environment', () => {
 
   it('should expose separate HTTP ports and RabbitMQ management UI', () => {
     expect(compose.services.api.ports).toContain('3000:3000');
+    expect(compose.services.mongo.ports).toContain('27017:27017');
     expect(compose.services.notifications.ports).toContain('3001:3001');
     expect(compose.services.web.ports).toContain('8080:80');
     expect(compose.services.rabbitmq.ports).toEqual(
@@ -74,9 +76,16 @@ describe('docker-compose distributed environment', () => {
     );
   });
 
-  it('should make services wait for RabbitMQ health before starting', () => {
+  it('should make services wait for MongoDB and RabbitMQ health before starting', () => {
+    expect(compose.services.mongo.healthcheck).toBeDefined();
     expect(compose.services.rabbitmq.healthcheck).toBeDefined();
+    expect(compose.services.api.depends_on?.mongo?.condition).toBe(
+      'service_healthy',
+    );
     expect(compose.services.api.depends_on?.rabbitmq?.condition).toBe(
+      'service_healthy',
+    );
+    expect(compose.services.notifications.depends_on?.mongo?.condition).toBe(
       'service_healthy',
     );
     expect(compose.services.notifications.depends_on?.rabbitmq?.condition).toBe(
@@ -84,12 +93,12 @@ describe('docker-compose distributed environment', () => {
     );
   });
 
-  it('should pass Atlas MongoDB through MONGODB_URI instead of composing MongoDB', () => {
+  it('should default services to local MongoDB while allowing MONGODB_URI override', () => {
     expect(compose.services.api.environment?.MONGODB_URI).toContain(
-      'MONGODB_URI',
+      'mongodb://mongo:27017/weatherflow',
     );
     expect(compose.services.notifications.environment?.MONGODB_URI).toContain(
-      'MONGODB_URI',
+      'mongodb://mongo:27017/weatherflow',
     );
   });
 });

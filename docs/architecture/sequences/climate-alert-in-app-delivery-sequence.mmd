@@ -1,31 +1,38 @@
 sequenceDiagram
 autonumber
 actor Browser as Web browser
-participant NotificationsController
-participant StreamController as NotificationStreamController
-participant RabbitMQ
+participant API as API service
+participant Publisher as RabbitMqAlertPublisherAdapter
+participant RabbitMQ as RabbitMQ exchange/queue
 participant Consumer as RabbitMqClimateAlertConsumerAdapter
 participant NotificationService
-participant ProfileRepository as MongoNotificationProfileRepository
-participant InAppAdapter as InAppAlertNotifierAdapter
-participant NotificationRepository as MongoNotificationRepository
+participant Profiles as MongoNotificationProfileRepository
+participant Composite as CompositeAlertNotifierAdapter
+participant InApp as InAppAlertNotifierAdapter
+participant Notifications as MongoNotificationRepository
 participant Events as EventEmitter2
+participant Stream as NotificationStreamController
 
-Browser->>NotificationsController: GET /notifications?unreadOnly=true&limit=20
-NotificationsController->>NotificationRepository: findByUserId(userId, unreadOnly)
-NotificationRepository-->>Browser: unread notification history
-Browser->>StreamController: GET /notifications/stream?token=JWT
-StreamController->>StreamController: validate JWT and subscribe userId
-
-RabbitMQ->>Consumer: ClimateAlertDetectedMessage
+Browser->>Stream: GET /notifications/stream?token=JWT
+Stream->>Stream: Verify JWT and bind connection to userId
+Browser->>API: POST /measurements
+API->>API: Measurement.create(..., alertSettings)
+API->>Publisher: publishClimateAlert(ClimateAlertDetectedMessage)
+Publisher->>RabbitMQ: publish exchange/routing key
+RabbitMQ-->>Consumer: ClimateAlertDetectedMessage
 Consumer->>NotificationService: handleClimateAlert(message)
-NotificationService->>ProfileRepository: findSubscribersByStationId(stationId)
-ProfileRepository-->>NotificationService: subscribed profiles
-NotificationService->>NotificationService: resolve in-app targets when deliveryChannels.inApp is true
-NotificationService->>InAppAdapter: sendMeasurementAlert(notification)
-InAppAdapter->>NotificationRepository: save(Notification)
-NotificationRepository-->>InAppAdapter: duplicate messageId is idempotent
-InAppAdapter->>Events: emit notification.delivered(userId, notification)
-Events-->>StreamController: matching user event
-StreamController-->>Browser: event: notification
-StreamController-->>Browser: event: ping every 25s
+NotificationService->>Profiles: findSubscribersByStationId(stationId)
+Profiles-->>NotificationService: UserNotificationProfile[]
+NotificationService->>NotificationService: Filter subscribers by station and alert type
+NotificationService->>NotificationService: Resolve delivery targets, including deliveryChannels.inApp
+NotificationService->>Composite: sendMeasurementAlert(notification)
+Composite->>InApp: sendMeasurementAlert(notification)
+InApp->>Notifications: save(Notification)
+Notifications-->>InApp: Persisted or ignored duplicate userId+messageId
+InApp->>Events: emit notification.delivered(userId, notification)
+Events-->>Stream: notification.delivered for connected userId
+Stream-->>Browser: event: notification + NotificationResponseDto JSON
+Stream-->>Browser: event: ping every 25s
+Browser->>Stream: reconnect after network loss
+Browser->>Stream: GET /notifications/stream?token=JWT
+Browser->>Stream: Rehydrate separately with GET /notifications

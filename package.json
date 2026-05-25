@@ -29,7 +29,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:integration": "jest --config ./test/jest-integration.json --runInBand"
+    "test:integration": "jest --config ./test/jest-integration.json --runInBand",
+    "test:int:notifications": "jest --config ./test/jest-integration.json --runInBand apps/notifications/test/in-app-fanout.int-spec.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

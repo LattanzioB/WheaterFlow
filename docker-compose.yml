@@ -1,6 +1,22 @@
 name: weatherflow
 
 services:
+  mongo:
+    image: mongo:7
+    container_name: weatherflow-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - weatherflow-mongo-data:/data/db
+    healthcheck:
+      test:
+        ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand("ping").ok']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: weatherflow-rabbitmq
@@ -28,7 +44,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI to your MongoDB Atlas connection string}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/weatherflow}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local API auth}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5174,http://localhost:8080}
@@ -40,6 +56,8 @@ services:
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
       TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
     depends_on:
+      mongo:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     healthcheck:
@@ -64,7 +82,7 @@ services:
     environment:
       NODE_ENV: production
       NOTIFICATIONS_PORT: 3001
-      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI to your MongoDB Atlas connection string}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/weatherflow}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local Notification service auth}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://weatherflow:weatherflow@rabbitmq:5672}
@@ -76,6 +94,8 @@ services:
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
       TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
     depends_on:
+      mongo:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     healthcheck:
@@ -104,3 +124,6 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  weatherflow-mongo-data:

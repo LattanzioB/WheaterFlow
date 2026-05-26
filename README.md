@@ -1,6 +1,6 @@
 # WeatherFlow
 
-WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**, **MongoDB**, and **RabbitMQ**. The repository contains two independently runnable applications: the API service for weather data and alert detection, and the Notification service for notification delivery workflows.
+WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**, **MongoDB Atlas**, and **RabbitMQ**. The repository contains two independently runnable applications: the API service for weather data and alert detection, and the Notification service for notification delivery workflows.
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@ WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**
 | ------------------- | ------------------------------------------------------------ |
 | NestJS 11           | Application framework                                        |
 | TypeScript (strict) | Type-safe backend development                                |
-| MongoDB + Mongoose  | Document database access                                     |
+| MongoDB Atlas + Mongoose | Managed document database access                       |
 | RabbitMQ            | Asynchronous alert messaging                                 |
 | Swagger / OpenAPI   | Interactive API documentation                                |
 | Docker Compose      | Local API, Notification service, and RabbitMQ infrastructure |
@@ -21,6 +21,7 @@ WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**
 | ----------------------------------------------------------------- | -------------------- |
 | [Node.js](https://nodejs.org/)                                    | 20+                  |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest               |
+| MongoDB Atlas                                                     | Free tier is enough  |
 | npm                                                               | Bundled with Node.js |
 
 ## Installation
@@ -50,7 +51,7 @@ npm run start:notifications:dev
 npm run start:web:dev
 ```
 
-Docker Compose starts MongoDB, RabbitMQ, and separate API, Notification service, and Web UI containers. Set `MONGODB_URI` only when you want to override the local Compose Mongo database.
+Docker Compose starts RabbitMQ plus separate API, Notification service, and Web UI containers. Configure `MONGODB_URI` with a MongoDB Atlas connection string so both services use the managed database. The local Mongo container in Compose is only for disposable local/integration scenarios.
 
 - API base URL: `http://localhost:3000`
 - Web UI (extra): `http://localhost:5174` (dev) or `http://localhost:8080` (Docker)
@@ -73,7 +74,7 @@ Docker Compose starts MongoDB, RabbitMQ, and separate API, Notification service,
 | `npm run lint`                     | Run ESLint                                                                           |
 | `npm run test`                     | Run unit tests                                                                       |
 | `npm run test:e2e`                 | Run end-to-end tests                                                                 |
-| `npm run test:integration`         | Run cross-service API, Notification service, RabbitMQ, and MongoDB integration tests |
+| `npm run test:integration`         | Run cross-service API, Notification service, RabbitMQ, and MongoDB Atlas integration tests |
 | `npm run test:int:notifications`   | Run the in-app notification fanout integration test                                  |
 | `npm run test:cov`                 | Run tests with coverage                                                              |
 | `npm run format`                   | Format source and test files with Prettier                                           |
@@ -116,7 +117,7 @@ Copy `.env.example` to `.env` and configure the following values:
 | ---------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
 | `PORT`                       | HTTP server port                                                          | `3000`                                         |
 | `NOTIFICATIONS_PORT`         | Notification service HTTP port                                            | `3001`                                         |
-| `MONGODB_URI`                | MongoDB connection string; Compose defaults to local Mongo when unset     | `mongodb://mongo:27017/weatherflow`            |
+| `MONGODB_URI`                | MongoDB Atlas connection string                                           | `mongodb+srv://.../weatherflow`                |
 | `JWT_SECRET`                 | JWT signing secret                                                        | `your-secret-key`                              |
 | `JWT_EXPIRES_IN`             | JWT expiration window                                                     | `7d`                                           |
 | `CORS_ORIGINS`               | Allowed browser origins for the Web UI                                    | `http://localhost:5174,http://localhost:8080`  |
@@ -152,8 +153,7 @@ npm run test:integration
 
 `npm run test:integration` requires the dedicated `.env.integration` settings
 described in `docs/testing/integration-tests.md`, including a disposable
-MongoDB database and a reachable RabbitMQ broker. For the in-app fanout slice,
-`docker compose up mongo rabbitmq` is enough for the local dependencies.
+MongoDB Atlas database and a reachable RabbitMQ broker.
 
 ### Mock Data
 

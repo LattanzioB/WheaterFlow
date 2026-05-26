@@ -5,7 +5,7 @@
 - Node.js 20+
 - npm 9+
 - Docker Desktop
-- MongoDB local via Docker Compose, or MongoDB Atlas if you prefer a remote database
+- MongoDB Atlas account (free tier works)
 - Telegram Bot Token (optional for local notification delivery)
 
 ---
@@ -37,7 +37,7 @@ Minimum local distributed environment:
 ```env
 PORT=3000
 NOTIFICATIONS_PORT=3001
-MONGODB_URI=mongodb://mongo:27017/weatherflow
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/weatherflow
 JWT_SECRET=your-secret-key-here
 JWT_EXPIRES_IN=7d
 NOTIFICATION_SERVICE_URL=http://notifications:3001
@@ -53,14 +53,16 @@ TELEGRAM_BOT_USERNAME=
 TELEGRAM_WEBHOOK_SECRET=
 ```
 
-### MongoDB URI
+### MongoDB Atlas URI
 
-Docker Compose provides a local MongoDB service at `mongodb://mongo:27017/weatherflow`. To use Atlas instead:
+Use MongoDB Atlas as the normal WeatherFlow database:
 
 1. Create a free cluster at [mongodb.com/atlas](https://mongodb.com/atlas).
 2. Create a database user.
 3. Whitelist your IP address, or use `0.0.0.0/0` only for development.
 4. Copy the connection string into `MONGODB_URI`.
+
+The local MongoDB service in `docker-compose.yml` is for disposable local and integration scenarios. For the distributed environment used by the application docs, keep `MONGODB_URI` pointed at Atlas.
 
 ---
 
@@ -78,7 +80,6 @@ Local URLs:
 | Swagger UI                  | `http://localhost:3000/api/docs`        |
 | OpenAPI JSON                | `http://localhost:3000/api/docs-json`   |
 | Notification service health | `http://localhost:3001/health`          |
-| MongoDB                     | `mongodb://localhost:27017/weatherflow` |
 | RabbitMQ management UI      | `http://localhost:15672`                |
 
 Open RabbitMQ management and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS`.
@@ -120,9 +121,8 @@ Focus unit tests on domain entities, value objects, application services, and in
 
 `npm run test:integration` exercises the Delivery II remote boundaries. It
 requires `.env.integration`, a disposable MongoDB database, RabbitMQ, and
-explicit cleanup consent. `docker compose up mongo rabbitmq` provides the local
-dependencies for the notification fanout integration test. See
-`docs/testing/integration-tests.md`.
+explicit cleanup consent. Use a dedicated MongoDB Atlas test database for these
+tests. See `docs/testing/integration-tests.md`.
 
 ---
 
@@ -173,4 +173,4 @@ Open a pull request into `main`, wait for review, and squash merge after checks 
 - Use value object factory methods instead of direct constructors.
 - Inject repositories through tokens rather than concrete classes.
 - Alert detection remains in the measurement/domain flow.
-- Keep Docker Compose focused on local service orchestration; override `MONGODB_URI` when a managed MongoDB dependency is needed.
+- Keep Docker Compose focused on local service orchestration; managed dependencies like MongoDB Atlas stay external for normal development.

@@ -6,7 +6,7 @@ Documentacion de **WeatherFlow Delivery II**: plataforma distribuida con API, No
 
 Fuente: [c4_level_1_context.plantuml](c4_level_1_context.plantuml).
 
-WeatherFlow se modela como **caja negra** (`System`). En contexto solo aparece **Telegram Bot API** como sistema externo. Los actores son **Usuario** (Web UI) y **Usuario de Telegram** (misma persona al vincular Telegram). API, Web UI, Notification service, RabbitMQ y MongoDB son detalle del nivel 2.
+WeatherFlow se modela como **caja negra** (`System`). El actor principal es el **Usuario**, que usa la Web UI, gestiona alertas y recibe notificaciones in-app. **Telegram Bot API** aparece solo como canal externo opcional para vinculacion y entrega cuando el usuario lo habilita. API, Web UI, Notification service, RabbitMQ y MongoDB son detalle del nivel 2.
 
 ![C4 nivel 1 - Contexto](c4_level_1_context.png)
 

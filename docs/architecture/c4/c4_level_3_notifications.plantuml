@@ -39,6 +39,7 @@ ContainerQueue(rabbit, "RabbitMQ", "AMQP", "weatherflow.alerts exchange, weather
 Rel(webUser, web, "Uses", "HTTPS")
 Rel(web, historyController, "Hydrates history and read state", "HTTP REST")
 Rel(web, streamController, "Receives live notification events", "SSE")
+Rel(streamController, web, "Pushes live notification events", "SSE")
 Rel(api, prefsController, "Proxies preference mutations", "HTTP REST")
 Rel(api, rabbit, "Publishes climate alerts", "AMQP", $tags="async")
 Rel(telegramUser, telegram, "Sends /link code", "HTTPS")

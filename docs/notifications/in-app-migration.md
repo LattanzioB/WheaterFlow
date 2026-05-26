@@ -3,7 +3,7 @@
 Story `S-02.10` adds `deliveryChannels.inApp` to notification profiles. New profiles default it to `true`; existing profiles can be backfilled with the idempotent script below.
 
 ```powershell
-$env:MONGODB_URI = "mongodb://localhost:27017/weatherflow"
+$env:MONGODB_URI = "mongodb+srv://<user>:<password>@<cluster>.mongodb.net/weatherflow"
 npx ts-node scripts/migrations/2026-05-add-in-app-channel.ts
 ```
 

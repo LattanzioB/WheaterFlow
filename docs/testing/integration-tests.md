@@ -10,7 +10,7 @@ The suite starts test instances of the API and Notification Nest applications in
 the Jest process, each bound to an ephemeral localhost port. It connects those
 apps to real remote boundaries:
 
-- MongoDB through `MONGODB_URI` (local Compose Mongo by default)
+- MongoDB Atlas through `MONGODB_URI`
 - RabbitMQ through `RABBITMQ_URL`
 - API-to-Notification HTTP through the API proxy client
 - Notification alert delivery through an injected fake notifier
@@ -21,7 +21,7 @@ Copy `.env.integration.example` to `.env.integration` and fill in disposable
 test resources:
 
 ```bash
-MONGODB_URI=mongodb://127.0.0.1:27017/weatherflow_integration
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/weatherflow_integration
 WEATHERFLOW_INTEGRATION_ALLOW_DB_CLEANUP=true
 RABBITMQ_URL=amqp://weatherflow:weatherflow@localhost:5672
 RABBITMQ_ALERT_EXCHANGE=weatherflow.integration.alerts
@@ -43,8 +43,8 @@ cleans these test collections before and after each test:
 - `user_notification_profiles`
 - `notifications`
 
-Use the local Compose Mongo service, or a dedicated remote test database. Do not
-point this suite at a development or production database.
+Use a dedicated MongoDB Atlas test database. Do not point this suite at a
+development or production database.
 
 RabbitMQ queues and exchanges are suffixed with a per-test UUID. The harness
 purges them before each test and deletes them after the applications shut down.

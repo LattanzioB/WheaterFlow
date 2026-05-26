@@ -88,6 +88,15 @@ class MongoNotificationProfileRepository["MongoNotificationProfileRepository (Ad
   +save(profile)
 }
 
+class INotificationRepository["INotificationRepository (Port)"] {
+  +save(notification)
+  +findById(id)
+  +findByUserId(query)
+  +countUnread(userId)
+  +markRead(id, userId)
+  +markAllRead(userId)
+}
+
 class HttpNotificationServiceClient["HttpNotificationServiceClient (Adapter)"] {
   +getProfile(userId)
   +subscribe(request)
@@ -106,12 +115,23 @@ class MongoMeasurementRepository["MongoMeasurementRepository (Adapter)"] {
   +findWithFilters(filters)
 }
 
+class MongoNotificationRepository["MongoNotificationRepository (Adapter)"] {
+  +save(notification)
+  +findById(id)
+  +findByUserId(query)
+  +countUnread(userId)
+  +markRead(id, userId)
+  +markAllRead(userId)
+}
+
 class UserDocumentMapper["UserDocumentMapper (Mapper)"]
 class WeatherStationDocumentMapper["WeatherStationDocumentMapper (Mapper)"]
 class MeasurementDocumentMapper["MeasurementDocumentMapper (Mapper)"]
+class NotificationDocumentMapper["NotificationDocumentMapper (Mapper)"]
 class UserPersistenceModel["UserPersistenceModel (PersistenceModel)"]
 class WeatherStationPersistenceModel["WeatherStationPersistenceModel (PersistenceModel)"]
 class MeasurementPersistenceModel["MeasurementPersistenceModel (PersistenceModel)"]
+class NotificationPersistenceModel["NotificationPersistenceModel (PersistenceModel)"]
 
 %% Notifications port and adapter
 class AlertNotifier["AlertNotifier (Port)"] {
@@ -138,8 +158,29 @@ class NotificationDeliveryTarget["NotificationDeliveryTarget (RequestModel)"] {
 
 class AlertType["AlertType (DomainEnum)"]
 
+class CompositeAlertNotifierAdapter["CompositeAlertNotifierAdapter (Adapter)"] {
+  +sendMeasurementAlert(notification)
+}
+
+class LogAlertNotifierAdapter["LogAlertNotifierAdapter (LogAdapter)"] {
+  +sendMeasurementAlert(notification)
+}
+
 class TelegramAlertNotifierAdapter["TelegramAlertNotifierAdapter (TelegramAdapter)"] {
   +sendMeasurementAlert(notification)
+}
+
+class InAppAlertNotifierAdapter["InAppAlertNotifierAdapter (InAppAdapter)"] {
+  +sendMeasurementAlert(notification)
+}
+
+class Notification["Notification (DomainEntity)"] {
+  +markRead(now)
+  +isUnread()
+}
+
+class EventEmitter2["EventEmitter2 (EventBus)"] {
+  +emit(event, payload)
 }
 
 PasswordHasher <|.. BcryptPasswordHasher
@@ -148,6 +189,7 @@ JwtTokenService ..> AuthTokenPayload : signs
 
 IUserRepository <|.. MongoUserRepository
 INotificationProfileRepository <|.. MongoNotificationProfileRepository
+INotificationRepository <|.. MongoNotificationRepository
 INotificationServiceClient <|.. HttpNotificationServiceClient
 IStationRepository <|.. MongoWeatherStationRepository
 IMeasurementRepository <|.. MongoMeasurementRepository
@@ -156,12 +198,25 @@ IMeasurementRepository ..> MeasurementFilters : query contract
 MongoUserRepository ..> UserDocumentMapper : maps
 MongoWeatherStationRepository ..> WeatherStationDocumentMapper : maps
 MongoMeasurementRepository ..> MeasurementDocumentMapper : maps
+MongoNotificationRepository ..> NotificationDocumentMapper : maps
 UserDocumentMapper ..> UserPersistenceModel : reads and writes
 WeatherStationDocumentMapper ..> WeatherStationPersistenceModel : reads and writes
 MeasurementDocumentMapper ..> MeasurementPersistenceModel : reads and writes
+NotificationDocumentMapper ..> NotificationPersistenceModel : reads and writes
 MongoMeasurementRepository ..> WeatherStationPersistenceModel : resolves station name filters
 
+AlertNotifier <|.. CompositeAlertNotifierAdapter
+AlertNotifier <|.. LogAlertNotifierAdapter
 AlertNotifier <|.. TelegramAlertNotifierAdapter
+AlertNotifier <|.. InAppAlertNotifierAdapter
+CompositeAlertNotifierAdapter ..> LogAlertNotifierAdapter : delegates
+CompositeAlertNotifierAdapter ..> TelegramAlertNotifierAdapter : delegates
+CompositeAlertNotifierAdapter ..> InAppAlertNotifierAdapter : delegates
 TelegramAlertNotifierAdapter ..> MeasurementAlertNotification : formats
+LogAlertNotifierAdapter ..> MeasurementAlertNotification : logs
+InAppAlertNotifierAdapter ..> MeasurementAlertNotification : filters in-app targets
+InAppAlertNotifierAdapter ..> INotificationRepository : persists
+InAppAlertNotifierAdapter ..> EventEmitter2 : emits notification.delivered
+MongoNotificationRepository ..> Notification : persists
 MeasurementAlertNotification *-- NotificationDeliveryTarget : delivery targets
 MeasurementAlertNotification --> AlertType : alert type

@@ -24,9 +24,11 @@ Rel(notifications, mongoAtlas, "Lee y escribe perfiles e historial in-app", "Mon
 Rel(usuario, usuarioTelegram, "Vincula su cuenta en Telegram", "")
 Rel(usuario, web, "Utiliza", "HTTPS")
 Rel(web, api, "Consume API REST", "HTTPS / JSON + JWT")
+Rel(web, notifications, "Consulta historial y abre stream de notificaciones", "HTTP REST / SSE")
 Rel(api, notifications, "Proxy de preferencias", "HTTP REST")
 Rel(api, rabbit, "Publica ClimateAlertDetectedMessage", "AMQP", $tags="async")
 Rel(rabbit, notifications, "Consume alertas climáticas", "AMQP", $tags="async")
+Rel(notifications, web, "Entrega eventos de notificacion in-app", "SSE")
 Rel(notifications, telegram, "Envía alertas y recibe webhooks", "HTTPS")
 Rel(usuarioTelegram, telegram, "Interactúa con el bot", "HTTPS")
 

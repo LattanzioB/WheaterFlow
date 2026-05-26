@@ -3,7 +3,7 @@
 
 AddRelTag("async", $lineStyle=DashedLine())
 
-LAYOUT_LEFT_RIGHT()
+LAYOUT_TOP_DOWN()
 
 System_Ext(telegram, "Telegram Bot API", "External channel for chat linking and Telegram alert delivery.")
 

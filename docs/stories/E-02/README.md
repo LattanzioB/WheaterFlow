@@ -30,14 +30,14 @@ The notification capability is extracted because it is already modeled as suppor
 
 | ID      | Title                                                                 | Status |
 | ------- | --------------------------------------------------------------------- | ------ |
-| S-02.1  | Restructure repository into two NestJS apps                           | draft  |
-| S-02.2  | Add Dockerized local distributed environment                          | draft  |
-| S-02.3  | Define shared contracts and alert publisher                           | draft  |
-| S-02.4  | Extract notification service APIs and persistence                     | draft  |
-| S-02.5  | Consume alert messages and dispatch notifications                     | draft  |
-| S-02.6  | Complete station and measurement search filters                       | draft  |
-| S-02.7  | Add cross-service integration tests                                   | draft  |
-| S-02.8  | Update distributed architecture documentation                         | draft  |
+| S-02.1  | Restructure repository into two NestJS apps                           | done   |
+| S-02.2  | Add Dockerized local distributed environment                          | done   |
+| S-02.3  | Define shared contracts and alert publisher                           | done   |
+| S-02.4  | Extract notification service APIs and persistence                     | done   |
+| S-02.5  | Consume alert messages and dispatch notifications                     | done   |
+| S-02.6  | Complete station and measurement search filters                       | done   |
+| S-02.7  | Add cross-service integration tests                                   | done   |
+| S-02.8  | Update distributed architecture documentation                         | done   |
 | S-02.9  | Build web UI for use cases (extra)                                    | done   |
 | S-02.10 | In-app notification persistence and adapter (extra)                   | done   |
 | S-02.11 | In-app notifications — REST history endpoints (extra)                 | done   |

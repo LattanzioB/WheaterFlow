@@ -1,0 +1,56 @@
+Este trabajo práctico es la continuación del TP1 (Entregas I y II). Sobre el sistema
+WeatherFlow que ya construyeron, van a incorporar una fuente externa de datos
+meteorológicos (OpenWeatherMap: https://openweathermap.org/).
+El dominio se mantiene aunque las mediciones ya no provienen únicamente de los
+reportes manuales del TP1, sino también de una fuente externa que se consume
+periódicamente de la siguiente manera:
+● Cada estación meteorológica deberá poder asociarse a un proveedor climático, en
+este caso usamos OpenWeather, utilizando como referencia la ubicación de la
+estación meteorológica.
+● El sistema deberá contar con estaciones meteorológicas default de tres
+ubicaciones: Universidad de Quilmes, y dos ciudades más que ustedes prefieran.
+Las mediciones obtenidas se persisten en la misma DB que las del TP1 y atraviesan el
+mismo pipeline de dominio: validación de umbrales, alertas, etc. El objetivo es que toda
+la lógica de búsqueda, filtrado, alertas y suscripciones ya construida funcione sin
+cambios sobre los datos que se ingestan desde OpenWeatherMap.
+Funcionalidad nueva
+1. Ingesta desde OpenWeatherMap: consumir periódicamente datos de
+OpenWeatherMap para un conjunto configurable de ubicaciones e incorporarlos
+al sistema como mediciones del dominio existente.
+2. Reportes: además de las búsquedas y filtros ya implementados en la Entrega II,
+se exponen tres endpoints nuevos:
+○ Temperatura actual de una estación/ubicación.
+○ Promedio de temperatura del último día.
+○ Promedio de temperatura de la última semana.
+Si la ingesta se implementa como un componente independiente nuevo o como un
+adaptador dentro de un componente existente queda a elección del grupo, con
+justificación basada en los desintegradores de granularidad y en cómo se distribuyen las
+responsabilidades. La comunicación entre componentes propios sigue siendo remota
+(REST/RPC/cola), como en la Entrega II.
+Requerimientos
+1. Ingesta periódica desde OpenWeatherMap con scheduling configurable.
+Las mediciones obtenidas deben persistirse y procesarse por el mismo pipeline de
+dominio.
+2. Estrategias de tolerancia a fallos (al menos 3, justificadas según dónde se
+aplican):
+○ Time-out
+○ Circuit breaker
+○ Bulkheads
+○ Fallbacks
+○ Request cache
+(Se espera particularmente protección en la frontera con OWM (API
+externa, latencia variable, posibles caídas) y en la comunicación entre los
+componentes propios.)
+3. Estrategias de observabilidad (todas):
+○ Log aggregation
+○ Metrics aggregation
+○ Distributed tracing: debe poder seguirse una request desde la ingesta
+hasta la alerta publicada en la cola
+○ Alerting (describir estrategia)
+4. Tests de carga (mínimo 3) sobre los endpoints de consulta/reporte, usando
+Locust, Artillery u otro framework.
+5. Dashboard de monitoreo con:
+○ Métricas de hardware
+○ Métricas por endpoint
+○ Métricas de negocio (ejemplo: mediciones ingestadas por minuto, alertas
+disparadas, tasa de error contra API externa)

@@ -98,6 +98,11 @@ npm run start:api:dev
 npm run start:notifications:dev
 ```
 
+When the API starts, an idempotent bootstrap ensures the WeatherFlow system
+owner and the Universidad Nacional de Quilmes, Buenos Aires, and Bariloche
+stations exist with `provider=openweather`. Repeated starts do not duplicate
+these records.
+
 ### Production Build
 
 ```bash

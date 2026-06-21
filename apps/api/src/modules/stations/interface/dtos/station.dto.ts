@@ -12,6 +12,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { StationStatus } from '../../domain/value-objects/station-status.enum';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
 
 export class StationLocationDto {
   @ApiProperty({
@@ -106,6 +107,16 @@ export class CreateStationDto {
   status?: StationStatus;
 
   @ApiPropertyOptional({
+    enum: WeatherProviderCode,
+    example: WeatherProviderCode.OPENWEATHER,
+    default: WeatherProviderCode.NONE,
+    description: 'Climate provider associated with the station coordinates',
+  })
+  @IsOptional()
+  @IsEnum(WeatherProviderCode)
+  provider?: WeatherProviderCode;
+
+  @ApiPropertyOptional({
     type: () => StationAlertSettingsDto,
     description: 'Station alert configuration',
   })
@@ -164,6 +175,16 @@ export class UpdateStationDto {
   status?: StationStatus;
 
   @ApiPropertyOptional({
+    enum: WeatherProviderCode,
+    example: WeatherProviderCode.OPENWEATHER,
+    description:
+      'Updated climate provider associated with the station coordinates',
+  })
+  @IsOptional()
+  @IsEnum(WeatherProviderCode)
+  provider?: WeatherProviderCode;
+
+  @ApiPropertyOptional({
     type: () => StationAlertSettingsDto,
     description: 'Updated station alert configuration',
   })
@@ -171,4 +192,41 @@ export class UpdateStationDto {
   @ValidateNested()
   @Type(() => StationAlertSettingsDto)
   alertSettings?: StationAlertSettingsDto;
+}
+
+export class StationResponseDto {
+  @ApiProperty({ example: 'station-123' })
+  id!: string;
+
+  @ApiProperty({ example: 'Buenos Aires' })
+  name!: string;
+
+  @ApiProperty({ type: () => StationLocationDto })
+  location!: StationLocationDto;
+
+  @ApiProperty({ example: 'OpenWeatherMap' })
+  sensorModel!: string;
+
+  @ApiProperty({ enum: StationStatus })
+  status!: StationStatus;
+
+  @ApiProperty({ example: 'user-123' })
+  ownerId!: string;
+
+  @ApiProperty({
+    enum: WeatherProviderCode,
+    example: WeatherProviderCode.OPENWEATHER,
+  })
+  provider!: WeatherProviderCode;
+
+  @ApiProperty({ type: () => StationAlertSettingsDto })
+  alertSettings!: {
+    extremeHeat: boolean;
+    frost: boolean;
+    storm: boolean;
+    criticalHumidity: boolean;
+  };
+
+  @ApiProperty({ example: '2026-06-21T12:00:00.000Z' })
+  createdAt!: string;
 }

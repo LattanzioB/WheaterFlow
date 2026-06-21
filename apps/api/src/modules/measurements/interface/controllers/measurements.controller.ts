@@ -11,7 +11,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { GetStationByIdService } from '../../../stations/application/services/get-station-by-id.service';
@@ -19,8 +23,11 @@ import { QueryMeasurementsService } from '../../application/services/query-measu
 import { RecordMeasurementService } from '../../application/services/record-measurement.service';
 import {
   CreateMeasurementDto,
+  MeasurementResponseDto,
   QueryMeasurementsDto,
 } from '../dtos/measurement.dto';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
+import { AlertType } from '../../domain/value-objects/alert-type.enum';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -35,10 +42,11 @@ export class MeasurementsController {
   ) {}
 
   @Post()
+  @ApiCreatedResponse({ type: MeasurementResponseDto })
   async create(
     @Body() dto: CreateMeasurementDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<MeasurementResponse> {
+  ): Promise<MeasurementResponseDto> {
     try {
       const station = await this.getStationByIdService.execute({
         stationId: dto.stationId,
@@ -65,9 +73,10 @@ export class MeasurementsController {
   }
 
   @Get()
+  @ApiOkResponse({ type: MeasurementResponseDto, isArray: true })
   async query(
     @Query() dto: QueryMeasurementsDto,
-  ): Promise<MeasurementResponse[]> {
+  ): Promise<MeasurementResponseDto[]> {
     try {
       const measurements = await this.queryMeasurementsService.execute({
         stationName: dto.stationName,
@@ -106,7 +115,7 @@ export class MeasurementsController {
 
   private toResponse(
     measurement: MeasurementResponseSource,
-  ): MeasurementResponse {
+  ): MeasurementResponseDto {
     return {
       id: measurement.getId(),
       stationId: measurement.getStationId(),
@@ -114,6 +123,7 @@ export class MeasurementsController {
       humidity: measurement.getHumidity().getValue(),
       pressure: measurement.getPressure().getValue(),
       reportedAt: measurement.getReportedAt().toISOString(),
+      source: measurement.getSource(),
       alertStatus: measurement.hasAlert(),
       alertType: measurement.getAlertType(),
     };
@@ -133,17 +143,7 @@ interface MeasurementResponseSource {
     getValue(): number;
   };
   getReportedAt(): Date;
+  getSource(): MeasurementSource;
   hasAlert(): boolean;
-  getAlertType(): string;
-}
-
-interface MeasurementResponse {
-  id: string;
-  stationId: string;
-  temperature: number;
-  humidity: number;
-  pressure: number;
-  reportedAt: string;
-  alertStatus: boolean;
-  alertType: string;
+  getAlertType(): AlertType;
 }

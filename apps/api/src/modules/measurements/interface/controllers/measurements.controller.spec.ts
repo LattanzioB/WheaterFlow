@@ -4,6 +4,7 @@ import { QueryMeasurementsService } from '../../application/services/query-measu
 import { RecordMeasurementService } from '../../application/services/record-measurement.service';
 import { GetStationByIdService } from '../../../stations/application/services/get-station-by-id.service';
 import { MeasurementsController } from './measurements.controller';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 
 describe('MeasurementsController', () => {
   const buildRecordService = () =>
@@ -28,6 +29,7 @@ describe('MeasurementsController', () => {
     getHumidity: () => ({ getValue: () => 65 }),
     getPressure: () => ({ getValue: () => 1008 }),
     getReportedAt: () => new Date('2026-04-25T12:00:00.000Z'),
+    getSource: () => MeasurementSource.OPENWEATHER,
     hasAlert: () => true,
     getAlertType: () => AlertType.EXTREME_HEAT,
   });
@@ -65,6 +67,7 @@ describe('MeasurementsController', () => {
     ).resolves.toMatchObject({
       id: 'measurement-1',
       alertType: AlertType.EXTREME_HEAT,
+      source: MeasurementSource.OPENWEATHER,
     });
   });
 

@@ -6,6 +6,10 @@ import { StationStatus } from '../../domain/value-objects/station-status.enum';
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { STATION_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
 import { StationLocationInput } from './create-station.service';
+import {
+  WeatherProvider,
+  WeatherProviderCode,
+} from '../../domain/value-objects/weather-provider.value-object';
 
 export interface UpdateStationCommand {
   stationId: string;
@@ -13,6 +17,7 @@ export interface UpdateStationCommand {
   location?: StationLocationInput;
   sensorModel?: string;
   status?: StationStatus;
+  provider?: WeatherProviderCode;
   alertSettings?: StationAlertSettingsProps;
 }
 
@@ -54,6 +59,10 @@ export class UpdateStationService {
 
     if (command.alertSettings) {
       station.configureAlerts(command.alertSettings);
+    }
+
+    if (command.provider !== undefined) {
+      station.changeProvider(WeatherProvider.create(command.provider));
     }
 
     await this.stationRepository.save(station);

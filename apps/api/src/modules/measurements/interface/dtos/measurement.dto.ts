@@ -8,6 +8,8 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { AlertType } from '../../domain/value-objects/alert-type.enum';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 
 export class CreateMeasurementDto {
   @ApiProperty({
@@ -141,4 +143,36 @@ export class QueryMeasurementsDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   alertOnly?: boolean;
+}
+
+export class MeasurementResponseDto {
+  @ApiProperty({ example: 'measurement-123' })
+  id!: string;
+
+  @ApiProperty({ example: 'station-123' })
+  stationId!: string;
+
+  @ApiProperty({ example: 26.4 })
+  temperature!: number;
+
+  @ApiProperty({ example: 74 })
+  humidity!: number;
+
+  @ApiProperty({ example: 1012.5 })
+  pressure!: number;
+
+  @ApiProperty({ example: '2026-06-21T12:00:00.000Z' })
+  reportedAt!: string;
+
+  @ApiProperty({
+    enum: MeasurementSource,
+    example: MeasurementSource.MANUAL,
+  })
+  source!: MeasurementSource;
+
+  @ApiProperty({ example: false })
+  alertStatus!: boolean;
+
+  @ApiProperty({ enum: AlertType, example: AlertType.NONE })
+  alertType!: AlertType;
 }

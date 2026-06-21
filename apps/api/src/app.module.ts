@@ -11,6 +11,7 @@ import { StationsModule } from './modules/stations/stations.module';
 import { UsersModule } from './modules/users/users.module';
 import configuration from '@shared/config/configuration';
 import { envValidationSchema } from '@shared/config/env-validation';
+import { DefaultStationsBootstrap } from './shared/seeds/default-stations.bootstrap';
 
 @Module({
   imports: [
@@ -38,6 +39,6 @@ import { envValidationSchema } from '@shared/config/env-validation';
     MeasurementsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DefaultStationsBootstrap],
 })
 export class AppModule {}

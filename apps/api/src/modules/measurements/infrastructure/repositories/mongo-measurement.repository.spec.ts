@@ -1,4 +1,5 @@
 import { AlertType } from '../../domain/value-objects/alert-type.enum';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 import { MongoMeasurementRepository } from './mongo-measurement.repository';
 
 describe('MongoMeasurementRepository', () => {
@@ -98,6 +99,7 @@ describe('MongoMeasurementRepository', () => {
       getHumidity: () => ({ getValue: () => 75 }),
       getPressure: () => ({ getValue: () => 1008 }),
       getReportedAt: () => new Date('2026-04-25T23:00:00.000Z'),
+      getSource: () => MeasurementSource.MANUAL,
       hasAlert: () => false,
       getAlertType: () => AlertType.NONE,
     } as any;
@@ -115,6 +117,7 @@ describe('MongoMeasurementRepository', () => {
         humidity: 75,
         pressure: 1008,
         reportedAt: new Date('2026-04-25T23:00:00.000Z'),
+        source: MeasurementSource.MANUAL,
         alertStatus: false,
         alertType: AlertType.NONE,
       },

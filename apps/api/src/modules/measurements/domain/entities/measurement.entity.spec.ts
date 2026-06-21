@@ -4,6 +4,7 @@ import { Humidity } from '../value-objects/humidity.value-object';
 import { Pressure } from '../value-objects/pressure.value-object';
 import { Temperature } from '../value-objects/temperature.value-object';
 import { AlertEvaluator } from '../services/alert-evaluator.service';
+import { MeasurementSource } from '../value-objects/measurement-source.enum';
 
 describe('Measurement', () => {
   const buildMeasurement = () =>
@@ -21,6 +22,7 @@ describe('Measurement', () => {
     expect(measurement.getStationId()).toBe('station-1');
     expect(measurement.hasAlert()).toBe(false);
     expect(measurement.getAlertType()).toBe(AlertType.NONE);
+    expect(measurement.getSource()).toBe(MeasurementSource.MANUAL);
   });
 
   it('flags heat alerts during creation when thresholds are breached', () => {
@@ -45,6 +47,7 @@ describe('Measurement', () => {
       reportedAt: new Date('2026-04-25T13:00:00.000Z'),
       alertStatus: true,
       alertType: AlertType.EXTREME_HEAT,
+      source: MeasurementSource.OPENWEATHER,
     });
 
     expect(measurement.getId()).toBe('measurement-1');
@@ -53,6 +56,7 @@ describe('Measurement', () => {
     );
     expect(measurement.hasAlert()).toBe(true);
     expect(measurement.getAlertType()).toBe(AlertType.EXTREME_HEAT);
+    expect(measurement.getSource()).toBe(MeasurementSource.OPENWEATHER);
   });
 
   it('updates alert state through applyAlert and clearAlert', () => {

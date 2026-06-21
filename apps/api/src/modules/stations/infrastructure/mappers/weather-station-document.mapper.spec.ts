@@ -3,10 +3,15 @@ import { Location } from '../../domain/value-objects/location.value-object';
 import { StationStatus } from '../../domain/value-objects/station-status.enum';
 import { WeatherStationDocumentMapper } from './weather-station-document.mapper';
 import { WeatherStationSchema } from '../persistence/weather-station.schema';
+import {
+  WeatherProvider,
+  WeatherProviderCode,
+} from '../../domain/value-objects/weather-provider.value-object';
 
 describe('WeatherStation persistence mapping', () => {
   it('defines the weather station schema with owner and nested paths', () => {
     expect(WeatherStationSchema.path('ownerId')).toBeDefined();
+    expect(WeatherStationSchema.path('provider')).toBeDefined();
     expect(WeatherStationSchema.path('location.latitude')).toBeDefined();
     expect(WeatherStationSchema.path('alertSettings.storm')).toBeDefined();
 
@@ -21,6 +26,7 @@ describe('WeatherStation persistence mapping', () => {
       sensorModel: 'WH-1080',
       status: StationStatus.INACTIVE,
       ownerId: 'user-1',
+      provider: WeatherProvider.create(WeatherProviderCode.OPENWEATHER),
       createdAt: new Date('2026-04-25T14:00:00.000Z'),
     });
 
@@ -41,6 +47,7 @@ describe('WeatherStation persistence mapping', () => {
       sensorModel: 'WH-1080',
       status: StationStatus.INACTIVE,
       ownerId: 'user-1',
+      provider: WeatherProviderCode.OPENWEATHER,
       alertSettings: {
         extremeHeat: true,
         frost: true,
@@ -79,6 +86,7 @@ describe('WeatherStation persistence mapping', () => {
       storm: true,
       criticalHumidity: true,
     });
+    expect(station.getProvider().getValue()).toBe(WeatherProviderCode.NONE);
     expect(station.getCreatedAt().toISOString()).toBe(
       '2026-04-25T15:00:00.000Z',
     );

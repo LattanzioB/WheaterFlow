@@ -2,6 +2,7 @@ import { Measurement } from '../../domain/entities/measurement.entity';
 import { Humidity } from '../../domain/value-objects/humidity.value-object';
 import { Pressure } from '../../domain/value-objects/pressure.value-object';
 import { Temperature } from '../../domain/value-objects/temperature.value-object';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 import {
   MeasurementModelDocument,
   MeasurementPersistence,
@@ -16,6 +17,7 @@ export class MeasurementDocumentMapper {
       humidity: measurement.getHumidity().getValue(),
       pressure: measurement.getPressure().getValue(),
       reportedAt: measurement.getReportedAt(),
+      source: measurement.getSource(),
       alertStatus: measurement.hasAlert(),
       alertType: measurement.getAlertType(),
     };
@@ -31,6 +33,7 @@ export class MeasurementDocumentMapper {
       humidity: Humidity.create(document.humidity),
       pressure: Pressure.create(document.pressure),
       reportedAt: document.reportedAt,
+      source: document.source ?? MeasurementSource.MANUAL,
       alertStatus: document.alertStatus,
       alertType: document.alertType,
     });

@@ -5,12 +5,14 @@ import { Pressure } from '../../domain/value-objects/pressure.value-object';
 import { Temperature } from '../../domain/value-objects/temperature.value-object';
 import { MeasurementDocumentMapper } from './measurement-document.mapper';
 import { MeasurementSchema } from '../persistence/measurement.schema';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 
 describe('Measurement persistence mapping', () => {
   it('defines the measurement schema with the expected indexes', () => {
     expect(MeasurementSchema.path('stationId')).toBeDefined();
     expect(MeasurementSchema.path('reportedAt')).toBeDefined();
     expect(MeasurementSchema.path('alertType')).toBeDefined();
+    expect(MeasurementSchema.path('source')).toBeDefined();
 
     expect(MeasurementSchema.indexes()).toContainEqual([
       { stationId: 1, reportedAt: -1 },
@@ -32,6 +34,7 @@ describe('Measurement persistence mapping', () => {
       reportedAt: new Date('2026-04-25T16:00:00.000Z'),
       alertStatus: true,
       alertType: AlertType.EXTREME_HEAT,
+      source: MeasurementSource.OPENWEATHER,
     });
 
     expect(MeasurementDocumentMapper.toPersistence(measurement)).toEqual({
@@ -41,6 +44,7 @@ describe('Measurement persistence mapping', () => {
       humidity: 64,
       pressure: 1001,
       reportedAt: new Date('2026-04-25T16:00:00.000Z'),
+      source: MeasurementSource.OPENWEATHER,
       alertStatus: true,
       alertType: AlertType.EXTREME_HEAT,
     });
@@ -63,5 +67,6 @@ describe('Measurement persistence mapping', () => {
     expect(measurement.getTemperature().getValue()).toBe(10);
     expect(measurement.hasAlert()).toBe(false);
     expect(measurement.getAlertType()).toBe(AlertType.NONE);
+    expect(measurement.getSource()).toBe(MeasurementSource.MANUAL);
   });
 });

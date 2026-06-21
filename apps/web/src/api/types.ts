@@ -20,6 +20,9 @@ export const SUBSCRIBABLE_ALERT_TYPES: AlertType[] = [
   'CRITICAL_HUMIDITY',
 ];
 
+export type WeatherProvider = 'none' | 'openweather';
+export type MeasurementSource = 'manual' | 'openweather';
+
 export interface ApiErrorBody {
   statusCode?: number;
   message?: string | string[];
@@ -58,6 +61,7 @@ export interface WeatherStation {
   sensorModel: string;
   status: string;
   ownerId: string;
+  provider: WeatherProvider;
   alertSettings?: {
     extremeHeat: boolean;
     frost: boolean;
@@ -74,6 +78,7 @@ export interface Measurement {
   humidity: number;
   pressure: number;
   reportedAt: string;
+  source: MeasurementSource;
   alertStatus: boolean;
   alertType: AlertType;
 }

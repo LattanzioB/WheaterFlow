@@ -5,6 +5,7 @@ import {
   StationAlertSettingsProps,
 } from '../value-objects/station-alert-settings.value-object';
 import { StationStatus } from '../value-objects/station-status.enum';
+import { WeatherProvider } from '../value-objects/weather-provider.value-object';
 
 export interface CreateWeatherStationProps {
   id?: string;
@@ -14,6 +15,7 @@ export interface CreateWeatherStationProps {
   status?: StationStatus;
   ownerId: string;
   alertSettings?: StationAlertSettings;
+  provider?: WeatherProvider;
   createdAt?: Date;
 }
 
@@ -26,6 +28,7 @@ export class WeatherStation {
     private status: StationStatus,
     private ownerId: string,
     private alertSettings: StationAlertSettings,
+    private provider: WeatherProvider,
     private readonly createdAt: Date,
   ) {}
 
@@ -53,6 +56,7 @@ export class WeatherStation {
       props.status ?? StationStatus.ACTIVE,
       ownerId,
       props.alertSettings ?? StationAlertSettings.create(),
+      props.provider ?? WeatherProvider.create(),
       createdAt,
     );
   }
@@ -83,6 +87,10 @@ export class WeatherStation {
 
   getAlertSettings(): StationAlertSettings {
     return this.alertSettings;
+  }
+
+  getProvider(): WeatherProvider {
+    return this.provider;
   }
 
   getCreatedAt(): Date {
@@ -118,6 +126,10 @@ export class WeatherStation {
 
   configureAlerts(props: StationAlertSettingsProps): void {
     this.alertSettings = StationAlertSettings.create(props);
+  }
+
+  changeProvider(provider: WeatherProvider): void {
+    this.provider = provider;
   }
 
   private static normalizeText(value: string, field: string): string {

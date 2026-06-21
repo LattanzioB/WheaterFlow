@@ -336,9 +336,11 @@ Persistence: `notifications` collection in MongoDB with `{ userId: 1, createdAt:
   "name": "Estacion Central",
   "location": { "latitude": -34.6037, "longitude": -58.3816 },
   "sensorModel": "Davis Vantage Pro2",
-  "ownerId": "user-uuid"
+  "provider": "none"
 }
 ```
+
+`provider` is optional and defaults to `"none"`.
 
 **Response `201`:** Station object.
 
@@ -354,7 +356,8 @@ Persistence: `notifications` collection in MongoDB with `{ userId: 1, createdAt:
 
 **Auth required.**
 
-**Body:** Any subset of: `name`, `location`, `sensorModel`, `status`
+**Body:** Any subset of: `name`, `location`, `sensorModel`, `status`,
+`provider`, `alertSettings`
 
 **Response `200`:** Updated Station object.
 
@@ -376,11 +379,19 @@ Persistence: `notifications` collection in MongoDB with `{ userId: 1, createdAt:
   "sensorModel": "Davis Vantage Pro2",
   "status": "Activa",
   "ownerId": "user-uuid",
+  "provider": "none",
+  "alertSettings": {
+    "extremeHeat": true,
+    "frost": true,
+    "storm": true,
+    "criticalHumidity": true
+  },
   "createdAt": "2026-03-29T00:00:00.000Z"
 }
 ```
 
 **Status values:** `"Activa"` | `"Inactiva"`
+**Provider values:** `"none"` | `"openweather"`
 
 ---
 
@@ -453,12 +464,14 @@ Alert fields (`alertStatus`, `alertType`) are set automatically by domain logic 
   "humidity": 65,
   "pressure": 1013,
   "reportedAt": "2026-03-29T12:00:00.000Z",
+  "source": "manual",
   "alertStatus": true,
   "alertType": "Calor Extremo"
 }
 ```
 
 **Alert type values:** `"Ninguna"` | `"Calor Extremo"` | `"Helada"` | `"Tormenta"` | `"Humedad Critica"`
+**Source values:** `"manual"` | `"openweather"`
 
 ---
 

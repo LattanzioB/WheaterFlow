@@ -9,6 +9,7 @@ import type { AlertPublisher } from '../ports/alert-publisher.port';
 import { Humidity } from '../../domain/value-objects/humidity.value-object';
 import { Pressure } from '../../domain/value-objects/pressure.value-object';
 import { Temperature } from '../../domain/value-objects/temperature.value-object';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 import {
   ALERT_PUBLISHER_TOKEN,
   MEASUREMENT_REPOSITORY_TOKEN,
@@ -21,6 +22,7 @@ export interface RecordMeasurementCommand {
   humidity: number;
   pressure: number;
   reportedAt?: Date;
+  source?: MeasurementSource;
 }
 
 @Injectable()
@@ -49,6 +51,7 @@ export class RecordMeasurementService {
       humidity: Humidity.create(command.humidity),
       pressure: Pressure.create(command.pressure),
       reportedAt: command.reportedAt,
+      source: command.source,
       alertSettings: station.getAlertSettings().toPrimitives(),
     });
 

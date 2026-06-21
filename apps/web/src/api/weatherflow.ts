@@ -7,6 +7,7 @@ import type {
   NotificationsPage,
   SubscribedStationSummary,
   UserProfile,
+  WeatherProvider,
   WeatherStation,
 } from './types';
 
@@ -55,6 +56,7 @@ export function createStation(payload: {
   location: { latitude: number; longitude: number };
   sensorModel: string;
   status?: string;
+  provider?: WeatherProvider;
 }): Promise<WeatherStation> {
   return apiRequest('/weather-stations', {
     method: 'POST',
@@ -69,6 +71,7 @@ export function updateStation(
     location: { latitude: number; longitude: number };
     sensorModel: string;
     status: string;
+    provider: WeatherProvider;
   }>,
 ): Promise<WeatherStation> {
   return apiRequest(`/weather-stations/${id}`, {

@@ -60,6 +60,10 @@ Docker Compose starts RabbitMQ plus separate API, Notification service, and Web 
 - Notification service health: `http://localhost:3001/health`
 - RabbitMQ management UI: `http://localhost:15672`
 
+API startup idempotently creates a non-interactive system owner plus default
+OpenWeather stations for Universidad Nacional de Quilmes, Buenos Aires, and
+Bariloche.
+
 ## Available Scripts
 
 | Script                             | Description                                                                          |

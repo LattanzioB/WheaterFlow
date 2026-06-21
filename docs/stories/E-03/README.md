@@ -123,7 +123,7 @@ exporting results to Prometheus/Grafana.
 
 | ID      | Title                                                                  | Status |
 | ------- | ---------------------------------------------------------------------- | ------ |
-| S-03.1  | Station↔provider association, measurement source & default stations    | draft  |
+| S-03.1  | Station↔provider association, measurement source & default stations    | done   |
 | S-03.2  | Internal ingestion intake endpoint reusing the domain pipeline         | draft  |
 | S-03.3  | Scaffold the `apps/ingestion` worker (scheduler, config, Docker)       | draft  |
 | S-03.4  | OpenWeatherMap client adapter and reading mapping                      | draft  |

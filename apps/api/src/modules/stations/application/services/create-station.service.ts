@@ -9,6 +9,10 @@ import {
 import { Location } from '../../domain/value-objects/location.value-object';
 import { StationStatus } from '../../domain/value-objects/station-status.enum';
 import {
+  WeatherProvider,
+  WeatherProviderCode,
+} from '../../domain/value-objects/weather-provider.value-object';
+import {
   STATION_REPOSITORY_TOKEN,
   USER_REPOSITORY_TOKEN,
 } from '@shared/tokens/injection-tokens';
@@ -24,6 +28,7 @@ export interface CreateStationCommand {
   sensorModel: string;
   ownerId: string;
   status?: StationStatus;
+  provider?: WeatherProviderCode;
   alertSettings?: StationAlertSettingsProps;
 }
 
@@ -52,6 +57,7 @@ export class CreateStationService {
       sensorModel: command.sensorModel,
       ownerId: command.ownerId,
       status: command.status,
+      provider: WeatherProvider.create(command.provider),
       alertSettings: command.alertSettings
         ? StationAlertSettings.create(command.alertSettings)
         : undefined,

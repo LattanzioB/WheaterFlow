@@ -37,10 +37,17 @@ Minimum local distributed environment:
 ```env
 PORT=3000
 NOTIFICATIONS_PORT=3001
+INGESTION_PORT=3002
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/weatherflow
 JWT_SECRET=your-secret-key-here
 JWT_EXPIRES_IN=7d
 NOTIFICATION_SERVICE_URL=http://notifications:3001
+OWM_API_KEY=your-openweather-api-key
+OWM_BASE_URL=https://api.openweathermap.org
+API_BASE_URL=http://api:3000
+INGESTION_CRON=*/10 * * * *
+OWM_CONCURRENCY_LIMIT=3
+API_CONCURRENCY_LIMIT=3
 RABBITMQ_DEFAULT_USER=weatherflow
 RABBITMQ_DEFAULT_PASS=weatherflow
 RABBITMQ_URL=amqp://weatherflow:weatherflow@rabbitmq:5672
@@ -74,13 +81,14 @@ docker compose up --build
 
 Local URLs:
 
-| Service                     | URL                                     |
-| --------------------------- | --------------------------------------- |
-| API                         | `http://localhost:3000`                 |
-| Swagger UI                  | `http://localhost:3000/api/docs`        |
-| OpenAPI JSON                | `http://localhost:3000/api/docs-json`   |
-| Notification service health | `http://localhost:3001/health`          |
-| RabbitMQ management UI      | `http://localhost:15672`                |
+| Service                     | URL                                   |
+| --------------------------- | ------------------------------------- |
+| API                         | `http://localhost:3000`               |
+| Swagger UI                  | `http://localhost:3000/api/docs`      |
+| OpenAPI JSON                | `http://localhost:3000/api/docs-json` |
+| Notification service health | `http://localhost:3001/health`        |
+| Ingestion service health    | `http://localhost:3002/health`        |
+| RabbitMQ management UI      | `http://localhost:15672`              |
 
 Open RabbitMQ management and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS`.
 
@@ -89,6 +97,7 @@ Open RabbitMQ management and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DE
 ```bash
 curl http://localhost:3000/health
 curl http://localhost:3001/health
+curl http://localhost:3002/health
 ```
 
 ### Running Services Without Docker Images
@@ -96,6 +105,7 @@ curl http://localhost:3001/health
 ```bash
 npm run start:api:dev
 npm run start:notifications:dev
+npm run start:ingestion:dev
 ```
 
 When the API starts, an idempotent bootstrap ensures the WeatherFlow system
@@ -109,6 +119,7 @@ these records.
 npm run build
 npm run start:api:prod
 npm run start:notifications:prod
+npm run start:ingestion:prod
 ```
 
 ---
@@ -143,10 +154,18 @@ apps/
 |       |   |-- stations/
 |       |   `-- users/
 |       `-- main.ts
-`-- notifications/
+|-- notifications/
     `-- src/
         |-- modules/
         |   `-- notifications/
+        `-- main.ts
+`-- ingestion/
+    `-- src/
+        |-- modules/
+        |   `-- ingestion/
+        |       |-- application/
+        |       |-- domain/
+        |       `-- infrastructure/
         `-- main.ts
 libs/
 |-- contracts/

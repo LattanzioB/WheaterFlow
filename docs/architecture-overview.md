@@ -2,13 +2,17 @@
 
 ## Summary
 
-WeatherFlow Delivery II is a distributed meteorological services platform built
-with two independently runnable NestJS applications:
+WeatherFlow is a distributed meteorological services platform built with three
+independently runnable NestJS backend applications:
 
 - API service: authenticates users, manages stations and measurements, evaluates
   climate alerts, and publishes alert messages.
 - Notification service: owns notification preferences, consumes alert messages,
   resolves subscribers and delivery targets, and dispatches notifications.
+- Ingestion service: owns external weather acquisition scheduling and isolates
+  OpenWeather failures from the API process. Its current base exposes health and
+  validated configuration; provider and scheduling adapters arrive in later E-03
+  stories.
 
 The services keep the Delivery I hexagonal and DDD structure inside each
 component. They communicate through explicit remote boundaries instead of in
@@ -35,6 +39,7 @@ for climate-alert delivery.
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
 | API service (`apps/api`)                    | Auth, user identity, station catalog, measurement recording, measurement search, alert detection                             | Public REST API on port `3000`, Swagger at `/api/docs`                    | MongoDB Atlas, RabbitMQ, Notification service REST API |
 | Notification service (`apps/notifications`) | Notification profiles, station subscriptions, alert-type preferences, delivery channels, Telegram link codes, alert dispatch | Internal/local REST API on port `3001`, Telegram webhook, health endpoint | MongoDB Atlas, RabbitMQ, Telegram Bot API when enabled |
+| Ingestion service (`apps/ingestion`)        | External weather acquisition orchestration and its operational configuration                                                 | Health endpoint on port `3002`                                            | OpenWeather API, API service                           |
 | RabbitMQ                                    | Durable alert exchange, notification queue, routing key binding                                                              | AMQP on `5672`, management UI on `15672`                                  | None inside the app boundary                           |
 | MongoDB Atlas                               | Persistent collections for users, stations, measurements, and notification profiles                                          | Managed MongoDB endpoint                                                  | External managed dependency                            |
 | Clients                                     | Users, Swagger/manual callers, station data publishers                                                                       | HTTPS/JSON requests to the API service                                    | API service                                            |
@@ -48,6 +53,7 @@ for climate-alert delivery.
 | Measurement alert publication                               | API to RabbitMQ                          | Alert dispatch does not block measurement persistence and can be retried or observed independently.           |
 | Alert consumption and delivery                              | RabbitMQ to Notification service         | Notification processing can scale or fail separately from measurement recording.                              |
 | Telegram account linking                                    | Telegram webhook to Notification service | Chat IDs belong to the notification boundary, not the weather-data API.                                       |
+| External weather acquisition                                | Ingestion service to OpenWeather and API | Scheduling and provider failures remain isolated; the API retains ownership of stations and measurements.     |
 
 ## Technical Split Justification
 
@@ -89,6 +95,14 @@ logic: each service accesses only the collections it owns for its use cases.
 - Filter subscribers by `stationId` and `alertType`.
 - Resolve concrete delivery targets before invoking channel adapters.
 - Dispatch notifications through the configured notifier adapters.
+
+### Ingestion Service
+
+- Run as an independent NestJS process and Docker container.
+- Validate OpenWeather/API URLs, API key, cron, and concurrency limits at startup.
+- Expose `GET /health` on port `3002`.
+- Keep application, domain, and infrastructure layers local to `apps/ingestion`.
+- Depend on remote contracts rather than importing API or Notification domain entities.
 
 ## Key Flows
 

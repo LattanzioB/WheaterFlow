@@ -6,9 +6,10 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "npm run build:api && npm run build:notifications && npm run build:web",
+    "build": "npm run build:api && npm run build:notifications && npm run build:ingestion && npm run build:web",
     "build:api": "nest build api",
     "build:notifications": "nest build notifications",
+    "build:ingestion": "nest build ingestion",
     "build:web": "npm run build --prefix apps/web",
     "start:web:dev": "npm run dev --prefix apps/web",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\" \"test/**/*.ts\"",
@@ -23,6 +24,10 @@
     "start:notifications:dev": "nest start notifications --watch",
     "start:notifications:debug": "nest start notifications --debug --watch",
     "start:notifications:prod": "node dist/apps/notifications/apps/notifications/src/main.js",
+    "start:ingestion": "nest start ingestion",
+    "start:ingestion:dev": "nest start ingestion --watch",
+    "start:ingestion:debug": "nest start ingestion --debug --watch",
+    "start:ingestion:prod": "node dist/apps/ingestion/apps/ingestion/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -99,6 +104,7 @@
     "moduleNameMapper": {
       "^@api/(.*)$": "<rootDir>/apps/api/src/$1",
       "^@notifications/(.*)$": "<rootDir>/apps/notifications/src/$1",
+      "^@ingestion/(.*)$": "<rootDir>/apps/ingestion/src/$1",
       "^@shared/(.*)$": "<rootDir>/libs/shared/src/$1",
       "^@contracts$": "<rootDir>/libs/contracts/src/index.ts",
       "^@contracts/(.*)$": "<rootDir>/libs/contracts/src/$1"

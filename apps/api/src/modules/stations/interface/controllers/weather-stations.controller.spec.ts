@@ -7,6 +7,7 @@ import { ListAllStationsService } from '../../application/services/list-all-stat
 import { ListUserStationsService } from '../../application/services/list-user-stations.service';
 import { UpdateStationService } from '../../application/services/update-station.service';
 import { WeatherStationsController } from './weather-stations.controller';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
 
 describe('WeatherStationsController', () => {
   const buildCreateService = () =>
@@ -32,6 +33,9 @@ describe('WeatherStationsController', () => {
     getSensorModel: () => 'WH-1080',
     getStatus: () => StationStatus.ACTIVE,
     getOwnerId: () => ownerId,
+    getProvider: () => ({
+      getValue: () => WeatherProviderCode.OPENWEATHER,
+    }),
     getAlertSettings: () => ({
       toPrimitives: () => ({
         extremeHeat: true,
@@ -118,7 +122,13 @@ describe('WeatherStationsController', () => {
       ),
     ).resolves.toMatchObject({
       ownerId: 'user-1',
+      provider: WeatherProviderCode.OPENWEATHER,
     });
+    expect(createService.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: undefined,
+      }),
+    );
   });
 
   it('returns a station only to its owner', async () => {

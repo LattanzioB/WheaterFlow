@@ -2,6 +2,10 @@ import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { Location } from '../../domain/value-objects/location.value-object';
 import { StationAlertSettings } from '../../domain/value-objects/station-alert-settings.value-object';
 import {
+  WeatherProvider,
+  WeatherProviderCode,
+} from '../../domain/value-objects/weather-provider.value-object';
+import {
   WeatherStationModelDocument,
   WeatherStationPersistence,
 } from '../persistence/weather-station.schema';
@@ -18,6 +22,7 @@ export class WeatherStationDocumentMapper {
       sensorModel: station.getSensorModel(),
       status: station.getStatus(),
       ownerId: station.getOwnerId(),
+      provider: station.getProvider().getValue(),
       alertSettings: station.getAlertSettings().toPrimitives(),
       createdAt: station.getCreatedAt(),
     };
@@ -36,6 +41,9 @@ export class WeatherStationDocumentMapper {
       sensorModel: document.sensorModel,
       status: document.status,
       ownerId: document.ownerId,
+      provider: WeatherProvider.create(
+        document.provider ?? WeatherProviderCode.NONE,
+      ),
       alertSettings: StationAlertSettings.create(document.alertSettings),
       createdAt: document.createdAt,
     });

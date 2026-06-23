@@ -1,4 +1,5 @@
 import { StationStatus } from '../../domain/value-objects/station-status.enum';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
 import { MongoWeatherStationRepository } from './mongo-weather-station.repository';
 
 describe('MongoWeatherStationRepository', () => {
@@ -96,6 +97,9 @@ describe('MongoWeatherStationRepository', () => {
       getSensorModel: () => 'Davis',
       getStatus: () => StationStatus.INACTIVE,
       getOwnerId: () => 'user-2',
+      getProvider: () => ({
+        getValue: () => WeatherProviderCode.OPENWEATHER,
+      }),
       getAlertSettings: () => ({
         toPrimitives: () => ({
           extremeHeat: false,
@@ -123,6 +127,7 @@ describe('MongoWeatherStationRepository', () => {
         sensorModel: 'Davis',
         status: StationStatus.INACTIVE,
         ownerId: 'user-2',
+        provider: WeatherProviderCode.OPENWEATHER,
         alertSettings: {
           extremeHeat: false,
           frost: true,

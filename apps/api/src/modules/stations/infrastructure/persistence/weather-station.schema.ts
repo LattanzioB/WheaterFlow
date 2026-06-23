@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { StationStatus } from '../../domain/value-objects/station-status.enum';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
 
 @Schema({ _id: false, id: false })
 export class StationLocationDocument {
@@ -56,6 +57,14 @@ export class WeatherStationPersistenceModel {
   ownerId!: string;
 
   @Prop({
+    type: String,
+    required: true,
+    enum: Object.values(WeatherProviderCode),
+    default: WeatherProviderCode.NONE,
+  })
+  provider!: WeatherProviderCode;
+
+  @Prop({
     type: StationAlertSettingsDocument,
     required: true,
     default: () => ({
@@ -81,6 +90,7 @@ export interface WeatherStationPersistence {
   sensorModel: string;
   status: StationStatus;
   ownerId: string;
+  provider?: WeatherProviderCode;
   alertSettings: {
     extremeHeat: boolean;
     frost: boolean;

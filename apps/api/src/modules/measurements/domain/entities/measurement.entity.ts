@@ -5,6 +5,7 @@ import { AlertType } from '../value-objects/alert-type.enum';
 import { Humidity } from '../value-objects/humidity.value-object';
 import { Pressure } from '../value-objects/pressure.value-object';
 import { Temperature } from '../value-objects/temperature.value-object';
+import { MeasurementSource } from '../value-objects/measurement-source.enum';
 
 export interface CreateMeasurementProps {
   id?: string;
@@ -17,6 +18,7 @@ export interface CreateMeasurementProps {
   alertType?: AlertType;
   alertSettings?: AlertSettings;
   alertEvaluator?: AlertEvaluator;
+  source?: MeasurementSource;
 }
 
 export class Measurement {
@@ -27,6 +29,7 @@ export class Measurement {
     private readonly humidity: Humidity,
     private readonly pressure: Pressure,
     private readonly reportedAt: Date,
+    private readonly source: MeasurementSource,
     private alertStatus: boolean,
     private alertType: AlertType,
   ) {}
@@ -59,6 +62,7 @@ export class Measurement {
       props.humidity,
       props.pressure,
       reportedAt,
+      props.source ?? MeasurementSource.MANUAL,
       alertStatus,
       alertType,
     );
@@ -95,6 +99,10 @@ export class Measurement {
 
   getReportedAt(): Date {
     return this.reportedAt;
+  }
+
+  getSource(): MeasurementSource {
+    return this.source;
   }
 
   hasAlert(): boolean {

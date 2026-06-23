@@ -6,6 +6,7 @@ import {
 import { WeatherStation } from '../../domain/entities/weather-station.entity';
 import { Location } from '../../domain/value-objects/location.value-object';
 import { StationStatus } from '../../domain/value-objects/station-status.enum';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
 
 describe('UpdateStationService', () => {
   const buildStationRepository = (): jest.Mocked<IStationRepository> => ({
@@ -39,6 +40,7 @@ describe('UpdateStationService', () => {
       },
       sensorModel: 'AWS-3000',
       status: StationStatus.INACTIVE,
+      provider: WeatherProviderCode.OPENWEATHER,
       alertSettings: {
         extremeHeat: false,
         frost: false,
@@ -57,6 +59,9 @@ describe('UpdateStationService', () => {
     );
     expect(result.getSensorModel()).toBe('AWS-3000');
     expect(result.getStatus()).toBe(StationStatus.INACTIVE);
+    expect(result.getProvider().getValue()).toBe(
+      WeatherProviderCode.OPENWEATHER,
+    );
     expect(result.getAlertSettings().toPrimitives()).toEqual({
       extremeHeat: false,
       frost: false,

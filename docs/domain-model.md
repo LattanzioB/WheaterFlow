@@ -92,14 +92,20 @@ WeatherStation {
   sensorModel: string
   status: StationStatus
   ownerId: string
+  provider: WeatherProvider
   createdAt: Date
 }
 ```
+
+`WeatherProvider` stores `none` (default) or `openweather`. Provider-backed
+stations reuse the aggregate's existing `Location`; no provider-specific
+coordinates are persisted.
 
 ### Invariants
 
 - `ownerId` must reference an existing user
 - coordinates must stay within valid latitude and longitude ranges
+- provider must be `none` or `openweather`
 
 ---
 
@@ -118,10 +124,14 @@ Measurement {
   humidity: Humidity
   pressure: Pressure
   reportedAt: Date
+  source: MeasurementSource
   alertStatus: boolean
   alertType: AlertType
 }
 ```
+
+`MeasurementSource` stores `manual` (default) or `openweather`. Source metadata
+does not participate in alert evaluation.
 
 ### Alert Rules
 

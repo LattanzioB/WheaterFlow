@@ -7,6 +7,7 @@ import { IUserRepository } from '../../../users/domain/ports/user-repository.por
 import { StationStatus } from '../../domain/value-objects/station-status.enum';
 import { User } from '../../../users/domain/entities/user.entity';
 import { Email } from '../../../users/domain/value-objects/email.value-object';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
 
 describe('CreateStationService', () => {
   const command: CreateStationCommand = {
@@ -18,6 +19,7 @@ describe('CreateStationService', () => {
     sensorModel: 'WH-1080',
     ownerId: 'user-1',
     status: StationStatus.INACTIVE,
+    provider: WeatherProviderCode.OPENWEATHER,
     alertSettings: {
       storm: false,
     },
@@ -64,6 +66,9 @@ describe('CreateStationService', () => {
     expect(savedStation.getName()).toBe('Central');
     expect(savedStation.getOwnerId()).toBe('user-1');
     expect(savedStation.getStatus()).toBe(StationStatus.INACTIVE);
+    expect(savedStation.getProvider().getValue()).toBe(
+      WeatherProviderCode.OPENWEATHER,
+    );
     expect(savedStation.getLocation().getLatitude()).toBe(-34.6037);
     expect(savedStation.getAlertSettings().toPrimitives()).toEqual({
       extremeHeat: true,

@@ -2,6 +2,10 @@ import { WeatherStation } from './weather-station.entity';
 import { Location } from '../value-objects/location.value-object';
 import { StationAlertSettings } from '../value-objects/station-alert-settings.value-object';
 import { StationStatus } from '../value-objects/station-status.enum';
+import {
+  WeatherProvider,
+  WeatherProviderCode,
+} from '../value-objects/weather-provider.value-object';
 
 describe('WeatherStation', () => {
   const location = Location.create(-34.6037, -58.3816);
@@ -22,6 +26,7 @@ describe('WeatherStation', () => {
     expect(station.getSensorModel()).toBe('WH-1080');
     expect(station.getOwnerId()).toBe('owner-1');
     expect(station.getStatus()).toBe(StationStatus.ACTIVE);
+    expect(station.getProvider().getValue()).toBe(WeatherProviderCode.NONE);
     expect(station.getAlertSettings().toPrimitives()).toEqual({
       extremeHeat: true,
       frost: true,
@@ -68,6 +73,9 @@ describe('WeatherStation', () => {
       extremeHeat: false,
       storm: false,
     });
+    station.changeProvider(
+      WeatherProvider.create(WeatherProviderCode.OPENWEATHER),
+    );
     station.deactivate();
 
     expect(station.getName()).toBe('South');
@@ -83,6 +91,9 @@ describe('WeatherStation', () => {
       criticalHumidity: true,
     });
     expect(station.getStatus()).toBe(StationStatus.INACTIVE);
+    expect(station.getProvider().getValue()).toBe(
+      WeatherProviderCode.OPENWEATHER,
+    );
 
     station.activate();
 

@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { AlertType } from '../../domain/value-objects/alert-type.enum';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 
 @Schema({
   collection: 'measurements',
@@ -26,6 +27,14 @@ export class MeasurementPersistenceModel {
   @Prop({ type: Date, required: true })
   reportedAt!: Date;
 
+  @Prop({
+    type: String,
+    required: true,
+    enum: Object.values(MeasurementSource),
+    default: MeasurementSource.MANUAL,
+  })
+  source!: MeasurementSource;
+
   @Prop({ type: Boolean, required: true, default: false })
   alertStatus!: boolean;
 
@@ -45,6 +54,7 @@ export interface MeasurementPersistence {
   humidity: number;
   pressure: number;
   reportedAt: Date;
+  source?: MeasurementSource;
   alertStatus: boolean;
   alertType: AlertType;
 }

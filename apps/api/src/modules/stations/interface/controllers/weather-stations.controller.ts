@@ -15,7 +15,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
 import { CreateStationService } from '../../application/services/create-station.service';
@@ -27,8 +31,11 @@ import { UpdateStationService } from '../../application/services/update-station.
 import {
   CreateStationDto,
   QueryStationsDto,
+  StationResponseDto,
   UpdateStationDto,
 } from '../dtos/station.dto';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
+import { StationStatus } from '../../domain/value-objects/station-status.enum';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
@@ -46,9 +53,10 @@ export class WeatherStationsController {
   ) {}
 
   @Get('available')
+  @ApiOkResponse({ type: StationResponseDto, isArray: true })
   async listAvailable(
     @Query() dto: QueryStationsDto,
-  ): Promise<StationResponse[]> {
+  ): Promise<StationResponseDto[]> {
     const stations = await this.listAllStationsService.execute({
       name: dto.name,
     });
@@ -57,10 +65,11 @@ export class WeatherStationsController {
   }
 
   @Get()
+  @ApiOkResponse({ type: StationResponseDto, isArray: true })
   async list(
     @Query() dto: QueryStationsDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<StationResponse[]> {
+  ): Promise<StationResponseDto[]> {
     const stations = await this.listUserStationsService.execute({
       ownerId: req.user.userId,
       name: dto.name,
@@ -70,10 +79,11 @@ export class WeatherStationsController {
   }
 
   @Post()
+  @ApiCreatedResponse({ type: StationResponseDto })
   async create(
     @Body() dto: CreateStationDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<StationResponse> {
+  ): Promise<StationResponseDto> {
     try {
       const station = await this.createStationService.execute({
         name: dto.name,
@@ -81,6 +91,7 @@ export class WeatherStationsController {
         sensorModel: dto.sensorModel,
         ownerId: req.user.userId,
         status: dto.status,
+        provider: dto.provider,
         alertSettings: dto.alertSettings,
       });
 
@@ -91,10 +102,11 @@ export class WeatherStationsController {
   }
 
   @Get(':id')
+  @ApiOkResponse({ type: StationResponseDto })
   async getById(
     @Param('id') stationId: string,
     @Req() req: AuthenticatedRequest,
-  ): Promise<StationResponse> {
+  ): Promise<StationResponseDto> {
     try {
       const station = await this.getStationByIdService.execute({ stationId });
       this.ensureOwnership(station.getOwnerId(), req.user);
@@ -106,11 +118,12 @@ export class WeatherStationsController {
   }
 
   @Patch(':id')
+  @ApiOkResponse({ type: StationResponseDto })
   async update(
     @Param('id') stationId: string,
     @Body() dto: UpdateStationDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<StationResponse> {
+  ): Promise<StationResponseDto> {
     try {
       const existingStation = await this.getStationByIdService.execute({
         stationId,
@@ -123,6 +136,7 @@ export class WeatherStationsController {
         location: dto.location,
         sensorModel: dto.sensorModel,
         status: dto.status,
+        provider: dto.provider,
         alertSettings: dto.alertSettings,
       });
 
@@ -175,7 +189,7 @@ export class WeatherStationsController {
     return new BadRequestException(error.message);
   }
 
-  private toResponse(station: StationResponseSource): StationResponse {
+  private toResponse(station: StationResponseSource): StationResponseDto {
     return {
       id: station.getId(),
       name: station.getName(),
@@ -186,6 +200,7 @@ export class WeatherStationsController {
       sensorModel: station.getSensorModel(),
       status: station.getStatus(),
       ownerId: station.getOwnerId(),
+      provider: station.getProvider().getValue(),
       alertSettings: station.getAlertSettings().toPrimitives(),
       createdAt: station.getCreatedAt().toISOString(),
     };
@@ -200,8 +215,11 @@ interface StationResponseSource {
     getLongitude(): number;
   };
   getSensorModel(): string;
-  getStatus(): string;
+  getStatus(): StationStatus;
   getOwnerId(): string;
+  getProvider(): {
+    getValue(): WeatherProviderCode;
+  };
   getAlertSettings(): {
     toPrimitives(): {
       extremeHeat: boolean;
@@ -211,23 +229,4 @@ interface StationResponseSource {
     };
   };
   getCreatedAt(): Date;
-}
-
-interface StationResponse {
-  id: string;
-  name: string;
-  location: {
-    latitude: number;
-    longitude: number;
-  };
-  sensorModel: string;
-  status: string;
-  ownerId: string;
-  alertSettings: {
-    extremeHeat: boolean;
-    frost: boolean;
-    storm: boolean;
-    criticalHumidity: boolean;
-  };
-  createdAt: string;
 }

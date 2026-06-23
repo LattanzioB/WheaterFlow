@@ -10,6 +10,7 @@ import { Location } from '../../../stations/domain/value-objects/location.value-
 import { StationAlertSettings } from '../../../stations/domain/value-objects/station-alert-settings.value-object';
 import { AlertType } from '../../domain/value-objects/alert-type.enum';
 import { Logger } from '@nestjs/common';
+import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
 
 describe('RecordMeasurementService', () => {
   const command: RecordMeasurementCommand = {
@@ -18,6 +19,7 @@ describe('RecordMeasurementService', () => {
     humidity: 65,
     pressure: 1005,
     reportedAt: new Date('2026-04-25T17:00:00.000Z'),
+    source: MeasurementSource.OPENWEATHER,
   };
 
   const buildMeasurementRepository =
@@ -70,6 +72,7 @@ describe('RecordMeasurementService', () => {
     expect(stationRepository.findById.mock.calls).toEqual([['station-1']]);
     expect(measurementRepository.save.mock.calls).toHaveLength(1);
     expect(result.getAlertType()).toBe(AlertType.EXTREME_HEAT);
+    expect(result.getSource()).toBe(MeasurementSource.OPENWEATHER);
     expect(alertPublisher.publishClimateAlert.mock.calls).toEqual([
       [
         {

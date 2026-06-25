@@ -125,6 +125,7 @@ describe('docker-compose distributed environment', () => {
       expect.objectContaining({
         API_BASE_URL: '${API_BASE_URL:-http://api:3000}',
         INGESTION_CRON: '${INGESTION_CRON:-*/10 * * * *}',
+        OWM_TIMEOUT_MS: '${OWM_TIMEOUT_MS:-10000}',
         OWM_CONCURRENCY_LIMIT: '${OWM_CONCURRENCY_LIMIT:-3}',
         API_CONCURRENCY_LIMIT: '${API_CONCURRENCY_LIMIT:-3}',
       }),

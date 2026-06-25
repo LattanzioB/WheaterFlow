@@ -1,0 +1,54 @@
+import { ConfigModule } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import type { AxiosInstance } from 'axios';
+import { WEATHER_DATA_PROVIDER_TOKEN } from './domain/ports/weather-data-provider.port';
+import { IngestionModule } from './ingestion.module';
+import ingestionConfiguration from './infrastructure/config/ingestion.configuration';
+import {
+  OPENWEATHER_HTTP_CLIENT_TOKEN,
+  OpenWeatherMapAdapter,
+} from './infrastructure/adapters/openweathermap.adapter';
+
+describe('IngestionModule', () => {
+  const originalEnv = process.env;
+
+  beforeAll(() => {
+    process.env = {
+      ...originalEnv,
+      OWM_API_KEY: 'test-api-key',
+      OWM_BASE_URL: 'https://api.openweathermap.org',
+      OWM_TIMEOUT_MS: '5000',
+    };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  it('exports WeatherDataProvider as an injectable OpenWeather adapter', async () => {
+    const testingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          load: [ingestionConfiguration],
+        }),
+        IngestionModule,
+      ],
+    }).compile();
+
+    expect(testingModule.get(WEATHER_DATA_PROVIDER_TOKEN)).toBeInstanceOf(
+      OpenWeatherMapAdapter,
+    );
+
+    const httpClient = testingModule.get<AxiosInstance>(
+      OPENWEATHER_HTTP_CLIENT_TOKEN,
+    );
+
+    expect(httpClient.defaults).toMatchObject({
+      baseURL: 'https://api.openweathermap.org',
+      timeout: 5_000,
+      params: {
+        appid: 'test-api-key',
+      },
+    });
+  });
+});

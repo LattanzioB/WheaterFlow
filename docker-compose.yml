@@ -122,6 +122,7 @@ services:
       INGESTION_PORT: 3002
       OWM_API_KEY: ${OWM_API_KEY:?Set OWM_API_KEY for OpenWeather ingestion}
       OWM_BASE_URL: ${OWM_BASE_URL:-https://api.openweathermap.org}
+      OWM_TIMEOUT_MS: ${OWM_TIMEOUT_MS:-10000}
       API_BASE_URL: ${API_BASE_URL:-http://api:3000}
       INGESTION_CRON: ${INGESTION_CRON:-*/10 * * * *}
       OWM_CONCURRENCY_LIMIT: ${OWM_CONCURRENCY_LIMIT:-3}

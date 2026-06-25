@@ -3,6 +3,7 @@ import { ingestionEnvValidationSchema } from './ingestion-env-validation';
 const VALID_ENV = {
   OWM_API_KEY: 'test-api-key',
   OWM_BASE_URL: 'https://api.openweathermap.org',
+  OWM_TIMEOUT_MS: 10_000,
   API_BASE_URL: 'http://localhost:3000',
   INGESTION_CRON: '*/10 * * * *',
   OWM_CONCURRENCY_LIMIT: 3,
@@ -41,6 +42,7 @@ describe('ingestionEnvValidationSchema', () => {
       {
         ...VALID_ENV,
         INGESTION_CRON: 'not-a-cron',
+        OWM_TIMEOUT_MS: 99,
         OWM_CONCURRENCY_LIMIT: 0,
         API_CONCURRENCY_LIMIT: 51,
       },
@@ -50,6 +52,7 @@ describe('ingestionEnvValidationSchema', () => {
     expect(error?.details.map((detail) => detail.path[0])).toEqual(
       expect.arrayContaining([
         'INGESTION_CRON',
+        'OWM_TIMEOUT_MS',
         'OWM_CONCURRENCY_LIMIT',
         'API_CONCURRENCY_LIMIT',
       ]),

@@ -19,7 +19,7 @@ Telegram webhook        orchestration         value objects      HTTP clients, T
 | ------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | API service (`apps/api`)                    | Auth, user identity facade, stations, measurements, alert detection     | REST controllers, Swagger                                        | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client |
 | Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier         |
-| Ingestion service (`apps/ingestion`)        | Scheduled external weather acquisition                                  | Health endpoint and future manual trigger/scheduler              | Future OpenWeather and API HTTP adapters                                       |
+| Ingestion service (`apps/ingestion`)        | Scheduled external weather acquisition                                  | Health endpoint and future manual trigger/scheduler              | OpenWeather Current Weather adapter and future API HTTP adapter                 |
 
 The former Delivery I modular monolith is historical context. Delivery II keeps
 the same internal layer discipline, but the notification capability is now a
@@ -115,6 +115,13 @@ Infrastructure adapters implement ports and communicate with external systems.
 | `NotificationServiceClient`      | `HttpNotificationServiceClient`      | API          | Calls the Notification service REST boundary.           |
 | `INotificationProfileRepository` | `MongoNotificationProfileRepository` | Notification | Notification profile persistence.                       |
 | `AlertNotifier`                  | Composite, log, Telegram adapters    | Notification | Sends resolved notifications.                           |
+| `WeatherDataProvider`            | `OpenWeatherMapAdapter`              | Ingestion    | Normalizes OpenWeather Current Weather readings.        |
+
+The ingestion application exports `WeatherDataProvider` through a NestJS token.
+The port returns a provider-neutral reading with an external identifier,
+observation timestamp, and explicit units for temperature, humidity, and
+pressure. The adapter is therefore reusable by both the scheduled ingestion
+workflow and the future synchronous current-temperature endpoint.
 
 ## Data Flow: Alerting Measurement
 

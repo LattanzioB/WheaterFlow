@@ -9,10 +9,10 @@ independently runnable NestJS backend applications:
   climate alerts, and publishes alert messages.
 - Notification service: owns notification preferences, consumes alert messages,
   resolves subscribers and delivery targets, and dispatches notifications.
-- Ingestion service: owns external weather acquisition scheduling and isolates
-  OpenWeather failures from the API process. Its current base exposes health and
-  validated configuration; provider and scheduling adapters arrive in later E-03
-  stories.
+- Ingestion service: owns external weather acquisition and isolates OpenWeather
+  failures from the API process. It exposes health, validates operational
+  configuration, and contains a reusable Current Weather adapter; scheduling
+  and API submission arrive in later E-03 stories.
 
 The services keep the Delivery I hexagonal and DDD structure inside each
 component. They communicate through explicit remote boundaries instead of in
@@ -101,6 +101,12 @@ logic: each service accesses only the collections it owns for its use cases.
 - Run as an independent NestJS process and Docker container.
 - Validate OpenWeather/API URLs, API key, cron, and concurrency limits at startup.
 - Expose `GET /health` on port `3002`.
+- Query OpenWeather Current Weather by coordinates through the
+  `WeatherDataProvider` port.
+- Normalize provider payloads to explicit Celsius, percent, hPa, observation
+  timestamp, and external identifier fields.
+- Classify OpenWeather client errors, server errors, timeouts, network failures,
+  and invalid payloads with typed provider errors.
 - Keep application, domain, and infrastructure layers local to `apps/ingestion`.
 - Depend on remote contracts rather than importing API or Notification domain entities.
 

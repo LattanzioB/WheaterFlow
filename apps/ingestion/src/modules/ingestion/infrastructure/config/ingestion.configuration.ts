@@ -3,6 +3,7 @@ export type IngestionConfiguration = {
   openWeather: {
     apiKey: string | undefined;
     baseUrl: string | undefined;
+    timeoutMs: number;
     concurrencyLimit: number;
   };
   api: {
@@ -19,6 +20,7 @@ export default (): IngestionConfiguration => ({
   openWeather: {
     apiKey: process.env.OWM_API_KEY,
     baseUrl: process.env.OWM_BASE_URL,
+    timeoutMs: Number.parseInt(process.env.OWM_TIMEOUT_MS ?? '10000', 10),
     concurrencyLimit: Number.parseInt(
       process.env.OWM_CONCURRENCY_LIMIT ?? '3',
       10,

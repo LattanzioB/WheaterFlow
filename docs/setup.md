@@ -44,6 +44,7 @@ JWT_EXPIRES_IN=7d
 NOTIFICATION_SERVICE_URL=http://notifications:3001
 OWM_API_KEY=your-openweather-api-key
 OWM_BASE_URL=https://api.openweathermap.org
+OWM_TIMEOUT_MS=10000
 API_BASE_URL=http://api:3000
 INGESTION_CRON=*/10 * * * *
 OWM_CONCURRENCY_LIMIT=3
@@ -112,6 +113,11 @@ When the API starts, an idempotent bootstrap ensures the WeatherFlow system
 owner and the Universidad Nacional de Quilmes, Buenos Aires, and Bariloche
 stations exist with `provider=openweather`. Repeated starts do not duplicate
 these records.
+
+The Ingestion service uses `OWM_BASE_URL`, `OWM_API_KEY`, and
+`OWM_TIMEOUT_MS` to call OpenWeather Current Weather by latitude and longitude.
+The adapter always requests `units=metric`, so temperature is normalized as
+Celsius while humidity remains percent and pressure remains hPa.
 
 ### Production Build
 

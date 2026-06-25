@@ -110,6 +110,37 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  ingestion:
+    container_name: weatherflow-ingestion
+    build:
+      context: .
+      dockerfile: apps/ingestion/Dockerfile
+    ports:
+      - '3002:3002'
+    environment:
+      NODE_ENV: production
+      INGESTION_PORT: 3002
+      OWM_API_KEY: ${OWM_API_KEY:?Set OWM_API_KEY for OpenWeather ingestion}
+      OWM_BASE_URL: ${OWM_BASE_URL:-https://api.openweathermap.org}
+      API_BASE_URL: ${API_BASE_URL:-http://api:3000}
+      INGESTION_CRON: ${INGESTION_CRON:-*/10 * * * *}
+      OWM_CONCURRENCY_LIMIT: ${OWM_CONCURRENCY_LIMIT:-3}
+      API_CONCURRENCY_LIMIT: ${API_CONCURRENCY_LIMIT:-3}
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://127.0.0.1:3002/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
   web:
     container_name: weatherflow-web
     build:

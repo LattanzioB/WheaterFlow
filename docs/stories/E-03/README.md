@@ -50,6 +50,7 @@ RabbitMQ y despacho de notificaciones.
 | S-03.14 | Panel de monitoreo y estrategia de alertas operativas | pendiente |
 | S-03.15 | Documentación de arquitectura de la Entrega III | pendiente |
 
+
 ## Dependencias
 
 ```text

@@ -27,6 +27,15 @@
         "tsConfigPath": "apps/notifications/tsconfig.app.json"
       }
     },
+    "ingestion": {
+      "type": "application",
+      "root": "apps/ingestion",
+      "entryFile": "main",
+      "sourceRoot": "apps/ingestion/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/ingestion/tsconfig.app.json"
+      }
+    },
     "contracts": {
       "type": "library",
       "root": "libs/contracts",

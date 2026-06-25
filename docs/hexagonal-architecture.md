@@ -15,10 +15,11 @@ Telegram webhook        orchestration         value objects      HTTP clients, T
 
 ## Service Boundaries
 
-| Service | Business responsibility | Primary adapters | Secondary adapters |
-|---|---|---|---|
-| API service (`apps/api`) | Auth, user identity facade, stations, measurements, alert detection | REST controllers, Swagger | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client |
-| Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier |
+| Service                                     | Business responsibility                                                 | Primary adapters                                                 | Secondary adapters                                                             |
+| ------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| API service (`apps/api`)                    | Auth, user identity facade, stations, measurements, alert detection     | REST controllers, Swagger                                        | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client |
+| Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier         |
+| Ingestion service (`apps/ingestion`)        | Scheduled external weather acquisition                                  | Health endpoint and future manual trigger/scheduler              | Future OpenWeather and API HTTP adapters                                       |
 
 The former Delivery I modular monolith is historical context. Delivery II keeps
 the same internal layer discipline, but the notification capability is now a
@@ -31,6 +32,7 @@ separate NestJS application with its own REST and messaging boundaries.
 Domain code lives under each module's `domain` folder.
 
 **Examples:**
+
 - API service: `User`, `WeatherStation`, `Measurement`, `Email`, `Location`,
   `Temperature`, `Humidity`, `Pressure`.
 - Notification service: `UserNotificationProfile` with station alert
@@ -39,6 +41,7 @@ Domain code lives under each module's `domain` folder.
   `INotificationProfileRepository`.
 
 **Rules:**
+
 - No NestJS, Mongoose, AMQP, Axios, or Telegram imports.
 - Business invariants and value-object validation stay here.
 - Domain ports describe what the application needs from the outside world.
@@ -48,6 +51,7 @@ Domain code lives under each module's `domain` folder.
 Application services orchestrate use cases and depend on domain contracts.
 
 **Examples:**
+
 - `RecordMeasurementService` creates a `Measurement`, saves it, and calls the
   `AlertPublisher` port when an alert exists.
 - `QueryMeasurementsService` validates and normalizes measurement filters.
@@ -61,10 +65,13 @@ Interface adapters receive inbound requests and translate them into application
 commands.
 
 **Examples:**
+
 - API service: `AuthController`, `WeatherStationsController`,
   `MeasurementsController`, `UserNotificationPreferencesController`.
 - Notification service: `NotificationPreferencesController`,
   `TelegramWebhookController`.
+- Ingestion service: `HealthController`; later E-03 stories add scheduler and
+  manual-trigger adapters without crossing into API domain code.
 
 Controllers validate DTOs, enforce HTTP/JWT access rules where applicable, and
 return response DTOs. They do not call repositories directly.
@@ -74,6 +81,7 @@ return response DTOs. They do not call repositories directly.
 Infrastructure adapters implement ports and communicate with external systems.
 
 **Examples:**
+
 - `MongoUserRepository`, `MongoWeatherStationRepository`,
   `MongoMeasurementRepository`.
 - `MongoNotificationProfileRepository`.
@@ -86,27 +94,27 @@ Infrastructure adapters implement ports and communicate with external systems.
 
 ### Driving Adapters
 
-| Adapter | Service | Description |
-|---|---|---|
-| `AuthController` | API | Register and login users. |
-| `WeatherStationsController` | API | Manage and search stations. |
-| `MeasurementsController` | API | Record and filter measurements. |
-| `UserNotificationPreferencesController` | API | Authenticated facade for notification preferences. |
-| `NotificationPreferencesController` | Notification | Internal/local preference API owned by the Notification service. |
-| `TelegramWebhookController` | Notification | Receives Telegram link commands. |
-| `RabbitMqClimateAlertConsumerAdapter` | Notification | Consumes climate-alert messages from RabbitMQ. |
+| Adapter                                 | Service      | Description                                                      |
+| --------------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `AuthController`                        | API          | Register and login users.                                        |
+| `WeatherStationsController`             | API          | Manage and search stations.                                      |
+| `MeasurementsController`                | API          | Record and filter measurements.                                  |
+| `UserNotificationPreferencesController` | API          | Authenticated facade for notification preferences.               |
+| `NotificationPreferencesController`     | Notification | Internal/local preference API owned by the Notification service. |
+| `TelegramWebhookController`             | Notification | Receives Telegram link commands.                                 |
+| `RabbitMqClimateAlertConsumerAdapter`   | Notification | Consumes climate-alert messages from RabbitMQ.                   |
 
 ### Driven Adapters
 
-| Port | Adapter | Service | Description |
-|---|---|---|---|
-| `IUserRepository` | `MongoUserRepository` | API | User identity persistence. |
-| `IStationRepository` | `MongoWeatherStationRepository` | API | Station persistence and search. |
-| `IMeasurementRepository` | `MongoMeasurementRepository` | API | Measurement persistence and filtering. |
-| `AlertPublisher` | `RabbitMqAlertPublisherAdapter` | API | Publishes alert messages after measurement persistence. |
-| `NotificationServiceClient` | `HttpNotificationServiceClient` | API | Calls the Notification service REST boundary. |
-| `INotificationProfileRepository` | `MongoNotificationProfileRepository` | Notification | Notification profile persistence. |
-| `AlertNotifier` | Composite, log, Telegram adapters | Notification | Sends resolved notifications. |
+| Port                             | Adapter                              | Service      | Description                                             |
+| -------------------------------- | ------------------------------------ | ------------ | ------------------------------------------------------- |
+| `IUserRepository`                | `MongoUserRepository`                | API          | User identity persistence.                              |
+| `IStationRepository`             | `MongoWeatherStationRepository`      | API          | Station persistence and search.                         |
+| `IMeasurementRepository`         | `MongoMeasurementRepository`         | API          | Measurement persistence and filtering.                  |
+| `AlertPublisher`                 | `RabbitMqAlertPublisherAdapter`      | API          | Publishes alert messages after measurement persistence. |
+| `NotificationServiceClient`      | `HttpNotificationServiceClient`      | API          | Calls the Notification service REST boundary.           |
+| `INotificationProfileRepository` | `MongoNotificationProfileRepository` | Notification | Notification profile persistence.                       |
+| `AlertNotifier`                  | Composite, log, Telegram adapters    | Notification | Sends resolved notifications.                           |
 
 ## Data Flow: Alerting Measurement
 

@@ -1,19 +1,19 @@
 # WeatherFlow
 
-WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**, **MongoDB Atlas**, and **RabbitMQ**. The repository contains two independently runnable applications: the API service for weather data and alert detection, and the Notification service for notification delivery workflows.
+WeatherFlow is a distributed weather monitoring backend built with **NestJS 11**, **MongoDB Atlas**, and **RabbitMQ**. The repository contains three independently runnable backend applications: the API service for weather data and alert detection, the Notification service for notification delivery workflows, and the Ingestion service for scheduled OpenWeather data acquisition.
 
 ## Tech Stack
 
-| Technology          | Purpose                                                      |
-| ------------------- | ------------------------------------------------------------ |
-| NestJS 11           | Application framework                                        |
-| TypeScript (strict) | Type-safe backend development                                |
-| MongoDB Atlas + Mongoose | Managed document database access                       |
-| RabbitMQ            | Asynchronous alert messaging                                 |
-| Swagger / OpenAPI   | Interactive API documentation                                |
-| Docker Compose      | Local API, Notification service, and RabbitMQ infrastructure |
-| Jest + SWC          | Unit and e2e testing                                         |
-| ESLint + Prettier   | Linting and formatting                                       |
+| Technology               | Purpose                                                      |
+| ------------------------ | ------------------------------------------------------------ |
+| NestJS 11                | Application framework                                        |
+| TypeScript (strict)      | Type-safe backend development                                |
+| MongoDB Atlas + Mongoose | Managed document database access                             |
+| RabbitMQ                 | Asynchronous alert messaging                                 |
+| Swagger / OpenAPI        | Interactive API documentation                                |
+| Docker Compose           | Local API, Notification service, and RabbitMQ infrastructure |
+| Jest + SWC               | Unit and e2e testing                                         |
+| ESLint + Prettier        | Linting and formatting                                       |
 
 ## Prerequisites
 
@@ -48,16 +48,18 @@ docker compose up --build
 # Or run each NestJS app directly in watch mode
 npm run start:api:dev
 npm run start:notifications:dev
+npm run start:ingestion:dev
 npm run start:web:dev
 ```
 
-Docker Compose starts RabbitMQ plus separate API, Notification service, and Web UI containers. Configure `MONGODB_URI` with a MongoDB Atlas connection string so both services use the managed database. The local Mongo container in Compose is only for disposable local/integration scenarios.
+Docker Compose starts RabbitMQ plus separate API, Notification, Ingestion, and Web UI containers. Configure `MONGODB_URI` with a MongoDB Atlas connection string so the data-owning services use the managed database. The Ingestion service only communicates with OpenWeather and the API; it does not access MongoDB or RabbitMQ directly.
 
 - API base URL: `http://localhost:3000`
 - Web UI (extra): `http://localhost:5174` (dev) or `http://localhost:8080` (Docker)
 - Swagger UI: `http://localhost:3000/api/docs`
 - OpenAPI JSON: `http://localhost:3000/api/docs-json`
 - Notification service health: `http://localhost:3001/health`
+- Ingestion service health: `http://localhost:3002/health`
 - RabbitMQ management UI: `http://localhost:15672`
 
 API startup idempotently creates a non-interactive system owner plus default
@@ -66,22 +68,24 @@ Bariloche.
 
 ## Available Scripts
 
-| Script                             | Description                                                                          |
-| ---------------------------------- | ------------------------------------------------------------------------------------ |
-| `npm run start:api:dev`            | Start the API service with hot reload                                                |
-| `npm run start:notifications:dev`  | Start the Notification service with hot reload                                       |
-| `npm run start:web:dev`            | Start the Web UI (Vite) on port 5174                                                 |
-| `npm run build:web`                | Build the Web UI for production                                                      |
-| `npm run build`                    | Compile the production build                                                         |
-| `npm run start:api:prod`           | Run the compiled API service                                                         |
-| `npm run start:notifications:prod` | Run the compiled Notification service                                                |
-| `npm run lint`                     | Run ESLint                                                                           |
-| `npm run test`                     | Run unit tests                                                                       |
-| `npm run test:e2e`                 | Run end-to-end tests                                                                 |
+| Script                             | Description                                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| `npm run start:api:dev`            | Start the API service with hot reload                                                      |
+| `npm run start:notifications:dev`  | Start the Notification service with hot reload                                             |
+| `npm run start:ingestion:dev`      | Start the Ingestion service with hot reload                                                |
+| `npm run start:web:dev`            | Start the Web UI (Vite) on port 5174                                                       |
+| `npm run build:web`                | Build the Web UI for production                                                            |
+| `npm run build`                    | Compile the production build                                                               |
+| `npm run start:api:prod`           | Run the compiled API service                                                               |
+| `npm run start:notifications:prod` | Run the compiled Notification service                                                      |
+| `npm run start:ingestion:prod`     | Run the compiled Ingestion service                                                         |
+| `npm run lint`                     | Run ESLint                                                                                 |
+| `npm run test`                     | Run unit tests                                                                             |
+| `npm run test:e2e`                 | Run end-to-end tests                                                                       |
 | `npm run test:integration`         | Run cross-service API, Notification service, RabbitMQ, and MongoDB Atlas integration tests |
-| `npm run test:int:notifications`   | Run the in-app notification fanout integration test                                  |
-| `npm run test:cov`                 | Run tests with coverage                                                              |
-| `npm run format`                   | Format source and test files with Prettier                                           |
+| `npm run test:int:notifications`   | Run the in-app notification fanout integration test                                        |
+| `npm run test:cov`                 | Run tests with coverage                                                                    |
+| `npm run format`                   | Format source and test files with Prettier                                                 |
 
 ## Project Structure
 
@@ -98,12 +102,21 @@ apps/
 |       |   `-- measurements/
 |       |-- app.module.ts
 |       `-- main.ts
-`-- notifications/
+|-- notifications/
     `-- src/
         |-- modules/
         |   |-- notification-preferences/
         |   `-- notifications/
         |-- notifications-app.module.ts
+        `-- main.ts
+`-- ingestion/
+    `-- src/
+        |-- modules/
+        |   `-- ingestion/
+        |       |-- application/
+        |       |-- domain/
+        |       `-- infrastructure/
+        |-- ingestion-app.module.ts
         `-- main.ts
 libs/
 |-- contracts/
@@ -121,11 +134,18 @@ Copy `.env.example` to `.env` and configure the following values:
 | ---------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
 | `PORT`                       | HTTP server port                                                          | `3000`                                         |
 | `NOTIFICATIONS_PORT`         | Notification service HTTP port                                            | `3001`                                         |
+| `INGESTION_PORT`             | Ingestion service health HTTP port                                        | `3002`                                         |
 | `MONGODB_URI`                | MongoDB Atlas connection string                                           | `mongodb+srv://.../weatherflow`                |
 | `JWT_SECRET`                 | JWT signing secret                                                        | `your-secret-key`                              |
 | `JWT_EXPIRES_IN`             | JWT expiration window                                                     | `7d`                                           |
 | `CORS_ORIGINS`               | Allowed browser origins for the Web UI                                    | `http://localhost:5174,http://localhost:8080`  |
 | `NOTIFICATION_SERVICE_URL`   | Internal URL the API uses for synchronous calls to notifications          | `http://notifications:3001`                    |
+| `OWM_API_KEY`                | OpenWeather API key required by the Ingestion service                     | `your-openweather-api-key`                     |
+| `OWM_BASE_URL`               | OpenWeather API base URL                                                  | `https://api.openweathermap.org`               |
+| `API_BASE_URL`               | Internal API URL used by the Ingestion service                            | `http://api:3000`                              |
+| `INGESTION_CRON`             | Five-field cron expression for future scheduled ingestion                 | `*/10 * * * *`                                 |
+| `OWM_CONCURRENCY_LIMIT`      | Maximum concurrent OpenWeather requests per cycle                         | `3`                                            |
+| `API_CONCURRENCY_LIMIT`      | Maximum concurrent API submissions per cycle                              | `3`                                            |
 | `RABBITMQ_DEFAULT_USER`      | Local RabbitMQ username created by Compose                                | `weatherflow`                                  |
 | `RABBITMQ_DEFAULT_PASS`      | Local RabbitMQ password created by Compose                                | `weatherflow`                                  |
 | `RABBITMQ_URL`               | AMQP connection string used by both services                              | `amqp://weatherflow:weatherflow@rabbitmq:5672` |
@@ -142,6 +162,7 @@ Copy `.env.example` to `.env` and configure the following values:
 ```bash
 curl http://localhost:3000/health
 curl http://localhost:3001/health
+curl http://localhost:3002/health
 ```
 
 Open `http://localhost:15672` and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` from `.env`.

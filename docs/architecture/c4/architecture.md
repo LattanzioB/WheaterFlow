@@ -1,6 +1,6 @@
 # Arquitectura (modelo C4)
 
-Documentacion de **WeatherFlow Delivery II**: plataforma distribuida con API, Notification service, RabbitMQ, MongoDB y Web UI. Las fuentes principales estan en **PlantUML** con la libreria [C4-PlantUML](https://github.com/plantuml-stdlib/C4-PlantUML); tambien se mantiene una fuente Mermaid/SVG del componente distribuido para revision rapida.
+Documentacion evolutiva de **WeatherFlow**: plataforma distribuida con API, Notification service, Ingestion service, RabbitMQ, MongoDB y Web UI. Las fuentes principales estan en **PlantUML** con la libreria [C4-PlantUML](https://github.com/plantuml-stdlib/C4-PlantUML); tambien se mantiene una fuente Mermaid/SVG del componente distribuido para revision rapida.
 
 ## Nivel 1 - Contexto del sistema
 
@@ -14,7 +14,7 @@ WeatherFlow se modela como **caja negra** (`System`). El actor principal es el *
 
 Fuente: [c4_level_2_container.plantuml](c4_level_2_container.plantuml).
 
-El **Usuario** accede solo a **Web UI**; la Web UI consume la API y el Notification service para notificaciones in-app. MongoDB y Telegram Bot API son servicios externos; RabbitMQ permanece dentro del limite de WeatherFlow.
+El **Usuario** accede solo a **Web UI**; la Web UI consume la API y el Notification service para notificaciones in-app. El **Ingestion service** es un worker independiente que consulta OpenWeather y se comunica con la API sin acceder directamente a MongoDB ni RabbitMQ. MongoDB, OpenWeather y Telegram Bot API son servicios externos; RabbitMQ permanece dentro del limite de WeatherFlow.
 
 ![C4 nivel 2 - Contenedores](c4_level_2_container.png)
 

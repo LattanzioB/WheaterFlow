@@ -4,6 +4,7 @@ import {
 } from './env-validation';
 
 type EnvShape = {
+  INGESTION_SYSTEM_TOKEN: string;
   JWT_EXPIRES_IN?: string;
   JWT_SECRET: string;
   MONGODB_URI: string;
@@ -34,6 +35,7 @@ describe('envValidationSchema', () => {
     MONGODB_URI: 'mongodb://localhost:27017/weatherflow',
     JWT_SECRET: 'super-secret-key-12345',
     JWT_EXPIRES_IN: '7d',
+    INGESTION_SYSTEM_TOKEN: 'test-ingestion-system-token',
     NOTIFICATION_SERVICE_URL: 'http://notifications:3001',
     NOTIFICATION_DELIVERY_MODE: 'log',
     RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
@@ -82,6 +84,16 @@ describe('envValidationSchema', () => {
     const { error } = validateEnv(env, false);
     expect(error).toBeDefined();
     expect(error!.message).toContain('NOTIFICATION_SERVICE_URL');
+  });
+
+  it('should require a sufficiently long ingestion system token', () => {
+    const { error } = validateEnv({
+      ...validEnv,
+      INGESTION_SYSTEM_TOKEN: 'short',
+    });
+
+    expect(error).toBeDefined();
+    expect(error!.message).toContain('INGESTION_SYSTEM_TOKEN');
   });
 
   // EC-20

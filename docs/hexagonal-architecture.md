@@ -19,7 +19,7 @@ Telegram webhook        orchestration         value objects      HTTP clients, T
 | ------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | API service (`apps/api`)                    | Auth, user identity facade, stations, measurements, alert detection     | REST controllers, Swagger                                        | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client |
 | Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier         |
-| Ingestion service (`apps/ingestion`)        | Scheduled external weather acquisition                                  | Health endpoint and future manual trigger/scheduler              | OpenWeather Current Weather adapter and future API HTTP adapter                 |
+| Ingestion service (`apps/ingestion`)        | Scheduled external weather acquisition                                  | Health endpoint, cron scheduler, protected manual trigger        | OpenWeather Current Weather adapter and API station-catalog HTTP adapter       |
 
 The former Delivery I modular monolith is historical context. Delivery II keeps
 the same internal layer discipline, but the notification capability is now a
@@ -70,8 +70,8 @@ commands.
   `MeasurementsController`, `UserNotificationPreferencesController`.
 - Notification service: `NotificationPreferencesController`,
   `TelegramWebhookController`.
-- Ingestion service: `HealthController`; later E-03 stories add scheduler and
-  manual-trigger adapters without crossing into API domain code.
+- Ingestion service: `HealthController`, `IngestionController`, and
+  `IngestionScheduler`, without crossing into API domain code.
 
 Controllers validate DTOs, enforce HTTP/JWT access rules where applicable, and
 return response DTOs. They do not call repositories directly.
@@ -116,12 +116,18 @@ Infrastructure adapters implement ports and communicate with external systems.
 | `INotificationProfileRepository` | `MongoNotificationProfileRepository` | Notification | Notification profile persistence.                       |
 | `AlertNotifier`                  | Composite, log, Telegram adapters    | Notification | Sends resolved notifications.                           |
 | `WeatherDataProvider`            | `OpenWeatherMapAdapter`              | Ingestion    | Normalizes OpenWeather Current Weather readings.        |
+| `WeatherStationCatalog`          | `ApiWeatherStationCatalogAdapter`    | Ingestion    | Loads provider-backed stations from the API boundary.   |
 
 The ingestion application exports `WeatherDataProvider` through a NestJS token.
 The port returns a provider-neutral reading with an external identifier,
 observation timestamp, and explicit units for temperature, humidity, and
 pressure. The adapter is therefore reusable by both the scheduled ingestion
 workflow and the future synchronous current-temperature endpoint.
+
+`RunIngestionCycleService` coordinates the catalog and provider ports. It owns
+the anti-overlap lock, applies bounded concurrency, isolates per-station errors,
+and returns a structured operational summary. It deliberately does not import
+API aggregates or persist measurements; S-03.6 adds that separate driven port.
 
 ## Data Flow: Alerting Measurement
 

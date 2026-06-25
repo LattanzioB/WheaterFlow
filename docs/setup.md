@@ -46,6 +46,7 @@ OWM_API_KEY=your-openweather-api-key
 OWM_BASE_URL=https://api.openweathermap.org
 OWM_TIMEOUT_MS=10000
 API_BASE_URL=http://api:3000
+INGESTION_SYSTEM_TOKEN=replace-with-at-least-16-characters
 INGESTION_CRON=*/10 * * * *
 OWM_CONCURRENCY_LIMIT=3
 API_CONCURRENCY_LIMIT=3
@@ -82,14 +83,15 @@ docker compose up --build
 
 Local URLs:
 
-| Service                     | URL                                   |
-| --------------------------- | ------------------------------------- |
-| API                         | `http://localhost:3000`               |
-| Swagger UI                  | `http://localhost:3000/api/docs`      |
-| OpenAPI JSON                | `http://localhost:3000/api/docs-json` |
-| Notification service health | `http://localhost:3001/health`        |
-| Ingestion service health    | `http://localhost:3002/health`        |
-| RabbitMQ management UI      | `http://localhost:15672`              |
+| Service                     | URL                                                 |
+| --------------------------- | --------------------------------------------------- |
+| API                         | `http://localhost:3000`                             |
+| Swagger UI                  | `http://localhost:3000/api/docs`                    |
+| OpenAPI JSON                | `http://localhost:3000/api/docs-json`               |
+| Notification service health | `http://localhost:3001/health`                      |
+| Ingestion service health    | `http://localhost:3002/health`                      |
+| Manual ingestion trigger    | `POST http://localhost:3002/internal/ingestion/run` |
+| RabbitMQ management UI      | `http://localhost:15672`                            |
 
 Open RabbitMQ management and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS`.
 
@@ -118,6 +120,20 @@ The Ingestion service uses `OWM_BASE_URL`, `OWM_API_KEY`, and
 `OWM_TIMEOUT_MS` to call OpenWeather Current Weather by latitude and longitude.
 The adapter always requests `units=metric`, so temperature is normalized as
 Celsius while humidity remains percent and pressure remains hPa.
+
+The ingestion process registers the `INGESTION_CRON` schedule at startup. Each
+cycle loads `provider=openweather` stations from the API, skips inactive
+stations, limits concurrent OWM requests with `OWM_CONCURRENCY_LIMIT`, and logs
+a structured summary. For a diagnostic run:
+
+```bash
+curl -X POST http://localhost:3002/internal/ingestion/run \
+  -H "x-ingestion-token: $INGESTION_SYSTEM_TOKEN"
+```
+
+The same token protects the API station catalog used by the worker. S-03.5
+collects normalized readings; persistence through the API domain pipeline is
+added by S-03.6.
 
 ### Production Build
 

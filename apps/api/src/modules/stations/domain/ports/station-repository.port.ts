@@ -1,8 +1,10 @@
 import { WeatherStation } from '../entities/weather-station.entity';
+import { WeatherProviderCode } from '../value-objects/weather-provider.value-object';
 
 export interface StationFilters {
   ownerId?: string;
   name?: string;
+  provider?: WeatherProviderCode;
 }
 
 export interface IStationRepository {

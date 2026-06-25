@@ -12,6 +12,7 @@ export const ingestionEnvValidationSchema = Joi.object({
   API_BASE_URL: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .required(),
+  INGESTION_SYSTEM_TOKEN: Joi.string().trim().min(16).required(),
   INGESTION_CRON: Joi.string()
     .trim()
     .pattern(cronExpression)

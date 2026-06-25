@@ -27,6 +27,7 @@ export const envValidationSchema = Joi.object({
   }),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   NOTIFICATION_SERVICE_URL: Joi.string().uri().required(),
+  INGESTION_SYSTEM_TOKEN: Joi.string().trim().min(16).required(),
   NOTIFICATION_DELIVERY_MODE: Joi.string()
     .valid('log', 'telegram')
     .default('log'),

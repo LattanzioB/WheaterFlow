@@ -37,10 +37,7 @@ function isAllowedCorsOrigin(
   return false;
 }
 
-type CorsOriginCallback = (
-  err: Error | null,
-  allow?: boolean | string,
-) => void;
+type CorsOriginCallback = (err: Error | null, allow?: boolean | string) => void;
 
 function corsOriginDelegate(allowedOrigins: string[]) {
   return (origin: string | undefined, callback: CorsOriginCallback): void => {
@@ -81,6 +78,15 @@ async function bootstrap() {
           'Paste the access_token returned by the authentication endpoints.',
       },
       'bearer',
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        in: 'header',
+        name: 'x-ingestion-token',
+        description: 'Shared token for internal ingestion service calls.',
+      },
+      'ingestion-system-token',
     )
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);

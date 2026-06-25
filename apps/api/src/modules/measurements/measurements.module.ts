@@ -14,6 +14,8 @@ import {
   MeasurementSchema,
 } from './infrastructure/persistence/measurement.schema';
 import { MeasurementsController } from './interface/controllers/measurements.controller';
+import { InternalIngestionMeasurementsController } from './interface/controllers/internal-ingestion-measurements.controller';
+import { IngestionSystemTokenGuard } from '../../shared/guards/ingestion-system-token.guard';
 import {
   WeatherStationPersistenceModel,
   WeatherStationSchema,
@@ -33,10 +35,14 @@ import {
     ]),
     StationsModule,
   ],
-  controllers: [MeasurementsController],
+  controllers: [
+    MeasurementsController,
+    InternalIngestionMeasurementsController,
+  ],
   providers: [
     RecordMeasurementService,
     QueryMeasurementsService,
+    IngestionSystemTokenGuard,
     {
       provide: MEASUREMENT_REPOSITORY_TOKEN,
       useClass: MongoMeasurementRepository,

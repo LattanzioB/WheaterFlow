@@ -117,6 +117,7 @@ Infrastructure adapters implement ports and communicate with external systems.
 | `AlertNotifier`                  | Composite, log, Telegram adapters    | Notification | Sends resolved notifications.                           |
 | `WeatherDataProvider`            | `OpenWeatherMapAdapter`              | Ingestion    | Normalizes OpenWeather Current Weather readings.        |
 | `WeatherStationCatalog`          | `ApiWeatherStationCatalogAdapter`    | Ingestion    | Loads provider-backed stations from the API boundary.   |
+| `MeasurementSubmitter`           | `ApiMeasurementSubmitterAdapter`     | Ingestion    | Sends observations through the API domain pipeline.     |
 
 The ingestion application exports `WeatherDataProvider` through a NestJS token.
 The port returns a provider-neutral reading with an external identifier,
@@ -124,10 +125,11 @@ observation timestamp, and explicit units for temperature, humidity, and
 pressure. The adapter is therefore reusable by both the scheduled ingestion
 workflow and the future synchronous current-temperature endpoint.
 
-`RunIngestionCycleService` coordinates the catalog and provider ports. It owns
-the anti-overlap lock, applies bounded concurrency, isolates per-station errors,
-and returns a structured operational summary. It deliberately does not import
-API aggregates or persist measurements; S-03.6 adds that separate driven port.
+`RunIngestionCycleService` coordinates the catalog, provider, and measurement
+submitter ports. It owns the anti-overlap lock, applies bounded concurrency,
+isolates per-station errors, and returns a structured operational summary. The
+REST adapter crosses the API boundary without importing API aggregates; the API
+persists through `RecordMeasurementService`.
 
 ## Data Flow: Alerting Measurement
 

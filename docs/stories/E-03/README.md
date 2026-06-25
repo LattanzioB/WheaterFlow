@@ -39,7 +39,7 @@ RabbitMQ y despacho de notificaciones.
 | S-03.3  | Estructura base del servicio de ingesta y Docker      | completada |
 | S-03.4  | Adaptador HTTP de OpenWeatherMap                      | completada |
 | S-03.5  | Proceso de ingesta programada                         | completada |
-| S-03.6  | Registro remoto por el pipeline de dominio            | pendiente  |
+| S-03.6  | Registro remoto por el pipeline de dominio            | completada |
 | S-03.7  | Resiliencia en la frontera OpenWeatherMap             | pendiente  |
 | S-03.8  | Resiliencia en fronteras API ↔ ingesta                | pendiente  |
 | S-03.9  | Reporte de temperatura actual (OWM en tiempo real)    | pendiente  |

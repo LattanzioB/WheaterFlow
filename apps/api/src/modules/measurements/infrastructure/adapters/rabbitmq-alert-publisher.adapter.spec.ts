@@ -20,6 +20,7 @@ describe('RabbitMqAlertPublisherAdapter', () => {
     temperature: 24,
     humidity: 92,
     pressure: 970,
+    correlationId: 'cycle-1',
   };
 
   const buildConfigService = () =>
@@ -82,6 +83,7 @@ describe('RabbitMqAlertPublisherAdapter', () => {
         messageId: 'message-1',
         timestamp: Math.floor(new Date(message.occurredAt).getTime() / 1000),
         type: 'ClimateAlertDetectedMessage',
+        correlationId: 'cycle-1',
       },
     );
     expect(channel.waitForConfirms).toHaveBeenCalledTimes(1);

@@ -35,6 +35,9 @@ export class RabbitMqAlertPublisherAdapter
       messageId: message.messageId,
       timestamp: Math.floor(new Date(message.occurredAt).getTime() / 1000),
       type: 'ClimateAlertDetectedMessage',
+      ...(message.correlationId
+        ? { correlationId: message.correlationId }
+        : {}),
     };
 
     await channel.assertExchange(exchange, 'topic', { durable: true });

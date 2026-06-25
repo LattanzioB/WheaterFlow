@@ -28,20 +28,22 @@ describe('ListSubscribedStationsService', () => {
       findById: jest.fn(),
       findByStationId: jest.fn(),
       save: jest.fn(),
+      saveIfAbsent: jest.fn(),
       delete: jest.fn(),
       findWithFilters: jest.fn(),
       findLatestByStationIds: jest.fn(),
     });
 
-  const buildNotificationClient = (): jest.Mocked<INotificationServiceClient> => ({
-    getProfile: jest.fn(),
-    listSubscriptions: jest.fn(),
-    subscribe: jest.fn(),
-    unsubscribe: jest.fn(),
-    updateAlertPreferences: jest.fn(),
-    updateDeliveryChannels: jest.fn(),
-    createTelegramLinkCode: jest.fn(),
-  });
+  const buildNotificationClient =
+    (): jest.Mocked<INotificationServiceClient> => ({
+      getProfile: jest.fn(),
+      listSubscriptions: jest.fn(),
+      subscribe: jest.fn(),
+      unsubscribe: jest.fn(),
+      updateAlertPreferences: jest.fn(),
+      updateDeliveryChannels: jest.fn(),
+      createTelegramLinkCode: jest.fn(),
+    });
 
   const buildUser = () => ({
     getId: () => 'user-1',

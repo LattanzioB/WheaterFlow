@@ -11,6 +11,7 @@ export interface ClimateAlertDetectedMessage {
   temperature: number;
   humidity: number;
   pressure: number;
+  correlationId?: string;
 }
 
 export interface ClimateAlertDetectedMessageValidationResult {
@@ -70,6 +71,13 @@ export function validateClimateAlertDetectedMessage(
     !isValidIsoDate(candidate.reportedAt)
   ) {
     errors.push('reportedAt must be a valid ISO date string');
+  }
+
+  if (
+    candidate.correlationId !== undefined &&
+    !isNonEmptyString(candidate.correlationId)
+  ) {
+    errors.push('correlationId must be a non-empty string when provided');
   }
 
   if (errors.length > 0) {

@@ -18,6 +18,7 @@ export interface IMeasurementRepository {
   findByStationId(stationId: string): Promise<Measurement[]>;
   findLatestByStationIds(stationIds: string[]): Promise<Measurement[]>;
   save(measurement: Measurement): Promise<void>;
+  saveIfAbsent(measurement: Measurement): Promise<boolean>;
   delete(id: string): Promise<void>;
   findWithFilters(filters: MeasurementFilters): Promise<Measurement[]>;
 }

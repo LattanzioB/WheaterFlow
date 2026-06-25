@@ -12,8 +12,8 @@ independently runnable NestJS backend applications:
 - Ingestion service: owns external weather acquisition and isolates OpenWeather
   failures from the API process. It exposes health, validates operational
   configuration, schedules bounded-concurrency acquisition cycles, and contains
-  a reusable Current Weather adapter. API measurement submission arrives in
-  S-03.6.
+  a reusable Current Weather adapter, and submits normalized observations to
+  the API domain pipeline with idempotency and correlation.
 
 The services keep the Delivery I hexagonal and DDD structure inside each
 component. They communicate through explicit remote boundaries instead of in
@@ -108,6 +108,10 @@ logic: each service accesses only the collections it owns for its use cases.
 - Run the configured `INGESTION_CRON` job with bounded OWM concurrency.
 - Continue after station-level failures and report succeeded, failed, skipped,
   and duration fields for every cycle.
+- Submit normalized observations through the `MeasurementSubmitter` port and
+  protected API REST adapter.
+- Derive deterministic idempotency keys from OWM observations and propagate the
+  cycle identifier through HTTP and RabbitMQ.
 - Protect manual cycles and the API catalog with `INGESTION_SYSTEM_TOKEN`, and
   reject overlapping manual cycles.
 - Normalize provider payloads to explicit Celsius, percent, hPa, observation
@@ -124,9 +128,9 @@ logic: each service accesses only the collections it owns for its use cases.
 The Ingestion scheduler starts from `INGESTION_CRON`, requests the protected
 OpenWeather station catalog from the API, skips inactive stations, and invokes
 `WeatherDataProvider` with at most `OWM_CONCURRENCY_LIMIT` concurrent calls.
-Failures are isolated per station and the cycle emits one structured summary.
-The normalized readings remain inside the cycle result until S-03.6 adds the
-authenticated measurement submitter.
+Failures are isolated per station. Successful readings are sent through the
+authenticated `MeasurementSubmitter` REST adapter to `RecordMeasurementService`;
+the cycle emits one structured summary containing the persisted measurement.
 
 Sequence source:
 `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`

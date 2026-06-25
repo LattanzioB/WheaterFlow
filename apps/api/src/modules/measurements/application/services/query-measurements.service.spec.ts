@@ -15,6 +15,7 @@ describe('QueryMeasurementsService', () => {
       findByStationId: jest.fn(),
       findLatestByStationIds: jest.fn(),
       save: jest.fn(),
+      saveIfAbsent: jest.fn(),
       delete: jest.fn(),
       findWithFilters: jest.fn(),
     });

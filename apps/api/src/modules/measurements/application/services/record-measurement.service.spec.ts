@@ -28,6 +28,7 @@ describe('RecordMeasurementService', () => {
       findByStationId: jest.fn(),
       findLatestByStationIds: jest.fn(),
       save: jest.fn(),
+      saveIfAbsent: jest.fn(),
       delete: jest.fn(),
       findWithFilters: jest.fn(),
     });
@@ -158,5 +159,63 @@ describe('RecordMeasurementService', () => {
     );
 
     loggerSpy.mockRestore();
+  });
+
+  it('stores an idempotent ingestion measurement once and propagates correlation', async () => {
+    const measurementRepository = buildMeasurementRepository();
+    const stationRepository = buildStationRepository();
+    const alertPublisher = buildAlertPublisher();
+    const service = new RecordMeasurementService(
+      measurementRepository,
+      stationRepository,
+      alertPublisher,
+    );
+
+    stationRepository.findById.mockResolvedValue(buildStation());
+    measurementRepository.findById.mockResolvedValue(null);
+    measurementRepository.saveIfAbsent.mockResolvedValue(true);
+
+    const result = await service.execute({
+      ...command,
+      idempotencyKey: 'a'.repeat(64),
+      correlationId: 'cycle-1',
+    });
+
+    expect(result.getId()).toMatch(/^ingestion-[a-f0-9]{64}$/);
+    expect(measurementRepository.saveIfAbsent).toHaveBeenCalledWith(result);
+    expect(measurementRepository.save).not.toHaveBeenCalled();
+    expect(alertPublisher.publishClimateAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        measurementId: result.getId(),
+        correlationId: 'cycle-1',
+      }),
+    );
+  });
+
+  it('returns an existing idempotent measurement without saving or republishing', async () => {
+    const measurementRepository = buildMeasurementRepository();
+    const stationRepository = buildStationRepository();
+    const alertPublisher = buildAlertPublisher();
+    const service = new RecordMeasurementService(
+      measurementRepository,
+      stationRepository,
+      alertPublisher,
+    );
+    const existing = {
+      getId: () => 'existing-measurement',
+    };
+
+    measurementRepository.findById.mockResolvedValue(existing as never);
+
+    await expect(
+      service.execute({
+        ...command,
+        idempotencyKey: 'a'.repeat(64),
+        correlationId: 'cycle-2',
+      }),
+    ).resolves.toBe(existing);
+    expect(stationRepository.findById).not.toHaveBeenCalled();
+    expect(measurementRepository.saveIfAbsent).not.toHaveBeenCalled();
+    expect(alertPublisher.publishClimateAlert).not.toHaveBeenCalled();
   });
 });

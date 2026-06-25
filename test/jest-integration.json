@@ -8,6 +8,7 @@
   "moduleNameMapper": {
     "^@api/(.*)$": "<rootDir>/apps/api/src/$1",
     "^@notifications/(.*)$": "<rootDir>/apps/notifications/src/$1",
+    "^@ingestion/(.*)$": "<rootDir>/apps/ingestion/src/$1",
     "^@shared/(.*)$": "<rootDir>/libs/shared/src/$1",
     "^@contracts$": "<rootDir>/libs/contracts/src/index.ts",
     "^@contracts/(.*)$": "<rootDir>/libs/contracts/src/$1"

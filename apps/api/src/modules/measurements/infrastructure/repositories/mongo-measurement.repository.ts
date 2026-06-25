@@ -94,6 +94,17 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
     });
   }
 
+  async saveIfAbsent(measurement: Measurement): Promise<boolean> {
+    const document = MeasurementDocumentMapper.toPersistence(measurement);
+    const result = await this.measurementModel.updateOne(
+      { _id: document._id },
+      { $setOnInsert: document },
+      { upsert: true },
+    );
+
+    return result.upsertedCount === 1;
+  }
+
   async delete(id: string): Promise<void> {
     await this.measurementModel.deleteOne({ _id: id });
   }

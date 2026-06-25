@@ -142,6 +142,7 @@ Copy `.env.example` to `.env` and configure the following values:
 | `NOTIFICATION_SERVICE_URL`   | Internal URL the API uses for synchronous calls to notifications          | `http://notifications:3001`                    |
 | `OWM_API_KEY`                | OpenWeather API key required by the Ingestion service                     | `your-openweather-api-key`                     |
 | `OWM_BASE_URL`               | OpenWeather API base URL                                                  | `https://api.openweathermap.org`               |
+| `OWM_TIMEOUT_MS`             | Timeout in milliseconds for each OpenWeather request                      | `10000`                                        |
 | `API_BASE_URL`               | Internal API URL used by the Ingestion service                            | `http://api:3000`                              |
 | `INGESTION_CRON`             | Five-field cron expression for future scheduled ingestion                 | `*/10 * * * *`                                 |
 | `OWM_CONCURRENCY_LIMIT`      | Maximum concurrent OpenWeather requests per cycle                         | `3`                                            |

@@ -27,6 +27,7 @@ describe('IngestionAppModule', () => {
       ...ORIGINAL_ENV,
       OWM_API_KEY: 'test-api-key',
       OWM_BASE_URL: 'https://api.openweathermap.org',
+      OWM_TIMEOUT_MS: '10000',
       API_BASE_URL: 'http://localhost:3000',
       INGESTION_CRON: '*/10 * * * *',
       OWM_CONCURRENCY_LIMIT: '3',

@@ -3,8 +3,26 @@
 Base URL: `http://localhost:3000`
 Swagger UI: `http://localhost:3000/api/docs`
 Notification service local URL: `http://localhost:3001`
+Ingestion service local URL: `http://localhost:3002`
 
 All protected endpoints require `Authorization: Bearer <token>`.
+
+The Ingestion service does not expose weather data publicly yet. Internally it
+exports the `WeatherDataProvider` port, whose normalized Current Weather reading
+has this shape:
+
+```json
+{
+  "externalId": "3435910",
+  "temperature": { "value": 18.42, "unit": "celsius" },
+  "humidity": { "value": 63, "unit": "percent" },
+  "pressure": { "value": 1017, "unit": "hPa" },
+  "observedAt": "2024-06-21T14:00:00.000Z"
+}
+```
+
+S-03.5 and S-03.9 consume this same port; neither duplicates the OpenWeather
+HTTP contract.
 
 ---
 

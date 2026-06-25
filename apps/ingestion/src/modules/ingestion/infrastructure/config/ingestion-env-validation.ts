@@ -8,6 +8,7 @@ export const ingestionEnvValidationSchema = Joi.object({
   OWM_BASE_URL: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .required(),
+  OWM_TIMEOUT_MS: Joi.number().integer().min(100).max(120_000).default(10_000),
   API_BASE_URL: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .required(),

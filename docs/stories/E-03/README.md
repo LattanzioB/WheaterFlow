@@ -37,7 +37,7 @@ RabbitMQ y despacho de notificaciones.
 | S-03.1 | Modelo de estación con proveedor y origen de medición | completada |
 | S-03.2 | Carga inicial de estaciones OpenWeather por defecto | completada |
 | S-03.3 | Estructura base del servicio de ingesta y Docker | pendiente |
-| S-03.4 | Adaptador HTTP de OpenWeatherMap | pendiente |
+| S-03.4 | Adaptador HTTP de OpenWeatherMap | completada |
 | S-03.5 | Proceso de ingesta programada | pendiente |
 | S-03.6 | Registro remoto por el pipeline de dominio | pendiente |
 | S-03.7 | Resiliencia en la frontera OpenWeatherMap | pendiente |

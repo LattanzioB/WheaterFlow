@@ -24,6 +24,11 @@ RabbitMQ y despacho de notificaciones.
 - Las estaciones iniciales son UNQ, Buenos Aires y Bariloche, ya implementadas.
 - La observabilidad se apoya en Prometheus, Grafana, Loki, OpenTelemetry,
   Jaeger y Alertmanager.
+- **Reporte temperatura actual (S-03.9):** el cliente llama a la API; la API
+  delega en ingesta vía REST; ingesta consulta OWM en tiempo real. OWM no se
+  invoca desde la API ni se lee MongoDB para ese endpoint.
+- **Reportes de promedios (S-03.10):** agregan mediciones ya persistidas en
+  MongoDB (ingesta periódica + reportes manuales).
 
 ## Historias
 
@@ -36,9 +41,9 @@ RabbitMQ y despacho de notificaciones.
 | S-03.5 | Proceso de ingesta programada | pendiente |
 | S-03.6 | Registro remoto por el pipeline de dominio | pendiente |
 | S-03.7 | Resiliencia en la frontera OpenWeatherMap | pendiente |
-| S-03.8 | Resiliencia en la frontera ingesta → API | pendiente |
-| S-03.9 | Reporte de temperatura actual | pendiente |
-| S-03.10 | Reportes de promedio diario y semanal | pendiente |
+| S-03.8 | Resiliencia en fronteras API ↔ ingesta | pendiente |
+| S-03.9 | Reporte de temperatura actual (OWM en tiempo real) | pendiente |
+| S-03.10 | Reportes de promedio diario y semanal (MongoDB) | pendiente |
 | S-03.11 | Agregación de logs y métricas | pendiente |
 | S-03.12 | Trazabilidad distribuida hasta la cola | pendiente |
 | S-03.13 | Pruebas de carga de consultas y reportes | pendiente |
@@ -49,15 +54,25 @@ RabbitMQ y despacho de notificaciones.
 
 ```text
 S-03.1 ──> S-03.2
-   ├─────> S-03.3 ──> S-03.4 ──> S-03.5 ──> S-03.6 ──┬─> S-03.7
-   │                                                  └─> S-03.8
-   └─────> S-03.9 ──> S-03.10 ──────────────────────────> S-03.13
+   └─────> S-03.3 ──> S-03.4 ──┬──> S-03.5 ──> S-03.6 ──┬──> S-03.7
+                               │                         └──> S-03.8
+                               └──> S-03.9 ──> S-03.10 ───────> S-03.13
+                                    (requiere S-03.1 + S-03.4)
 
 S-03.3 ──> S-03.11
 S-03.6 + S-03.11 ──> S-03.12
 S-03.11 + S-03.12 ──> S-03.14
 Todas ──> S-03.15
 ```
+
+### Carriles paralelos
+
+| Carril | Historias | Notas |
+| --- | --- | --- |
+| Ingesta periódica | S-03.3 → S-03.4 → S-03.5 → S-03.6 | Pipeline batch hacia API |
+| Reporte actual | S-03.4 → S-03.9 | Reutiliza adaptador OWM vía endpoint síncrono en ingesta |
+| Reportes históricos | S-03.1 → S-03.10 | Solo MongoDB; puede avanzar sin ingesta operativa |
+| Resiliencia | S-03.7, S-03.8 | Tras S-03.6 y S-03.9 respectivamente |
 
 ## Definición de terminado
 
@@ -68,7 +83,9 @@ Todas ──> S-03.15
    alertas y notificaciones.
 4. Hay al menos tres estrategias de tolerancia a fallos justificadas.
 5. Los tres reportes están documentados en Swagger y cubiertos por pruebas.
-6. Logs, métricas, trazas y alertas operativas son consultables.
-7. Grafana muestra métricas de hardware, endpoints y negocio.
-8. Existen tres escenarios k6 con umbrales y resultados documentados.
-9. La documentación refleja la arquitectura final y evidencia datos OWM.
+6. El reporte de temperatura actual consulta OWM en tiempo real vía ingesta.
+7. Los promedios diario y semanal usan datos persistidos en MongoDB.
+8. Logs, métricas, trazas y alertas operativas son consultables.
+9. Grafana muestra métricas de hardware, endpoints y negocio.
+10. Existen tres escenarios k6 con umbrales y resultados documentados.
+11. La documentación refleja la arquitectura final y evidencia datos OWM.

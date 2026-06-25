@@ -221,5 +221,8 @@ describe('WeatherStationsController', () => {
         ownerId: 'user-2',
       }),
     ]);
+    expect(listAllService.execute).toHaveBeenCalledWith({
+      name: undefined,
+    });
   });
 });

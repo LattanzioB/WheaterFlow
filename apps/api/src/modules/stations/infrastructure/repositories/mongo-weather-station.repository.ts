@@ -63,6 +63,10 @@ export class MongoWeatherStationRepository implements IStationRepository {
       query.ownerId = filters.ownerId;
     }
 
+    if (filters.provider) {
+      query.provider = filters.provider;
+    }
+
     const name = filters.name?.trim();
 
     if (name) {

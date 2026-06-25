@@ -8,6 +8,7 @@ import {
   OPENWEATHER_HTTP_CLIENT_TOKEN,
   OpenWeatherMapAdapter,
 } from './infrastructure/adapters/openweathermap.adapter';
+import { WEATHERFLOW_API_HTTP_CLIENT_TOKEN } from './infrastructure/adapters/api-weather-station-catalog.adapter';
 
 describe('IngestionModule', () => {
   const originalEnv = process.env;
@@ -18,6 +19,8 @@ describe('IngestionModule', () => {
       OWM_API_KEY: 'test-api-key',
       OWM_BASE_URL: 'https://api.openweathermap.org',
       OWM_TIMEOUT_MS: '5000',
+      API_BASE_URL: 'http://localhost:3000',
+      INGESTION_SYSTEM_TOKEN: 'test-ingestion-system-token',
     };
   });
 
@@ -49,6 +52,16 @@ describe('IngestionModule', () => {
       params: {
         appid: 'test-api-key',
       },
+    });
+
+    const apiHttpClient = testingModule.get<AxiosInstance>(
+      WEATHERFLOW_API_HTTP_CLIENT_TOKEN,
+    );
+    expect(apiHttpClient.defaults).toMatchObject({
+      baseURL: 'http://localhost:3000',
+      headers: expect.objectContaining({
+        'x-ingestion-token': 'test-ingestion-system-token',
+      }),
     });
   });
 });

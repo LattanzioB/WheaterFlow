@@ -32,24 +32,23 @@ RabbitMQ y despacho de notificaciones.
 
 ## Historias
 
-| ID | Historia | Estado |
-| --- | --- | --- |
-| S-03.1 | Modelo de estación con proveedor y origen de medición | completada |
-| S-03.2 | Carga inicial de estaciones OpenWeather por defecto | completada |
-| S-03.3 | Estructura base del servicio de ingesta y Docker | pendiente |
-| S-03.4 | Adaptador HTTP de OpenWeatherMap | completada |
-| S-03.5 | Proceso de ingesta programada | pendiente |
-| S-03.6 | Registro remoto por el pipeline de dominio | pendiente |
-| S-03.7 | Resiliencia en la frontera OpenWeatherMap | pendiente |
-| S-03.8 | Resiliencia en fronteras API ↔ ingesta | pendiente |
-| S-03.9 | Reporte de temperatura actual (OWM en tiempo real) | pendiente |
-| S-03.10 | Reportes de promedio diario y semanal (MongoDB) | pendiente |
-| S-03.11 | Agregación de logs y métricas | pendiente |
-| S-03.12 | Trazabilidad distribuida hasta la cola | pendiente |
-| S-03.13 | Pruebas de carga de consultas y reportes | pendiente |
-| S-03.14 | Panel de monitoreo y estrategia de alertas operativas | pendiente |
-| S-03.15 | Documentación de arquitectura de la Entrega III | pendiente |
-
+| ID      | Historia                                              | Estado     |
+| ------- | ----------------------------------------------------- | ---------- |
+| S-03.1  | Modelo de estación con proveedor y origen de medición | completada |
+| S-03.2  | Carga inicial de estaciones OpenWeather por defecto   | completada |
+| S-03.3  | Estructura base del servicio de ingesta y Docker      | completada |
+| S-03.4  | Adaptador HTTP de OpenWeatherMap                      | completada |
+| S-03.5  | Proceso de ingesta programada                         | completada |
+| S-03.6  | Registro remoto por el pipeline de dominio            | pendiente  |
+| S-03.7  | Resiliencia en la frontera OpenWeatherMap             | pendiente  |
+| S-03.8  | Resiliencia en fronteras API ↔ ingesta                | pendiente  |
+| S-03.9  | Reporte de temperatura actual (OWM en tiempo real)    | pendiente  |
+| S-03.10 | Reportes de promedio diario y semanal (MongoDB)       | pendiente  |
+| S-03.11 | Agregación de logs y métricas                         | pendiente  |
+| S-03.12 | Trazabilidad distribuida hasta la cola                | pendiente  |
+| S-03.13 | Pruebas de carga de consultas y reportes              | pendiente  |
+| S-03.14 | Panel de monitoreo y estrategia de alertas operativas | pendiente  |
+| S-03.15 | Documentación de arquitectura de la Entrega III       | pendiente  |
 
 ## Dependencias
 
@@ -68,12 +67,12 @@ Todas ──> S-03.15
 
 ### Carriles paralelos
 
-| Carril | Historias | Notas |
-| --- | --- | --- |
-| Ingesta periódica | S-03.3 → S-03.4 → S-03.5 → S-03.6 | Pipeline batch hacia API |
-| Reporte actual | S-03.4 → S-03.9 | Reutiliza adaptador OWM vía endpoint síncrono en ingesta |
-| Reportes históricos | S-03.1 → S-03.10 | Solo MongoDB; puede avanzar sin ingesta operativa |
-| Resiliencia | S-03.7, S-03.8 | Tras S-03.6 y S-03.9 respectivamente |
+| Carril              | Historias                         | Notas                                                    |
+| ------------------- | --------------------------------- | -------------------------------------------------------- |
+| Ingesta periódica   | S-03.3 → S-03.4 → S-03.5 → S-03.6 | Pipeline batch hacia API                                 |
+| Reporte actual      | S-03.4 → S-03.9                   | Reutiliza adaptador OWM vía endpoint síncrono en ingesta |
+| Reportes históricos | S-03.1 → S-03.10                  | Solo MongoDB; puede avanzar sin ingesta operativa        |
+| Resiliencia         | S-03.7, S-03.8                    | Tras S-03.6 y S-03.9 respectivamente                     |
 
 ## Definición de terminado
 

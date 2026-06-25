@@ -14,6 +14,8 @@ import {
   WeatherStationSchema,
 } from './infrastructure/persistence/weather-station.schema';
 import { WeatherStationsController } from './interface/controllers/weather-stations.controller';
+import { InternalIngestionStationsController } from './interface/controllers/internal-ingestion-stations.controller';
+import { IngestionSystemTokenGuard } from '../../shared/guards/ingestion-system-token.guard';
 
 @Module({
   imports: [
@@ -25,7 +27,7 @@ import { WeatherStationsController } from './interface/controllers/weather-stati
     ]),
     forwardRef(() => UsersModule),
   ],
-  controllers: [WeatherStationsController],
+  controllers: [WeatherStationsController, InternalIngestionStationsController],
   providers: [
     CreateStationService,
     ListUserStationsService,
@@ -33,6 +35,7 @@ import { WeatherStationsController } from './interface/controllers/weather-stati
     GetStationByIdService,
     UpdateStationService,
     DeleteStationService,
+    IngestionSystemTokenGuard,
     {
       provide: STATION_REPOSITORY_TOKEN,
       useClass: MongoWeatherStationRepository,

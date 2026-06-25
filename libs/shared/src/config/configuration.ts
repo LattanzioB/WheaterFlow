@@ -18,6 +18,9 @@ export default () => ({
     serviceUrl: process.env.NOTIFICATION_SERVICE_URL,
     deliveryMode: process.env.NOTIFICATION_DELIVERY_MODE || 'log',
   },
+  ingestion: {
+    systemToken: process.env.INGESTION_SYSTEM_TOKEN,
+  },
   rabbitmq: {
     url: process.env.RABBITMQ_URL,
     alertExchange: process.env.RABBITMQ_ALERT_EXCHANGE || 'weatherflow.alerts',

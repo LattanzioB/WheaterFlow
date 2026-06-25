@@ -49,6 +49,7 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5174,http://localhost:8080}
       NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notifications:3001}
+      INGESTION_SYSTEM_TOKEN: ${INGESTION_SYSTEM_TOKEN:?Set INGESTION_SYSTEM_TOKEN for internal ingestion calls}
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://weatherflow:weatherflow@rabbitmq:5672}
       RABBITMQ_ALERT_EXCHANGE: ${RABBITMQ_ALERT_EXCHANGE:-weatherflow.alerts}
       RABBITMQ_ALERT_ROUTING_KEY: ${RABBITMQ_ALERT_ROUTING_KEY:-alerts.climate.detected}
@@ -124,6 +125,7 @@ services:
       OWM_BASE_URL: ${OWM_BASE_URL:-https://api.openweathermap.org}
       OWM_TIMEOUT_MS: ${OWM_TIMEOUT_MS:-10000}
       API_BASE_URL: ${API_BASE_URL:-http://api:3000}
+      INGESTION_SYSTEM_TOKEN: ${INGESTION_SYSTEM_TOKEN:?Set INGESTION_SYSTEM_TOKEN for internal ingestion calls}
       INGESTION_CRON: ${INGESTION_CRON:-*/10 * * * *}
       OWM_CONCURRENCY_LIMIT: ${OWM_CONCURRENCY_LIMIT:-3}
       API_CONCURRENCY_LIMIT: ${API_CONCURRENCY_LIMIT:-3}

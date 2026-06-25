@@ -60,6 +60,7 @@ Docker Compose starts RabbitMQ plus separate API, Notification, Ingestion, and W
 - OpenAPI JSON: `http://localhost:3000/api/docs-json`
 - Notification service health: `http://localhost:3001/health`
 - Ingestion service health: `http://localhost:3002/health`
+- Manual ingestion trigger: `POST http://localhost:3002/internal/ingestion/run`
 - RabbitMQ management UI: `http://localhost:15672`
 
 API startup idempotently creates a non-interactive system owner plus default
@@ -144,7 +145,8 @@ Copy `.env.example` to `.env` and configure the following values:
 | `OWM_BASE_URL`               | OpenWeather API base URL                                                  | `https://api.openweathermap.org`               |
 | `OWM_TIMEOUT_MS`             | Timeout in milliseconds for each OpenWeather request                      | `10000`                                        |
 | `API_BASE_URL`               | Internal API URL used by the Ingestion service                            | `http://api:3000`                              |
-| `INGESTION_CRON`             | Five-field cron expression for future scheduled ingestion                 | `*/10 * * * *`                                 |
+| `INGESTION_SYSTEM_TOKEN`     | Shared token for API-to-ingestion internal routes and manual trigger      | `replace-with-at-least-16-characters`          |
+| `INGESTION_CRON`             | Five-field cron expression for scheduled ingestion                        | `*/10 * * * *`                                 |
 | `OWM_CONCURRENCY_LIMIT`      | Maximum concurrent OpenWeather requests per cycle                         | `3`                                            |
 | `API_CONCURRENCY_LIMIT`      | Maximum concurrent API submissions per cycle                              | `3`                                            |
 | `RABBITMQ_DEFAULT_USER`      | Local RabbitMQ username created by Compose                                | `weatherflow`                                  |

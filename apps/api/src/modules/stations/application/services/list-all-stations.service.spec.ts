@@ -1,5 +1,6 @@
 import { ListAllStationsService } from './list-all-stations.service';
 import { IStationRepository } from '../../domain/ports/station-repository.port';
+import { WeatherProviderCode } from '../../domain/value-objects/weather-provider.value-object';
 
 describe('ListAllStationsService', () => {
   it('returns every available station with optional name filtering', async () => {
@@ -17,9 +18,15 @@ describe('ListAllStationsService', () => {
 
     stationRepository.findWithFilters.mockResolvedValue(stations as any);
 
-    await expect(service.execute({ name: ' North ' })).resolves.toBe(stations);
+    await expect(
+      service.execute({
+        name: ' North ',
+        provider: WeatherProviderCode.OPENWEATHER,
+      }),
+    ).resolves.toBe(stations);
     expect(stationRepository.findWithFilters).toHaveBeenCalledWith({
       name: 'North',
+      provider: WeatherProviderCode.OPENWEATHER,
     });
   });
 });

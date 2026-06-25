@@ -24,6 +24,54 @@ has this shape:
 S-03.5 and S-03.9 consume this same port; neither duplicates the OpenWeather
 HTTP contract.
 
+## Internal Ingestion Operations
+
+These routes are service-to-service or operational endpoints. They require:
+
+```text
+x-ingestion-token: <INGESTION_SYSTEM_TOKEN>
+```
+
+### `GET http://localhost:3000/internal/ingestion/stations`
+
+Returns the API-owned stations whose provider is `openweather`. The scheduled
+worker uses this route instead of accessing MongoDB or importing API domain
+code.
+
+**Response `200`:** array of Station objects.
+
+**Response `401`:** missing or invalid ingestion system token.
+
+### `POST http://localhost:3002/internal/ingestion/run`
+
+Starts the same ingestion cycle used by `INGESTION_CRON`. The cycle skips
+inactive stations, limits concurrent OWM requests, and isolates failures by
+station.
+
+**Response `200`:**
+
+```json
+{
+  "cycleId": "f19bc2ec-7d42-42f9-b2b1-c2695d9f9854",
+  "trigger": "manual",
+  "startedAt": "2026-06-25T20:00:00.000Z",
+  "completedAt": "2026-06-25T20:00:00.420Z",
+  "durationMs": 420,
+  "discovered": 3,
+  "succeeded": 2,
+  "failed": 0,
+  "skipped": 1,
+  "results": []
+}
+```
+
+**Response `401`:** missing or invalid ingestion system token.
+
+**Response `409`:** another scheduled or manual cycle is already running.
+
+S-03.5 collects normalized provider readings but does not persist them. S-03.6
+adds the authenticated measurement submission boundary and idempotency.
+
 ---
 
 ## Authentication

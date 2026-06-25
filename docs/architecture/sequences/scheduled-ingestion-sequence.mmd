@@ -1,0 +1,26 @@
+sequenceDiagram
+    autonumber
+    participant Cron as IngestionScheduler
+    participant Cycle as RunIngestionCycleService
+    participant APIClient as WeatherStationCatalog
+    participant API as API service
+    participant OWM as WeatherDataProvider / OWM
+
+    Cron->>Cycle: execute("scheduled")
+    Cycle->>APIClient: listOpenWeatherStations()
+    APIClient->>API: GET /internal/ingestion/stations<br/>x-ingestion-token
+    API-->>APIClient: provider=openweather stations
+    APIClient-->>Cycle: IngestionStation[]
+
+    loop Active stations, bounded concurrency
+        Cycle->>OWM: getCurrentWeather(location)
+        alt Provider success
+            OWM-->>Cycle: normalized reading
+        else Provider failure
+            OWM--xCycle: typed error
+            Note over Cycle: Failure is recorded;<br/>the batch continues
+        end
+    end
+
+    Note over Cycle: Inactive stations are skipped
+    Cycle-->>Cron: structured cycle summary

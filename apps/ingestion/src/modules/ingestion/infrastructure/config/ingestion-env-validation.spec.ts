@@ -5,6 +5,7 @@ const VALID_ENV = {
   OWM_BASE_URL: 'https://api.openweathermap.org',
   OWM_TIMEOUT_MS: 10_000,
   API_BASE_URL: 'http://localhost:3000',
+  INGESTION_SYSTEM_TOKEN: 'test-ingestion-system-token',
   INGESTION_CRON: '*/10 * * * *',
   OWM_CONCURRENCY_LIMIT: 3,
   API_CONCURRENCY_LIMIT: 3,
@@ -23,19 +24,19 @@ describe('ingestionEnvValidationSchema', () => {
     );
   });
 
-  it.each(['OWM_API_KEY', 'OWM_BASE_URL', 'API_BASE_URL'] as const)(
-    'rejects a missing %s',
-    (key) => {
-      const invalidEnv = { ...VALID_ENV };
-      delete invalidEnv[key];
+  it.each([
+    'OWM_API_KEY',
+    'OWM_BASE_URL',
+    'API_BASE_URL',
+    'INGESTION_SYSTEM_TOKEN',
+  ] as const)('rejects a missing %s', (key) => {
+    const invalidEnv = { ...VALID_ENV };
+    delete invalidEnv[key];
 
-      const { error } = ingestionEnvValidationSchema.validate(invalidEnv);
+    const { error } = ingestionEnvValidationSchema.validate(invalidEnv);
 
-      expect(error?.details.some((detail) => detail.path[0] === key)).toBe(
-        true,
-      );
-    },
-  );
+    expect(error?.details.some((detail) => detail.path[0] === key)).toBe(true);
+  });
 
   it('rejects invalid cron expressions and concurrency limits', () => {
     const { error } = ingestionEnvValidationSchema.validate(

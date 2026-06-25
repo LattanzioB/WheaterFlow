@@ -9,6 +9,7 @@ export type IngestionConfiguration = {
   api: {
     baseUrl: string | undefined;
     concurrencyLimit: number;
+    systemToken: string | undefined;
   };
   schedule: {
     cron: string;
@@ -32,6 +33,7 @@ export default (): IngestionConfiguration => ({
       process.env.API_CONCURRENCY_LIMIT ?? '3',
       10,
     ),
+    systemToken: process.env.INGESTION_SYSTEM_TOKEN,
   },
   schedule: {
     cron: process.env.INGESTION_CRON ?? '*/10 * * * *',

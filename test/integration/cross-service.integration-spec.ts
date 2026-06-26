@@ -8,6 +8,7 @@ import request, {
 } from 'supertest';
 import { connect, type Channel, type ChannelModel } from 'amqplib';
 import { MongoClient } from 'mongodb';
+import axios from 'axios';
 import { AlertType, type ClimateAlertDetectedMessage } from '@contracts';
 import { ALERT_NOTIFIER_TOKEN } from '@shared/tokens/injection-tokens';
 import { RecordingAlertNotifier } from './recording-alert-notifier';
@@ -15,6 +16,8 @@ import {
   resolveIntegrationTestEnvironment,
   type IntegrationTestEnvironment,
 } from './integration-test-environment';
+import { RunIngestionCycleService } from '../../apps/ingestion/src/modules/ingestion/application/services/run-ingestion-cycle.service';
+import { ApiMeasurementSubmitterAdapter } from '../../apps/ingestion/src/modules/ingestion/infrastructure/adapters/api-measurement-submitter.adapter';
 
 interface StartedApplication {
   app: INestApplication;
@@ -137,16 +140,19 @@ describeIntegration('WeatherFlow cross-service integration', () => {
       pressure: 1012,
     });
 
-    await expect(notificationWait).resolves.toMatchObject({
+    const deliveredNotification = await notificationWait;
+    expect(deliveredNotification).toMatchObject({
       userId: user.userId,
       stationId: station.id,
       stationName: station.name,
       alertType: AlertType.EXTREME_HEAT,
-      deliveryTargets: expect.arrayContaining([
+    });
+    expect(deliveredNotification.deliveryTargets).toEqual(
+      expect.arrayContaining([
         { channel: 'log', destination: user.userId },
         { channel: 'in-app', destination: user.userId },
       ]),
-    });
+    );
   });
 
   it('routes API notification preference calls to the Notification service over HTTP', async () => {
@@ -184,6 +190,102 @@ describeIntegration('WeatherFlow cross-service integration', () => {
         telegram: { chatId: 'integration-chat' },
       },
     });
+  });
+
+  it('records a simulated OpenWeather reading through API, MongoDB, and RabbitMQ without duplicating retries', async () => {
+    const api = request(stack.api.baseUrl);
+    const user = await registerUser(api);
+    const station = await createStation(api, user.token, 'openweather');
+
+    await api
+      .post(`/users/${user.userId}/subscriptions/${station.id}`)
+      .set('Authorization', `Bearer ${user.token}`)
+      .send({ alertTypes: [AlertType.EXTREME_HEAT] })
+      .expect(201);
+
+    const notificationWait = stack.fakeNotifier.waitForNotification(
+      (notification) =>
+        notification.userId === user.userId &&
+        notification.stationId === station.id &&
+        notification.alertType === AlertType.EXTREME_HEAT,
+      10_000,
+    );
+    const submitter = new ApiMeasurementSubmitterAdapter(
+      axios.create({
+        baseURL: stack.api.baseUrl,
+        headers: {
+          'x-ingestion-token': process.env.INGESTION_SYSTEM_TOKEN,
+        },
+      }),
+    );
+    const cycle = new RunIngestionCycleService(
+      {
+        listOpenWeatherStations: jest.fn().mockResolvedValue([
+          {
+            id: station.id,
+            name: station.name,
+            location: { latitude: -34.6037, longitude: -58.3816 },
+            status: 'Activa',
+            provider: 'openweather',
+          },
+        ]),
+      },
+      {
+        getCurrentWeather: jest.fn().mockResolvedValue({
+          externalId: 'owm-observation-1',
+          temperature: { value: 42, unit: 'celsius' },
+          humidity: { value: 50, unit: 'percent' },
+          pressure: { value: 1012, unit: 'hPa' },
+          observedAt: new Date('2026-06-25T12:00:00.000Z'),
+        }),
+      },
+      submitter,
+      1,
+    );
+
+    const firstRun = await cycle.execute('manual');
+    const publishedMessage =
+      await waitForProbeMessage<ClimateAlertDetectedMessage>(
+        rabbitChannel,
+        probeQueue,
+      );
+
+    expect(firstRun).toMatchObject({
+      succeeded: 1,
+      failed: 0,
+    });
+    const firstResult = firstRun.results[0];
+
+    if (firstResult.status !== 'succeeded') {
+      throw new Error('Expected the simulated OpenWeather reading to succeed');
+    }
+
+    expect(firstResult.measurement).toMatchObject({
+      stationId: station.id,
+      source: 'openweather',
+      alertStatus: true,
+    });
+    expect(publishedMessage).toMatchObject({
+      stationId: station.id,
+      correlationId: firstRun.cycleId,
+      temperature: 42,
+    });
+    await expect(notificationWait).resolves.toMatchObject({
+      userId: user.userId,
+      stationId: station.id,
+    });
+
+    const secondRun = await cycle.execute('manual');
+    const secondResult = secondRun.results[0];
+
+    if (secondResult.status !== 'succeeded') {
+      throw new Error('Expected the idempotent retry to succeed');
+    }
+
+    expect(secondResult.measurement.id).toBe(firstResult.measurement.id);
+    await expect(
+      countMeasurements(environment.mongodbUri, station.id),
+    ).resolves.toBe(1);
   });
 
   async function prepareRabbitMq(): Promise<void> {
@@ -326,6 +428,7 @@ async function registerUser(
 async function createStation(
   api: SuperTest<SuperTestRequest>,
   token: string,
+  provider = 'none',
 ): Promise<{ id: string; name: string }> {
   const stationName = `Integration Station ${randomUUID()}`;
   const stationResponse = await api
@@ -338,6 +441,7 @@ async function createStation(
         longitude: -58.3816,
       },
       sensorModel: 'BME280',
+      provider,
       alertSettings: {
         extremeHeat: true,
         frost: false,
@@ -352,6 +456,22 @@ async function createStation(
     id: getStringField(stationBody, 'id'),
     name: getStringField(stationBody, 'name'),
   };
+}
+
+async function countMeasurements(
+  mongodbUri: string,
+  stationId: string,
+): Promise<number> {
+  const client = new MongoClient(mongodbUri);
+  await client.connect();
+
+  try {
+    return await client.db().collection('measurements').countDocuments({
+      stationId,
+    });
+  } finally {
+    await client.close();
+  }
 }
 
 async function waitForProbeMessage<T>(

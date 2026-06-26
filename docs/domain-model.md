@@ -133,6 +133,11 @@ Measurement {
 `MeasurementSource` stores `manual` (default) or `openweather`. Source metadata
 does not participate in alert evaluation.
 
+Remote OpenWeather observations receive a stable measurement identifier derived
+from the ingestion idempotency key. The repository inserts that aggregate only
+if absent, so retries reuse the original measurement and do not repeat domain
+alert publication.
+
 ### Alert Rules
 
 ```text

@@ -5,6 +5,7 @@ import type {
   WeatherStationCatalog,
 } from '../../domain/ports/weather-station-catalog.port';
 import { RunIngestionCycleService } from './run-ingestion-cycle.service';
+import type { MeasurementSubmitter } from '../../domain/ports/measurement-submitter.port';
 
 const activeStation = (id: string): IngestionStation => ({
   id,
@@ -15,6 +16,17 @@ const activeStation = (id: string): IngestionStation => ({
 });
 
 describe('RunIngestionCycleService', () => {
+  const buildMeasurementSubmitter = (): jest.Mocked<MeasurementSubmitter> => ({
+    submitMeasurement: jest.fn().mockImplementation(async ({ stationId }) => ({
+      id: `measurement-${stationId}`,
+      stationId,
+      source: 'openweather' as const,
+      reportedAt: '2026-06-25T12:00:00.000Z',
+      alertStatus: false,
+      alertType: 'Ninguna',
+    })),
+  });
+
   it('continues after an individual failure and reports every outcome', async () => {
     const stations: IngestionStation[] = [
       activeStation('1'),
@@ -39,6 +51,7 @@ describe('RunIngestionCycleService', () => {
     const service = new RunIngestionCycleService(
       stationCatalog,
       weatherDataProvider,
+      buildMeasurementSubmitter(),
       2,
     );
 
@@ -86,6 +99,7 @@ describe('RunIngestionCycleService', () => {
     const service = new RunIngestionCycleService(
       stationCatalog,
       weatherDataProvider,
+      buildMeasurementSubmitter(),
       2,
     );
 
@@ -107,6 +121,7 @@ describe('RunIngestionCycleService', () => {
     const service = new RunIngestionCycleService(
       stationCatalog,
       { getCurrentWeather: jest.fn() },
+      buildMeasurementSubmitter(),
       1,
     );
 

@@ -69,8 +69,40 @@ station.
 
 **Response `409`:** another scheduled or manual cycle is already running.
 
-S-03.5 collects normalized provider readings but does not persist them. S-03.6
-adds the authenticated measurement submission boundary and idempotency.
+Each successful station reading is submitted to the API domain pipeline through
+the endpoint below.
+
+### `POST http://localhost:3000/internal/ingestion/measurements`
+
+Requires `x-ingestion-token` and `x-correlation-id`.
+
+**Body:**
+
+```json
+{
+  "stationId": "station-uuid",
+  "temperature": 42,
+  "humidity": 50,
+  "pressure": 1012,
+  "reportedAt": "2026-06-25T12:00:00.000Z",
+  "source": "openweather",
+  "idempotencyKey": "0f2f0e332a783584246f5f972f6d3e06afc7eb74cb67ebf5db052363196a15c8"
+}
+```
+
+The ingestion adapter derives `idempotencyKey` from the station, OWM external
+identifier, and observation timestamp. Repeating the same observation returns
+the existing measurement without another MongoDB row or alert publication.
+The correlation identifier reaches the RabbitMQ message payload and AMQP
+metadata when the reading triggers an alert.
+
+**Response `200`:** Measurement object with `source: "openweather"`.
+
+**Response `400`:** invalid measurement or idempotency contract.
+
+**Response `401`:** missing/invalid system token or correlation identifier.
+
+**Response `404`:** station does not exist.
 
 ---
 

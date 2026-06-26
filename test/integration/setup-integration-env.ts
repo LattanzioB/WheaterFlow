@@ -10,3 +10,5 @@ process.env.NOTIFICATION_DELIVERY_MODE =
 process.env.TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? '';
 process.env.TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME ?? '';
 process.env.TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET ?? '';
+process.env.INGESTION_SYSTEM_TOKEN =
+  process.env.INGESTION_SYSTEM_TOKEN ?? 'integration-ingestion-token';

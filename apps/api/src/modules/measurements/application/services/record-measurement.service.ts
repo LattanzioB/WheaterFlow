@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { IMeasurementRepository } from '../../domain/ports/measurement-repository.port';
 import type { IStationRepository } from '../../../stations/domain/ports/station-repository.port';
@@ -23,6 +23,8 @@ export interface RecordMeasurementCommand {
   pressure: number;
   reportedAt?: Date;
   source?: MeasurementSource;
+  idempotencyKey?: string;
+  correlationId?: string;
 }
 
 @Injectable()
@@ -39,6 +41,20 @@ export class RecordMeasurementService {
   ) {}
 
   async execute(command: RecordMeasurementCommand): Promise<Measurement> {
+    const idempotentMeasurementId = command.idempotencyKey
+      ? this.buildIdempotentMeasurementId(command.idempotencyKey)
+      : undefined;
+
+    if (idempotentMeasurementId) {
+      const existing = await this.measurementRepository.findById(
+        idempotentMeasurementId,
+      );
+
+      if (existing) {
+        return existing;
+      }
+    }
+
     const station = await this.stationRepository.findById(command.stationId);
 
     if (!station) {
@@ -46,6 +62,7 @@ export class RecordMeasurementService {
     }
 
     const measurement = Measurement.create({
+      id: idempotentMeasurementId,
       stationId: command.stationId,
       temperature: Temperature.create(command.temperature),
       humidity: Humidity.create(command.humidity),
@@ -55,12 +72,30 @@ export class RecordMeasurementService {
       alertSettings: station.getAlertSettings().toPrimitives(),
     });
 
-    await this.measurementRepository.save(measurement);
+    if (idempotentMeasurementId) {
+      const created =
+        await this.measurementRepository.saveIfAbsent(measurement);
+
+      if (!created) {
+        const existing = await this.measurementRepository.findById(
+          idempotentMeasurementId,
+        );
+
+        if (existing) {
+          return existing;
+        }
+
+        throw new Error('Idempotent measurement could not be recovered');
+      }
+    } else {
+      await this.measurementRepository.save(measurement);
+    }
 
     if (measurement.hasAlert()) {
       const message = this.buildClimateAlertDetectedMessage(
         measurement,
         station,
+        command.correlationId,
       );
 
       try {
@@ -79,6 +114,7 @@ export class RecordMeasurementService {
   private buildClimateAlertDetectedMessage(
     measurement: Measurement,
     station: WeatherStation,
+    correlationId?: string,
   ): ClimateAlertDetectedMessage {
     return {
       messageId: randomUUID(),
@@ -91,6 +127,17 @@ export class RecordMeasurementService {
       temperature: measurement.getTemperature().getValue(),
       humidity: measurement.getHumidity().getValue(),
       pressure: measurement.getPressure().getValue(),
+      ...(correlationId ? { correlationId } : {}),
     };
+  }
+
+  private buildIdempotentMeasurementId(idempotencyKey: string): string {
+    const normalized = idempotencyKey.trim();
+
+    if (!normalized) {
+      throw new Error('Idempotency key cannot be empty');
+    }
+
+    return `ingestion-${createHash('sha256').update(normalized).digest('hex')}`;
   }
 }

@@ -11,6 +11,11 @@ import {
   type IngestionStation,
   type WeatherStationCatalog,
 } from '../../domain/ports/weather-station-catalog.port';
+import {
+  MEASUREMENT_SUBMITTER_TOKEN,
+  type MeasurementSubmitter,
+  type SubmittedMeasurement,
+} from '../../domain/ports/measurement-submitter.port';
 
 export const OWM_CONCURRENCY_LIMIT_TOKEN = 'OpenWeatherConcurrencyLimit';
 
@@ -22,6 +27,7 @@ export type IngestionStationResult =
       stationName: string;
       status: 'succeeded';
       reading: WeatherDataReading;
+      measurement: SubmittedMeasurement;
     }
   | {
       stationId: string;
@@ -62,6 +68,8 @@ export class RunIngestionCycleService {
     private readonly stationCatalog: WeatherStationCatalog,
     @Inject(WEATHER_DATA_PROVIDER_TOKEN)
     private readonly weatherDataProvider: WeatherDataProvider,
+    @Inject(MEASUREMENT_SUBMITTER_TOKEN)
+    private readonly measurementSubmitter: MeasurementSubmitter,
     @Inject(OWM_CONCURRENCY_LIMIT_TOKEN)
     private readonly concurrencyLimit: number,
   ) {}
@@ -92,7 +100,7 @@ export class RunIngestionCycleService {
       );
       const activeResults = await this.mapWithConcurrency(
         activeStations,
-        (station) => this.ingestStation(station),
+        (station) => this.ingestStation(station, cycleId),
       );
       const results = [...activeResults, ...inactiveResults];
       const completedAt = new Date();
@@ -119,17 +127,24 @@ export class RunIngestionCycleService {
 
   private async ingestStation(
     station: IngestionStation,
+    correlationId: string,
   ): Promise<IngestionStationResult> {
     try {
       const reading = await this.weatherDataProvider.getCurrentWeather(
         station.location,
       );
+      const measurement = await this.measurementSubmitter.submitMeasurement({
+        stationId: station.id,
+        reading,
+        correlationId,
+      });
 
       return {
         stationId: station.id,
         stationName: station.name,
         status: 'succeeded',
         reading,
+        measurement,
       };
     } catch (error: unknown) {
       const normalizedError =

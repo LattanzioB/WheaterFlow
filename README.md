@@ -67,6 +67,11 @@ API startup idempotently creates a non-interactive system owner plus default
 OpenWeather stations for Universidad Nacional de Quilmes, Buenos Aires, and
 Bariloche.
 
+Scheduled and manual ingestion cycles submit each normalized OWM observation to
+the protected API measurement endpoint. The API reuses the normal measurement
+domain pipeline, deduplicates retries, and propagates the cycle correlation ID
+to RabbitMQ when an alert is detected.
+
 ## Available Scripts
 
 | Script                             | Description                                                                                |

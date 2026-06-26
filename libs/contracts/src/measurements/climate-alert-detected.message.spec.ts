@@ -16,6 +16,7 @@ describe('ClimateAlertDetectedMessage', () => {
     temperature: 41,
     humidity: 65,
     pressure: 1005,
+    correlationId: 'cycle-1',
   };
 
   it('uses serializable primitives for the cross-service alert payload', () => {
@@ -30,6 +31,7 @@ describe('ClimateAlertDetectedMessage', () => {
       temperature: 41,
       humidity: 65,
       pressure: 1005,
+      correlationId: 'cycle-1',
     });
   });
 
@@ -58,6 +60,17 @@ describe('ClimateAlertDetectedMessage', () => {
         'reportedAt must be a valid ISO date string',
         'temperature must be a finite number',
       ]),
+    );
+  });
+
+  it('rejects an empty optional correlation identifier', () => {
+    const result = validateClimateAlertDetectedMessage({
+      ...message,
+      correlationId: ' ',
+    });
+
+    expect(result.errors).toContain(
+      'correlationId must be a non-empty string when provided',
     );
   });
 });

@@ -12,6 +12,7 @@ describe('MongoMeasurementRepository', () => {
     ({
       findById: jest.fn(),
       replaceOne: jest.fn(),
+      updateOne: jest.fn(),
       deleteOne: jest.fn(),
       find: jest.fn(),
       aggregate: jest.fn(),
@@ -174,6 +175,41 @@ describe('MongoMeasurementRepository', () => {
     ]);
     expect(measurements).toHaveLength(1);
     expect(measurements[0].getStationId()).toBe('station-1');
+  });
+
+  it('atomically inserts an idempotent measurement only once', async () => {
+    const measurementModel = buildModel();
+    const stationModel = buildModel();
+    const repository = new MongoMeasurementRepository(
+      measurementModel,
+      stationModel,
+    );
+    const aggregate = {
+      getId: () => 'ingestion-key',
+      getStationId: () => 'station-2',
+      getTemperature: () => ({ getValue: () => 10 }),
+      getHumidity: () => ({ getValue: () => 75 }),
+      getPressure: () => ({ getValue: () => 1008 }),
+      getReportedAt: () => new Date('2026-04-25T23:00:00.000Z'),
+      getSource: () => MeasurementSource.OPENWEATHER,
+      hasAlert: () => false,
+      getAlertType: () => AlertType.NONE,
+    } as any;
+
+    measurementModel.updateOne.mockResolvedValue({ upsertedCount: 1 });
+
+    await expect(repository.saveIfAbsent(aggregate)).resolves.toBe(true);
+    expect(measurementModel.updateOne).toHaveBeenCalledWith(
+      { _id: 'ingestion-key' },
+      {
+        $setOnInsert: expect.objectContaining({
+          _id: 'ingestion-key',
+          stationId: 'station-2',
+          source: MeasurementSource.OPENWEATHER,
+        }),
+      },
+      { upsert: true },
+    );
   });
 
   it('builds date, humidity, and pressure filters in the measurement query', async () => {

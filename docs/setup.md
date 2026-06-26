@@ -131,9 +131,11 @@ curl -X POST http://localhost:3002/internal/ingestion/run \
   -H "x-ingestion-token: $INGESTION_SYSTEM_TOKEN"
 ```
 
-The same token protects the API station catalog used by the worker. S-03.5
-collects normalized readings; persistence through the API domain pipeline is
-added by S-03.6.
+The same token protects the API station catalog and measurement endpoint used
+by the worker. Every successful OWM observation is submitted to the API with a
+deterministic idempotency key and the cycle identifier as correlation ID. The
+API records it through `RecordMeasurementService`; retries return the same
+measurement without duplicate persistence or alert publication.
 
 ### Production Build
 

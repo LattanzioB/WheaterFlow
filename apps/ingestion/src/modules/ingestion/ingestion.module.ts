@@ -8,6 +8,8 @@ import {
 } from './application/services/run-ingestion-cycle.service';
 import { WEATHER_DATA_PROVIDER_TOKEN } from './domain/ports/weather-data-provider.port';
 import { WEATHER_STATION_CATALOG_TOKEN } from './domain/ports/weather-station-catalog.port';
+import { MEASUREMENT_SUBMITTER_TOKEN } from './domain/ports/measurement-submitter.port';
+import { ApiMeasurementSubmitterAdapter } from './infrastructure/adapters/api-measurement-submitter.adapter';
 import {
   ApiWeatherStationCatalogAdapter,
   WEATHERFLOW_API_HTTP_CLIENT_TOKEN,
@@ -76,6 +78,10 @@ import { IngestionScheduler } from './infrastructure/scheduling/ingestion.schedu
     {
       provide: WEATHER_STATION_CATALOG_TOKEN,
       useClass: ApiWeatherStationCatalogAdapter,
+    },
+    {
+      provide: MEASUREMENT_SUBMITTER_TOKEN,
+      useClass: ApiMeasurementSubmitterAdapter,
     },
   ],
   exports: [WEATHER_DATA_PROVIDER_TOKEN, RunIngestionCycleService],

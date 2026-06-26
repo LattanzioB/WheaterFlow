@@ -9,6 +9,10 @@ import {
   OpenWeatherMapAdapter,
 } from './infrastructure/adapters/openweathermap.adapter';
 import { WEATHERFLOW_API_HTTP_CLIENT_TOKEN } from './infrastructure/adapters/api-weather-station-catalog.adapter';
+import {
+  OPENWEATHER_RAW_PROVIDER_TOKEN,
+  ResilientWeatherDataProvider,
+} from './infrastructure/resilience/resilient-weather-data-provider';
 
 describe('IngestionModule', () => {
   const originalEnv = process.env;
@@ -19,6 +23,9 @@ describe('IngestionModule', () => {
       OWM_API_KEY: 'test-api-key',
       OWM_BASE_URL: 'https://api.openweathermap.org',
       OWM_TIMEOUT_MS: '5000',
+      OWM_CACHE_TTL_MS: '300000',
+      OWM_BREAKER_FAILURE_THRESHOLD: '3',
+      OWM_BREAKER_OPEN_MS: '30000',
       API_BASE_URL: 'http://localhost:3000',
       INGESTION_SYSTEM_TOKEN: 'test-ingestion-system-token',
     };
@@ -39,6 +46,9 @@ describe('IngestionModule', () => {
     }).compile();
 
     expect(testingModule.get(WEATHER_DATA_PROVIDER_TOKEN)).toBeInstanceOf(
+      ResilientWeatherDataProvider,
+    );
+    expect(testingModule.get(OPENWEATHER_RAW_PROVIDER_TOKEN)).toBeInstanceOf(
       OpenWeatherMapAdapter,
     );
 

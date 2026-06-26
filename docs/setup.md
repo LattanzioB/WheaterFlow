@@ -45,6 +45,9 @@ NOTIFICATION_SERVICE_URL=http://notifications:3001
 OWM_API_KEY=your-openweather-api-key
 OWM_BASE_URL=https://api.openweathermap.org
 OWM_TIMEOUT_MS=10000
+OWM_CACHE_TTL_MS=300000
+OWM_BREAKER_FAILURE_THRESHOLD=3
+OWM_BREAKER_OPEN_MS=30000
 API_BASE_URL=http://api:3000
 INGESTION_SYSTEM_TOKEN=replace-with-at-least-16-characters
 INGESTION_CRON=*/10 * * * *
@@ -90,6 +93,7 @@ Local URLs:
 | OpenAPI JSON                | `http://localhost:3000/api/docs-json`               |
 | Notification service health | `http://localhost:3001/health`                      |
 | Ingestion service health    | `http://localhost:3002/health`                      |
+| Ingestion metrics           | `http://localhost:3002/metrics`                     |
 | Manual ingestion trigger    | `POST http://localhost:3002/internal/ingestion/run` |
 | RabbitMQ management UI      | `http://localhost:15672`                            |
 
@@ -120,6 +124,12 @@ The Ingestion service uses `OWM_BASE_URL`, `OWM_API_KEY`, and
 `OWM_TIMEOUT_MS` to call OpenWeather Current Weather by latitude and longitude.
 The adapter always requests `units=metric`, so temperature is normalized as
 Celsius while humidity remains percent and pressure remains hPa.
+The OpenWeather boundary is wrapped with a circuit breaker, bulkhead and
+request cache. `OWM_BREAKER_FAILURE_THRESHOLD` controls how many consecutive
+typed provider failures open the breaker, `OWM_BREAKER_OPEN_MS` controls how
+long requests are rejected before one half-open probe is allowed, and
+`OWM_CACHE_TTL_MS` controls how long the last valid reading per coordinate can
+be reused by scheduled ingestion.
 
 The ingestion process registers the `INGESTION_CRON` schedule at startup. Each
 cycle loads `provider=openweather` stations from the API, skips inactive
@@ -136,6 +146,15 @@ by the worker. Every successful OWM observation is submitted to the API with a
 deterministic idempotency key and the cycle identifier as correlation ID. The
 API records it through `RecordMeasurementService`; retries return the same
 measurement without duplicate persistence or alert publication.
+When a scheduled cycle cannot reach OWM, it may submit a cached reading only if
+that cache entry is still inside `OWM_CACHE_TTL_MS`; the cycle result includes
+`fallback.reason`, `fallback.cachedAt`, `fallback.ageMs`, and `fallback.ttlMs`.
+Manual runs and synchronous current-temperature requests keep the typed OWM
+error so callers can receive `502`, `503`, or `504` instead of stale data.
+
+OpenWeather resilience metrics are exposed in Prometheus text format at
+`GET /metrics`, including request outcomes, typed failure codes, breaker state
+and current cache entries.
 
 ### Production Build
 

@@ -24,6 +24,12 @@ has this shape:
 S-03.5 and S-03.9 consume this same port; neither duplicates the OpenWeather
 HTTP contract.
 
+The ingestion service exposes OpenWeather resilience metrics at
+`GET http://localhost:3002/metrics` in Prometheus text format. The current
+series include `weatherflow_owm_requests_total`,
+`weatherflow_owm_failures_total`, `weatherflow_owm_breaker_state` and
+`weatherflow_owm_cache_entries`.
+
 ## Internal Ingestion Operations
 
 These routes are service-to-service or operational endpoints. They require:
@@ -46,7 +52,9 @@ code.
 
 Starts the same ingestion cycle used by `INGESTION_CRON`. The cycle skips
 inactive stations, limits concurrent OWM requests, and isolates failures by
-station.
+station. Scheduled cycles may use the last valid OWM reading for the same
+coordinates when the provider fails and the cache entry is still within
+`OWM_CACHE_TTL_MS`; manual runs do not use fallback.
 
 **Response `200`:**
 
@@ -62,6 +70,23 @@ station.
   "failed": 0,
   "skipped": 1,
   "results": []
+}
+```
+
+When fallback is used, the successful station result includes the age of the
+reused observation:
+
+```json
+{
+  "stationId": "station-uuid",
+  "stationName": "Buenos Aires",
+  "status": "succeeded",
+  "fallback": {
+    "reason": "WeatherDataProviderTimeoutError",
+    "cachedAt": "2026-06-25T19:55:00.000Z",
+    "ageMs": 120000,
+    "ttlMs": 300000
+  }
 }
 ```
 

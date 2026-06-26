@@ -115,7 +115,7 @@ Infrastructure adapters implement ports and communicate with external systems.
 | `NotificationServiceClient`      | `HttpNotificationServiceClient`      | API          | Calls the Notification service REST boundary.           |
 | `INotificationProfileRepository` | `MongoNotificationProfileRepository` | Notification | Notification profile persistence.                       |
 | `AlertNotifier`                  | Composite, log, Telegram adapters    | Notification | Sends resolved notifications.                           |
-| `WeatherDataProvider`            | `OpenWeatherMapAdapter`              | Ingestion    | Normalizes OpenWeather Current Weather readings.        |
+| `WeatherDataProvider`            | `ResilientWeatherDataProvider` + `OpenWeatherMapAdapter` | Ingestion    | Protects and normalizes OpenWeather Current Weather readings. |
 | `WeatherStationCatalog`          | `ApiWeatherStationCatalogAdapter`    | Ingestion    | Loads provider-backed stations from the API boundary.   |
 | `MeasurementSubmitter`           | `ApiMeasurementSubmitterAdapter`     | Ingestion    | Sends observations through the API domain pipeline.     |
 
@@ -124,6 +124,13 @@ The port returns a provider-neutral reading with an external identifier,
 observation timestamp, and explicit units for temperature, humidity, and
 pressure. The adapter is therefore reusable by both the scheduled ingestion
 workflow and the future synchronous current-temperature endpoint.
+
+`OpenWeatherMapAdapter` remains the raw HTTP adapter for Current Weather.
+`ResilientWeatherDataProvider` decorates it with timeout-aware typed failures,
+circuit breaker, bulkhead, last-valid-reading cache and Prometheus metrics. The
+cache is exposed to the application layer only for scheduled ingestion fallback;
+manual and synchronous request paths keep the provider error so callers do not
+receive stale data by accident.
 
 `RunIngestionCycleService` coordinates the catalog, provider, and measurement
 submitter ports. It owns the anti-overlap lock, applies bounded concurrency,

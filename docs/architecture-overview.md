@@ -12,8 +12,9 @@ independently runnable NestJS backend applications:
 - Ingestion service: owns external weather acquisition and isolates OpenWeather
   failures from the API process. It exposes health, validates operational
   configuration, schedules bounded-concurrency acquisition cycles, and contains
-  a reusable Current Weather adapter, and submits normalized observations to
-  the API domain pipeline with idempotency and correlation.
+  a reusable Current Weather adapter, protects the OpenWeather boundary with
+  timeout, circuit breaker, bulkhead and request cache, and submits normalized
+  observations to the API domain pipeline with idempotency and correlation.
 
 The services keep the Delivery I hexagonal and DDD structure inside each
 component. They communicate through explicit remote boundaries instead of in
@@ -40,7 +41,7 @@ for climate-alert delivery.
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
 | API service (`apps/api`)                    | Auth, user identity, station catalog, measurement recording, measurement search, alert detection                             | Public REST API on port `3000`, Swagger at `/api/docs`                    | MongoDB Atlas, RabbitMQ, Notification service REST API |
 | Notification service (`apps/notifications`) | Notification profiles, station subscriptions, alert-type preferences, delivery channels, Telegram link codes, alert dispatch | Internal/local REST API on port `3001`, Telegram webhook, health endpoint | MongoDB Atlas, RabbitMQ, Telegram Bot API when enabled |
-| Ingestion service (`apps/ingestion`)        | External weather acquisition orchestration and its operational configuration                                                 | Health and protected manual trigger on port `3002`                        | OpenWeather API, API service                           |
+| Ingestion service (`apps/ingestion`)        | External weather acquisition orchestration, OpenWeather resilience and operational configuration                             | Health, metrics and protected manual trigger on port `3002`               | OpenWeather API, API service                           |
 | RabbitMQ                                    | Durable alert exchange, notification queue, routing key binding                                                              | AMQP on `5672`, management UI on `15672`                                  | None inside the app boundary                           |
 | MongoDB Atlas                               | Persistent collections for users, stations, measurements, and notification profiles                                          | Managed MongoDB endpoint                                                  | External managed dependency                            |
 | Clients                                     | Users, Swagger/manual callers, station data publishers                                                                       | HTTPS/JSON requests to the API service                                    | API service                                            |
@@ -104,6 +105,10 @@ logic: each service accesses only the collections it owns for its use cases.
 - Expose `GET /health` on port `3002`.
 - Query OpenWeather Current Weather by coordinates through the
   `WeatherDataProvider` port.
+- Protect OpenWeather calls with configurable timeout, circuit breaker,
+  provider-level bulkhead and last-valid-reading cache.
+- Expose OpenWeather resilience metrics at `/metrics` with bounded labels for
+  request outcome, typed failure code and breaker state.
 - Load `provider=openweather` stations through the API-owned internal catalog.
 - Run the configured `INGESTION_CRON` job with bounded OWM concurrency.
 - Continue after station-level failures and report succeeded, failed, skipped,
@@ -118,6 +123,9 @@ logic: each service accesses only the collections it owns for its use cases.
   timestamp, and external identifier fields.
 - Classify OpenWeather client errors, server errors, timeouts, network failures,
   and invalid payloads with typed provider errors.
+- Use cached OpenWeather readings only for scheduled ingestion fallback, making
+  the cache age explicit in the cycle summary; synchronous requests propagate
+  typed errors instead of returning stale data.
 - Keep application, domain, and infrastructure layers local to `apps/ingestion`.
 - Depend on remote contracts rather than importing API or Notification domain entities.
 
@@ -128,9 +136,12 @@ logic: each service accesses only the collections it owns for its use cases.
 The Ingestion scheduler starts from `INGESTION_CRON`, requests the protected
 OpenWeather station catalog from the API, skips inactive stations, and invokes
 `WeatherDataProvider` with at most `OWM_CONCURRENCY_LIMIT` concurrent calls.
-Failures are isolated per station. Successful readings are sent through the
-authenticated `MeasurementSubmitter` REST adapter to `RecordMeasurementService`;
-the cycle emits one structured summary containing the persisted measurement.
+The provider wrapper enforces timeout, circuit breaker, bulkhead and cache.
+Failures are isolated per station. Scheduled runs can reuse a valid cached
+reading and include its age in the result; manual or synchronous requests keep
+the typed failure. Successful readings are sent through the authenticated
+`MeasurementSubmitter` REST adapter to `RecordMeasurementService`; the cycle
+emits one structured summary containing the persisted measurement.
 
 Sequence source:
 `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`

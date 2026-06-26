@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { IngestionCycleAlreadyRunningError } from '../../domain/errors/ingestion-cycle.errors';
 import {
   WEATHER_DATA_PROVIDER_TOKEN,
+  supportsWeatherDataProviderCache,
   type WeatherDataProvider,
   type WeatherDataReading,
 } from '../../domain/ports/weather-data-provider.port';
@@ -28,6 +29,12 @@ export type IngestionStationResult =
       status: 'succeeded';
       reading: WeatherDataReading;
       measurement: SubmittedMeasurement;
+      fallback?: {
+        reason: string;
+        cachedAt: string;
+        ageMs: number;
+        ttlMs: number;
+      };
     }
   | {
       stationId: string;
@@ -100,7 +107,7 @@ export class RunIngestionCycleService {
       );
       const activeResults = await this.mapWithConcurrency(
         activeStations,
-        (station) => this.ingestStation(station, cycleId),
+        (station) => this.ingestStation(station, cycleId, trigger),
       );
       const results = [...activeResults, ...inactiveResults];
       const completedAt = new Date();
@@ -128,6 +135,7 @@ export class RunIngestionCycleService {
   private async ingestStation(
     station: IngestionStation,
     correlationId: string,
+    trigger: IngestionCycleTrigger,
   ): Promise<IngestionStationResult> {
     try {
       const reading = await this.weatherDataProvider.getCurrentWeather(
@@ -147,6 +155,18 @@ export class RunIngestionCycleService {
         measurement,
       };
     } catch (error: unknown) {
+      if (trigger === 'scheduled') {
+        const fallbackResult = await this.trySubmitCachedFallback(
+          station,
+          correlationId,
+          error,
+        );
+
+        if (fallbackResult) {
+          return fallbackResult;
+        }
+      }
+
       const normalizedError =
         error instanceof Error
           ? { name: error.name, message: error.message }
@@ -159,6 +179,43 @@ export class RunIngestionCycleService {
         error: normalizedError,
       };
     }
+  }
+
+  private async trySubmitCachedFallback(
+    station: IngestionStation,
+    correlationId: string,
+    originalError: unknown,
+  ): Promise<IngestionStationResult | null> {
+    if (!supportsWeatherDataProviderCache(this.weatherDataProvider)) {
+      return null;
+    }
+
+    const cached = this.weatherDataProvider.getCachedReading(station.location);
+    if (!cached) {
+      return null;
+    }
+
+    const measurement = await this.measurementSubmitter.submitMeasurement({
+      stationId: station.id,
+      reading: cached.reading,
+      correlationId,
+    });
+    const reason =
+      originalError instanceof Error ? originalError.name : 'UnknownError';
+
+    return {
+      stationId: station.id,
+      stationName: station.name,
+      status: 'succeeded',
+      reading: cached.reading,
+      measurement,
+      fallback: {
+        reason,
+        cachedAt: cached.cachedAt.toISOString(),
+        ageMs: cached.ageMs,
+        ttlMs: cached.ttlMs,
+      },
+    };
   }
 
   private async mapWithConcurrency<T, R>(

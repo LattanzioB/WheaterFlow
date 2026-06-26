@@ -3,7 +3,9 @@ export type WeatherDataProviderErrorCode =
   | 'server_error'
   | 'timeout'
   | 'unavailable'
-  | 'invalid_payload';
+  | 'invalid_payload'
+  | 'circuit_open'
+  | 'bulkhead_rejected';
 
 export abstract class WeatherDataProviderError extends Error {
   protected constructor(
@@ -57,6 +59,32 @@ export class WeatherDataProviderInvalidPayloadError extends WeatherDataProviderE
     super(
       `OpenWeather returned an invalid payload: ${reason}`,
       'invalid_payload',
+      options,
+    );
+  }
+}
+
+export class WeatherDataProviderCircuitOpenError extends WeatherDataProviderError {
+  constructor(
+    public readonly openedUntil: Date,
+    options?: ErrorOptions,
+  ) {
+    super(
+      `OpenWeather circuit breaker is open until ${openedUntil.toISOString()}`,
+      'circuit_open',
+      options,
+    );
+  }
+}
+
+export class WeatherDataProviderBulkheadRejectedError extends WeatherDataProviderError {
+  constructor(
+    public readonly concurrencyLimit: number,
+    options?: ErrorOptions,
+  ) {
+    super(
+      `OpenWeather bulkhead rejected the request at concurrency limit ${concurrencyLimit}`,
+      'bulkhead_rejected',
       options,
     );
   }

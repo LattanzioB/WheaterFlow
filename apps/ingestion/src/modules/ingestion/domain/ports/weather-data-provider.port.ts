@@ -22,6 +22,26 @@ export type WeatherDataReading = {
   observedAt: Date;
 };
 
+export type CachedWeatherDataReading = {
+  reading: WeatherDataReading;
+  cachedAt: Date;
+  ageMs: number;
+  ttlMs: number;
+};
+
 export interface WeatherDataProvider {
   getCurrentWeather(location: WeatherLocation): Promise<WeatherDataReading>;
+}
+
+export interface WeatherDataProviderCache {
+  getCachedReading(location: WeatherLocation): CachedWeatherDataReading | null;
+}
+
+export function supportsWeatherDataProviderCache(
+  provider: WeatherDataProvider,
+): provider is WeatherDataProvider & WeatherDataProviderCache {
+  return (
+    typeof (provider as Partial<WeatherDataProviderCache>).getCachedReading ===
+    'function'
+  );
 }

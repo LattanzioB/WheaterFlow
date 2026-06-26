@@ -1,5 +1,8 @@
 import { IngestionCycleAlreadyRunningError } from '../../domain/errors/ingestion-cycle.errors';
-import type { WeatherDataProvider } from '../../domain/ports/weather-data-provider.port';
+import type {
+  WeatherDataProvider,
+  WeatherDataProviderCache,
+} from '../../domain/ports/weather-data-provider.port';
 import type {
   IngestionStation,
   WeatherStationCatalog,
@@ -131,5 +134,94 @@ describe('RunIngestionCycleService', () => {
     );
     releaseCatalog();
     await runningCycle;
+  });
+
+  it('uses a valid cached OpenWeather reading only for scheduled fallback', async () => {
+    const stationCatalog: WeatherStationCatalog = {
+      listOpenWeatherStations: jest
+        .fn()
+        .mockResolvedValue([activeStation('cached')]),
+    };
+    const cachedReading = {
+      externalId: 'owm-cached',
+      temperature: { value: 18, unit: 'celsius' as const },
+      humidity: { value: 64, unit: 'percent' as const },
+      pressure: { value: 1012, unit: 'hPa' as const },
+      observedAt: new Date('2026-06-25T11:55:00.000Z'),
+    };
+    const weatherDataProvider: WeatherDataProvider & WeatherDataProviderCache = {
+      getCurrentWeather: jest
+        .fn()
+        .mockRejectedValue(new Error('provider unavailable')),
+      getCachedReading: jest.fn().mockReturnValue({
+        reading: cachedReading,
+        cachedAt: new Date('2026-06-25T11:55:05.000Z'),
+        ageMs: 5_000,
+        ttlMs: 300_000,
+      }),
+    };
+    const measurementSubmitter = buildMeasurementSubmitter();
+    const service = new RunIngestionCycleService(
+      stationCatalog,
+      weatherDataProvider,
+      measurementSubmitter,
+      1,
+    );
+
+    const summary = await service.execute('scheduled');
+
+    expect(summary).toMatchObject({
+      succeeded: 1,
+      failed: 0,
+    });
+    expect(summary.results[0]).toMatchObject({
+      stationId: 'cached',
+      status: 'succeeded',
+      fallback: {
+        reason: 'Error',
+        cachedAt: '2026-06-25T11:55:05.000Z',
+        ageMs: 5_000,
+        ttlMs: 300_000,
+      },
+    });
+    expect(measurementSubmitter.submitMeasurement).toHaveBeenCalledWith({
+      stationId: 'cached',
+      reading: cachedReading,
+      correlationId: summary.cycleId,
+    });
+  });
+
+  it('does not use cached OpenWeather data for manual synchronous-style runs', async () => {
+    const stationCatalog: WeatherStationCatalog = {
+      listOpenWeatherStations: jest
+        .fn()
+        .mockResolvedValue([activeStation('manual')]),
+    };
+    const weatherDataProvider: WeatherDataProvider & WeatherDataProviderCache = {
+      getCurrentWeather: jest.fn().mockRejectedValue(new Error('timeout')),
+      getCachedReading: jest.fn().mockReturnValue({
+        reading: {
+          externalId: 'owm-cached',
+          temperature: { value: 18, unit: 'celsius' },
+          humidity: { value: 64, unit: 'percent' },
+          pressure: { value: 1012, unit: 'hPa' },
+          observedAt: new Date('2026-06-25T11:55:00.000Z'),
+        },
+        cachedAt: new Date('2026-06-25T11:55:05.000Z'),
+        ageMs: 5_000,
+        ttlMs: 300_000,
+      }),
+    };
+    const service = new RunIngestionCycleService(
+      stationCatalog,
+      weatherDataProvider,
+      buildMeasurementSubmitter(),
+      1,
+    );
+
+    const summary = await service.execute('manual');
+
+    expect(summary).toMatchObject({ succeeded: 0, failed: 1 });
+    expect(weatherDataProvider.getCachedReading).not.toHaveBeenCalled();
   });
 });

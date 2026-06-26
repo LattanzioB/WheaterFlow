@@ -23,13 +23,24 @@ import { OpenWeatherMapResponseMapper } from './infrastructure/adapters/openweat
 import { HealthController } from './infrastructure/http/health.controller';
 import { IngestionController } from './infrastructure/http/ingestion.controller';
 import { ManualIngestionTokenGuard } from './infrastructure/http/manual-ingestion-token.guard';
+import { MetricsController } from './infrastructure/http/metrics.controller';
+import { OpenWeatherResilienceMetrics } from './infrastructure/resilience/openweather-resilience.metrics';
+import {
+  OPENWEATHER_BREAKER_FAILURE_THRESHOLD_TOKEN,
+  OPENWEATHER_BREAKER_OPEN_MS_TOKEN,
+  OPENWEATHER_BULKHEAD_LIMIT_TOKEN,
+  OPENWEATHER_CACHE_TTL_MS_TOKEN,
+  OPENWEATHER_RAW_PROVIDER_TOKEN,
+  ResilientWeatherDataProvider,
+} from './infrastructure/resilience/resilient-weather-data-provider';
 import { IngestionScheduler } from './infrastructure/scheduling/ingestion.scheduler';
 
 @Module({
   imports: [ConfigModule, ScheduleModule.forRoot()],
-  controllers: [HealthController, IngestionController],
+  controllers: [HealthController, IngestionController, MetricsController],
   providers: [
     OpenWeatherMapResponseMapper,
+    OpenWeatherResilienceMetrics,
     RunIngestionCycleService,
     IngestionScheduler,
     ManualIngestionTokenGuard,
@@ -46,6 +57,30 @@ import { IngestionScheduler } from './infrastructure/scheduling/ingestion.schedu
         configService.get<number>('openWeather.timeoutMs') ?? 10_000,
     },
     {
+      provide: OPENWEATHER_CACHE_TTL_MS_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('openWeather.cacheTtlMs') ?? 300_000,
+    },
+    {
+      provide: OPENWEATHER_BREAKER_FAILURE_THRESHOLD_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('openWeather.breakerFailureThreshold') ?? 3,
+    },
+    {
+      provide: OPENWEATHER_BREAKER_OPEN_MS_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('openWeather.breakerOpenMs') ?? 30_000,
+    },
+    {
+      provide: OPENWEATHER_BULKHEAD_LIMIT_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('openWeather.concurrencyLimit') ?? 3,
+    },
+    {
       provide: OPENWEATHER_HTTP_CLIENT_TOKEN,
       inject: [ConfigService, OPENWEATHER_TIMEOUT_MS_TOKEN],
       useFactory: (configService: ConfigService, timeout: number) =>
@@ -59,8 +94,12 @@ import { IngestionScheduler } from './infrastructure/scheduling/ingestion.schedu
         }),
     },
     {
-      provide: WEATHER_DATA_PROVIDER_TOKEN,
+      provide: OPENWEATHER_RAW_PROVIDER_TOKEN,
       useClass: OpenWeatherMapAdapter,
+    },
+    {
+      provide: WEATHER_DATA_PROVIDER_TOKEN,
+      useClass: ResilientWeatherDataProvider,
     },
     {
       provide: WEATHERFLOW_API_HTTP_CLIENT_TOKEN,

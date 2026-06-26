@@ -4,7 +4,7 @@ sequenceDiagram
     participant Cycle as RunIngestionCycleService
     participant APIClient as WeatherStationCatalog
     participant API as API service
-    participant OWM as WeatherDataProvider / OWM
+    participant OWM as ResilientWeatherDataProvider / OWM
     participant Submitter as MeasurementSubmitter
     participant Domain as RecordMeasurementService
     participant Mongo as MongoDB
@@ -29,7 +29,15 @@ sequenceDiagram
             end
             API-->>Submitter: persisted or existing measurement
             Submitter-->>Cycle: measurement result
-        else Provider failure
+        else Provider failure with valid cache
+            OWM-->>Cycle: cached reading + age metadata
+            Cycle->>Submitter: submitMeasurement(cached reading, cycleId)
+            Submitter->>API: POST /internal/ingestion/measurements<br/>token + correlation + idempotency
+            API->>Domain: execute(openweather command)
+            Domain->>Mongo: insert if absent
+            API-->>Submitter: persisted or existing measurement
+            Submitter-->>Cycle: measurement result + fallback metadata
+        else Provider failure without cache
             OWM--xCycle: typed error
             Note over Cycle: Failure is recorded;<br/>the batch continues
         end

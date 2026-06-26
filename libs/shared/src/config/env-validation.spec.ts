@@ -5,6 +5,13 @@ import {
 
 type EnvShape = {
   INGESTION_SYSTEM_TOKEN: string;
+  INGESTION_SERVICE_URL: string;
+  INGESTION_TIMEOUT_MS?: number | string;
+  INGESTION_CONCURRENCY_LIMIT?: number | string;
+  INGESTION_BREAKER_FAILURE_THRESHOLD?: number | string;
+  INGESTION_BREAKER_OPEN_MS?: number | string;
+  INGESTION_RETRY_ATTEMPTS?: number | string;
+  INGESTION_RETRY_BASE_DELAY_MS?: number | string;
   JWT_EXPIRES_IN?: string;
   JWT_SECRET: string;
   MONGODB_URI: string;
@@ -36,6 +43,13 @@ describe('envValidationSchema', () => {
     JWT_SECRET: 'super-secret-key-12345',
     JWT_EXPIRES_IN: '7d',
     INGESTION_SYSTEM_TOKEN: 'test-ingestion-system-token',
+    INGESTION_SERVICE_URL: 'http://ingestion:3002',
+    INGESTION_TIMEOUT_MS: 5_000,
+    INGESTION_CONCURRENCY_LIMIT: 10,
+    INGESTION_BREAKER_FAILURE_THRESHOLD: 3,
+    INGESTION_BREAKER_OPEN_MS: 30_000,
+    INGESTION_RETRY_ATTEMPTS: 1,
+    INGESTION_RETRY_BASE_DELAY_MS: 100,
     NOTIFICATION_SERVICE_URL: 'http://notifications:3001',
     NOTIFICATION_DELIVERY_MODE: 'log',
     RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
@@ -86,6 +100,13 @@ describe('envValidationSchema', () => {
     expect(error!.message).toContain('NOTIFICATION_SERVICE_URL');
   });
 
+  it('should fail when INGESTION_SERVICE_URL is missing for the API', () => {
+    const env = omitEnvKeys(validEnv, 'INGESTION_SERVICE_URL');
+    const { error } = validateEnv(env, false);
+    expect(error).toBeDefined();
+    expect(error!.message).toContain('INGESTION_SERVICE_URL');
+  });
+
   it('should require a sufficiently long ingestion system token', () => {
     const { error } = validateEnv({
       ...validEnv,
@@ -94,6 +115,28 @@ describe('envValidationSchema', () => {
 
     expect(error).toBeDefined();
     expect(error!.message).toContain('INGESTION_SYSTEM_TOKEN');
+  });
+
+  it('should reject unsupported API to ingestion resilience settings', () => {
+    const { error } = validateEnv(
+      {
+        ...validEnv,
+        INGESTION_TIMEOUT_MS: 99,
+        INGESTION_CONCURRENCY_LIMIT: 0,
+        INGESTION_BREAKER_FAILURE_THRESHOLD: 0,
+        INGESTION_BREAKER_OPEN_MS: 999,
+        INGESTION_RETRY_ATTEMPTS: 2,
+        INGESTION_RETRY_BASE_DELAY_MS: -1,
+      },
+      false,
+    );
+
+    expect(error?.message).toContain('INGESTION_TIMEOUT_MS');
+    expect(error?.message).toContain('INGESTION_CONCURRENCY_LIMIT');
+    expect(error?.message).toContain('INGESTION_BREAKER_FAILURE_THRESHOLD');
+    expect(error?.message).toContain('INGESTION_BREAKER_OPEN_MS');
+    expect(error?.message).toContain('INGESTION_RETRY_ATTEMPTS');
+    expect(error?.message).toContain('INGESTION_RETRY_BASE_DELAY_MS');
   });
 
   // EC-20

@@ -30,6 +30,13 @@ series include `weatherflow_owm_requests_total`,
 `weatherflow_owm_failures_total`, `weatherflow_owm_breaker_state` and
 `weatherflow_owm_cache_entries`.
 
+Both API and ingestion expose internal REST boundary metrics in Prometheus text
+format through `GET /metrics`. `weatherflow_http_boundary_requests_total`
+counts attempts, retries, failures, bulkhead rejections and open-circuit
+rejections for `ingestion_to_api` and `api_to_ingestion`.
+`weatherflow_http_boundary_breaker_state` exposes the current breaker state for
+each direction.
+
 ## Internal Ingestion Operations
 
 These routes are service-to-service or operational endpoints. They require:
@@ -120,6 +127,10 @@ identifier, and observation timestamp. Repeating the same observation returns
 the existing measurement without another MongoDB row or alert publication.
 The correlation identifier reaches the RabbitMQ message payload and AMQP
 metadata when the reading triggers an alert.
+The worker protects this write path with a configurable timeout, bulkhead,
+circuit breaker and backoff with jitter. Only `429`, `502`, `503`, `504`,
+timeouts and safe network failures are retried, always with the same
+idempotency key.
 
 **Response `200`:** Measurement object with `source: "openweather"`.
 
@@ -128,6 +139,19 @@ metadata when the reading triggers an alert.
 **Response `401`:** missing/invalid system token or correlation identifier.
 
 **Response `404`:** station does not exist.
+
+### API -> ingestion current-weather boundary
+
+S-03.9 will expose the public current-temperature report on the API. Its
+internal client already targets `GET http://localhost:3002/internal/weather/current`
+with `latitude` and `longitude`, authenticated with `x-ingestion-token`.
+The API client timeout, bulkhead, breaker and read-path retry policy are
+configured through `INGESTION_TIMEOUT_MS`, `INGESTION_CONCURRENCY_LIMIT`,
+`INGESTION_BREAKER_FAILURE_THRESHOLD`, `INGESTION_BREAKER_OPEN_MS`,
+`INGESTION_RETRY_ATTEMPTS` and `INGESTION_RETRY_BASE_DELAY_MS`. Defaults keep
+read retries conservative: maximum one retry for `429`, `502`, `503`, `504`,
+timeout or network failure, mapping exhausted internal failures to clear
+`502`, `503` or `504` responses without stack traces.
 
 ---
 

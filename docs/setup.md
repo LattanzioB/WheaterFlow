@@ -49,6 +49,18 @@ OWM_CACHE_TTL_MS=300000
 OWM_BREAKER_FAILURE_THRESHOLD=3
 OWM_BREAKER_OPEN_MS=30000
 API_BASE_URL=http://api:3000
+API_TIMEOUT_MS=10000
+API_BREAKER_FAILURE_THRESHOLD=3
+API_BREAKER_OPEN_MS=30000
+API_RETRY_ATTEMPTS=2
+API_RETRY_BASE_DELAY_MS=250
+INGESTION_SERVICE_URL=http://ingestion:3002
+INGESTION_TIMEOUT_MS=5000
+INGESTION_CONCURRENCY_LIMIT=10
+INGESTION_BREAKER_FAILURE_THRESHOLD=3
+INGESTION_BREAKER_OPEN_MS=30000
+INGESTION_RETRY_ATTEMPTS=1
+INGESTION_RETRY_BASE_DELAY_MS=100
 INGESTION_SYSTEM_TOKEN=replace-with-at-least-16-characters
 INGESTION_CRON=*/10 * * * *
 OWM_CONCURRENCY_LIMIT=3
@@ -93,6 +105,7 @@ Local URLs:
 | OpenAPI JSON                | `http://localhost:3000/api/docs-json`               |
 | Notification service health | `http://localhost:3001/health`                      |
 | Ingestion service health    | `http://localhost:3002/health`                      |
+| API metrics                 | `http://localhost:3000/metrics`                     |
 | Ingestion metrics           | `http://localhost:3002/metrics`                     |
 | Manual ingestion trigger    | `POST http://localhost:3002/internal/ingestion/run` |
 | RabbitMQ management UI      | `http://localhost:15672`                            |
@@ -146,15 +159,31 @@ by the worker. Every successful OWM observation is submitted to the API with a
 deterministic idempotency key and the cycle identifier as correlation ID. The
 API records it through `RecordMeasurementService`; retries return the same
 measurement without duplicate persistence or alert publication.
+The write boundary from ingestion to API uses `API_TIMEOUT_MS`,
+`API_CONCURRENCY_LIMIT`, `API_BREAKER_FAILURE_THRESHOLD`,
+`API_BREAKER_OPEN_MS`, `API_RETRY_ATTEMPTS`, and
+`API_RETRY_BASE_DELAY_MS`. Only `429`, `502`, `503`, `504`, timeouts, and safe
+network errors are retried, and every retry reuses the same idempotency key.
 When a scheduled cycle cannot reach OWM, it may submit a cached reading only if
 that cache entry is still inside `OWM_CACHE_TTL_MS`; the cycle result includes
 `fallback.reason`, `fallback.cachedAt`, `fallback.ageMs`, and `fallback.ttlMs`.
 Manual runs and synchronous current-temperature requests keep the typed OWM
 error so callers can receive `502`, `503`, or `504` instead of stale data.
 
+The read boundary from API to ingestion is configured separately with
+`INGESTION_SERVICE_URL`, `INGESTION_TIMEOUT_MS`,
+`INGESTION_CONCURRENCY_LIMIT`, `INGESTION_BREAKER_FAILURE_THRESHOLD`,
+`INGESTION_BREAKER_OPEN_MS`, `INGESTION_RETRY_ATTEMPTS`, and
+`INGESTION_RETRY_BASE_DELAY_MS`. The default read-path policy allows at most
+one retry on `429`, `502`, `503`, `504`, timeout, or network failure so current
+temperature reports do not trade p95 latency for aggressive recovery.
+
 OpenWeather resilience metrics are exposed in Prometheus text format at
 `GET /metrics`, including request outcomes, typed failure codes, breaker state
-and current cache entries.
+and current cache entries. Internal REST boundary metrics are exposed on both
+API and ingestion services as `weatherflow_http_boundary_requests_total` and
+`weatherflow_http_boundary_breaker_state`, labeled by direction
+(`api_to_ingestion` or `ingestion_to_api`).
 
 ### Production Build
 

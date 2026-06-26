@@ -11,7 +11,12 @@ export type IngestionConfiguration = {
   };
   api: {
     baseUrl: string | undefined;
+    timeoutMs: number;
     concurrencyLimit: number;
+    breakerFailureThreshold: number;
+    breakerOpenMs: number;
+    retryAttempts: number;
+    retryBaseDelayMs: number;
     systemToken: string | undefined;
   };
   schedule: {
@@ -41,8 +46,22 @@ export default (): IngestionConfiguration => ({
   },
   api: {
     baseUrl: process.env.API_BASE_URL,
+    timeoutMs: Number.parseInt(process.env.API_TIMEOUT_MS ?? '10000', 10),
     concurrencyLimit: Number.parseInt(
       process.env.API_CONCURRENCY_LIMIT ?? '3',
+      10,
+    ),
+    breakerFailureThreshold: Number.parseInt(
+      process.env.API_BREAKER_FAILURE_THRESHOLD ?? '3',
+      10,
+    ),
+    breakerOpenMs: Number.parseInt(
+      process.env.API_BREAKER_OPEN_MS ?? '30000',
+      10,
+    ),
+    retryAttempts: Number.parseInt(process.env.API_RETRY_ATTEMPTS ?? '2', 10),
+    retryBaseDelayMs: Number.parseInt(
+      process.env.API_RETRY_BASE_DELAY_MS ?? '250',
       10,
     ),
     systemToken: process.env.INGESTION_SYSTEM_TOKEN,

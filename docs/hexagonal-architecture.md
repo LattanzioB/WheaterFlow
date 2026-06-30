@@ -17,7 +17,7 @@ Telegram webhook        orchestration         value objects      HTTP clients, T
 
 | Service                                     | Business responsibility                                                 | Primary adapters                                                 | Secondary adapters                                                             |
 | ------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| API service (`apps/api`)                    | Auth, user identity facade, stations, measurements, alert detection     | REST controllers, Swagger                                        | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client |
+| API service (`apps/api`)                    | Auth, user identity facade, stations, measurements, alert detection     | REST controllers, Swagger                                        | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client, ingestion HTTP client |
 | Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier         |
 | Ingestion service (`apps/ingestion`)        | Scheduled external weather acquisition                                  | Health endpoint, cron scheduler, protected manual trigger        | OpenWeather Current Weather adapter and API station-catalog HTTP adapter       |
 
@@ -113,6 +113,7 @@ Infrastructure adapters implement ports and communicate with external systems.
 | `IMeasurementRepository`         | `MongoMeasurementRepository`         | API          | Measurement persistence and filtering.                  |
 | `AlertPublisher`                 | `RabbitMqAlertPublisherAdapter`      | API          | Publishes alert messages after measurement persistence. |
 | `NotificationServiceClient`      | `HttpNotificationServiceClient`      | API          | Calls the Notification service REST boundary.           |
+| Current weather ingestion client | `ApiToIngestionCurrentWeatherClient` | API          | Calls the ingestion service read boundary for S-03.9.   |
 | `INotificationProfileRepository` | `MongoNotificationProfileRepository` | Notification | Notification profile persistence.                       |
 | `AlertNotifier`                  | Composite, log, Telegram adapters    | Notification | Sends resolved notifications.                           |
 | `WeatherDataProvider`            | `ResilientWeatherDataProvider` + `OpenWeatherMapAdapter` | Ingestion    | Protects and normalizes OpenWeather Current Weather readings. |
@@ -136,7 +137,15 @@ receive stale data by accident.
 submitter ports. It owns the anti-overlap lock, applies bounded concurrency,
 isolates per-station errors, and returns a structured operational summary. The
 REST adapter crosses the API boundary without importing API aggregates; the API
-persists through `RecordMeasurementService`.
+persists through `RecordMeasurementService`. `ApiMeasurementSubmitterAdapter`
+keeps timeout, bulkhead, circuit breaker, safe retry and idempotency concerns
+inside the infrastructure adapter, so application services still depend only on
+the `MeasurementSubmitter` port.
+
+`ApiToIngestionCurrentWeatherClient` is the API-side outbound adapter prepared
+for S-03.9. It keeps synchronous read-path protection outside the public
+controller/use-case layer: timeout, bulkhead, circuit breaker, maximum-one retry
+policy and clear `502`/`503`/`504` mapping are infrastructure concerns.
 
 ## Data Flow: Alerting Measurement
 

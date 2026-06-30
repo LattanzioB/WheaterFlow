@@ -28,6 +28,7 @@ describe('AppModule', () => {
       MONGODB_URI: 'mongodb://localhost:27017/weatherflow-test',
       JWT_SECRET: 'test-secret-key',
       INGESTION_SYSTEM_TOKEN: 'test-ingestion-system-token',
+      INGESTION_SERVICE_URL: 'http://ingestion:3002',
       RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
       NOTIFICATION_SERVICE_URL: 'http://notifications:3001',
     };

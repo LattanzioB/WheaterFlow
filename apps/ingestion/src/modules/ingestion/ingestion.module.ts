@@ -9,11 +9,19 @@ import {
 import { WEATHER_DATA_PROVIDER_TOKEN } from './domain/ports/weather-data-provider.port';
 import { WEATHER_STATION_CATALOG_TOKEN } from './domain/ports/weather-station-catalog.port';
 import { MEASUREMENT_SUBMITTER_TOKEN } from './domain/ports/measurement-submitter.port';
-import { ApiMeasurementSubmitterAdapter } from './infrastructure/adapters/api-measurement-submitter.adapter';
+import {
+  ApiMeasurementSubmitterAdapter,
+  WEATHERFLOW_API_BREAKER_FAILURE_THRESHOLD_TOKEN,
+  WEATHERFLOW_API_BREAKER_OPEN_MS_TOKEN,
+  WEATHERFLOW_API_BULKHEAD_LIMIT_TOKEN,
+  WEATHERFLOW_API_RETRY_ATTEMPTS_TOKEN,
+  WEATHERFLOW_API_RETRY_BASE_DELAY_MS_TOKEN,
+} from './infrastructure/adapters/api-measurement-submitter.adapter';
 import {
   ApiWeatherStationCatalogAdapter,
   WEATHERFLOW_API_HTTP_CLIENT_TOKEN,
 } from './infrastructure/adapters/api-weather-station-catalog.adapter';
+import { HttpBoundaryMetrics } from '@shared/resilience/http-boundary.metrics';
 import {
   OPENWEATHER_HTTP_CLIENT_TOKEN,
   OPENWEATHER_TIMEOUT_MS_TOKEN,
@@ -41,6 +49,7 @@ import { IngestionScheduler } from './infrastructure/scheduling/ingestion.schedu
   providers: [
     OpenWeatherMapResponseMapper,
     OpenWeatherResilienceMetrics,
+    HttpBoundaryMetrics,
     RunIngestionCycleService,
     IngestionScheduler,
     ManualIngestionTokenGuard,
@@ -107,12 +116,43 @@ import { IngestionScheduler } from './infrastructure/scheduling/ingestion.schedu
       useFactory: (configService: ConfigService) =>
         axios.create({
           baseURL: configService.getOrThrow<string>('api.baseUrl'),
-          timeout: 10_000,
+          timeout: configService.get<number>('api.timeoutMs') ?? 10_000,
+          validateStatus: () => true,
           headers: {
             'x-ingestion-token':
               configService.getOrThrow<string>('api.systemToken'),
           },
         }),
+    },
+    {
+      provide: WEATHERFLOW_API_BULKHEAD_LIMIT_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('api.concurrencyLimit') ?? 3,
+    },
+    {
+      provide: WEATHERFLOW_API_BREAKER_FAILURE_THRESHOLD_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('api.breakerFailureThreshold') ?? 3,
+    },
+    {
+      provide: WEATHERFLOW_API_BREAKER_OPEN_MS_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('api.breakerOpenMs') ?? 30_000,
+    },
+    {
+      provide: WEATHERFLOW_API_RETRY_ATTEMPTS_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('api.retryAttempts') ?? 2,
+    },
+    {
+      provide: WEATHERFLOW_API_RETRY_BASE_DELAY_MS_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): number =>
+        configService.get<number>('api.retryBaseDelayMs') ?? 250,
     },
     {
       provide: WEATHER_STATION_CATALOG_TOKEN,

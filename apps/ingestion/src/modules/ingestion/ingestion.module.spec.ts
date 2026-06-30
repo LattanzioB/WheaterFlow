@@ -27,6 +27,11 @@ describe('IngestionModule', () => {
       OWM_BREAKER_FAILURE_THRESHOLD: '3',
       OWM_BREAKER_OPEN_MS: '30000',
       API_BASE_URL: 'http://localhost:3000',
+      API_TIMEOUT_MS: '7500',
+      API_BREAKER_FAILURE_THRESHOLD: '3',
+      API_BREAKER_OPEN_MS: '30000',
+      API_RETRY_ATTEMPTS: '2',
+      API_RETRY_BASE_DELAY_MS: '250',
       INGESTION_SYSTEM_TOKEN: 'test-ingestion-system-token',
     };
   });
@@ -69,6 +74,7 @@ describe('IngestionModule', () => {
     );
     expect(apiHttpClient.defaults).toMatchObject({
       baseURL: 'http://localhost:3000',
+      timeout: 7_500,
       headers: expect.objectContaining({
         'x-ingestion-token': 'test-ingestion-system-token',
       }),

@@ -28,6 +28,33 @@ export const envValidationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   NOTIFICATION_SERVICE_URL: Joi.string().uri().required(),
   INGESTION_SYSTEM_TOKEN: Joi.string().trim().min(16).required(),
+  INGESTION_SERVICE_URL: Joi.string().uri().required(),
+  INGESTION_TIMEOUT_MS: Joi.number()
+    .integer()
+    .min(100)
+    .max(120_000)
+    .default(5_000),
+  INGESTION_CONCURRENCY_LIMIT: Joi.number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(10),
+  INGESTION_BREAKER_FAILURE_THRESHOLD: Joi.number()
+    .integer()
+    .min(1)
+    .max(20)
+    .default(3),
+  INGESTION_BREAKER_OPEN_MS: Joi.number()
+    .integer()
+    .min(1_000)
+    .max(3_600_000)
+    .default(30_000),
+  INGESTION_RETRY_ATTEMPTS: Joi.number().integer().min(0).max(1).default(1),
+  INGESTION_RETRY_BASE_DELAY_MS: Joi.number()
+    .integer()
+    .min(0)
+    .max(60_000)
+    .default(100),
   NOTIFICATION_DELIVERY_MODE: Joi.string()
     .valid('log', 'telegram')
     .default('log'),

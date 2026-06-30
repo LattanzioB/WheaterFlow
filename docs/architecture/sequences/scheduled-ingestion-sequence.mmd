@@ -21,7 +21,9 @@ sequenceDiagram
         alt Provider success
             OWM-->>Cycle: normalized reading
             Cycle->>Submitter: submitMeasurement(reading, cycleId)
-            Submitter->>API: POST /internal/ingestion/measurements<br/>token + correlation + idempotency
+            loop Safe transient API failures
+                Submitter->>API: POST /internal/ingestion/measurements<br/>token + correlation + same idempotency key
+            end
             API->>Domain: execute(openweather command)
             Domain->>Mongo: insert if absent
             opt Critical measurement created
@@ -32,7 +34,9 @@ sequenceDiagram
         else Provider failure with valid cache
             OWM-->>Cycle: cached reading + age metadata
             Cycle->>Submitter: submitMeasurement(cached reading, cycleId)
-            Submitter->>API: POST /internal/ingestion/measurements<br/>token + correlation + idempotency
+            loop Safe transient API failures
+                Submitter->>API: POST /internal/ingestion/measurements<br/>token + correlation + same idempotency key
+            end
             API->>Domain: execute(openweather command)
             Domain->>Mongo: insert if absent
             API-->>Submitter: persisted or existing measurement

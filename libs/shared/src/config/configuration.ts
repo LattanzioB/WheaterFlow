@@ -20,6 +20,25 @@ export default () => ({
   },
   ingestion: {
     systemToken: process.env.INGESTION_SYSTEM_TOKEN,
+    serviceUrl: process.env.INGESTION_SERVICE_URL,
+    timeoutMs: parseInt(process.env.INGESTION_TIMEOUT_MS ?? '5000', 10),
+    concurrencyLimit: parseInt(
+      process.env.INGESTION_CONCURRENCY_LIMIT ?? '10',
+      10,
+    ),
+    breakerFailureThreshold: parseInt(
+      process.env.INGESTION_BREAKER_FAILURE_THRESHOLD ?? '3',
+      10,
+    ),
+    breakerOpenMs: parseInt(
+      process.env.INGESTION_BREAKER_OPEN_MS ?? '30000',
+      10,
+    ),
+    retryAttempts: parseInt(process.env.INGESTION_RETRY_ATTEMPTS ?? '1', 10),
+    retryBaseDelayMs: parseInt(
+      process.env.INGESTION_RETRY_BASE_DELAY_MS ?? '100',
+      10,
+    ),
   },
   rabbitmq: {
     url: process.env.RABBITMQ_URL,

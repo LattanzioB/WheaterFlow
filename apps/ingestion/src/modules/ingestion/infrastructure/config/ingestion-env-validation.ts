@@ -14,7 +14,11 @@ export const ingestionEnvValidationSchema = Joi.object({
     .min(1_000)
     .max(3_600_000)
     .default(300_000),
-  OWM_BREAKER_FAILURE_THRESHOLD: Joi.number().integer().min(1).max(20).default(3),
+  OWM_BREAKER_FAILURE_THRESHOLD: Joi.number()
+    .integer()
+    .min(1)
+    .max(20)
+    .default(3),
   OWM_BREAKER_OPEN_MS: Joi.number()
     .integer()
     .min(1_000)
@@ -23,6 +27,23 @@ export const ingestionEnvValidationSchema = Joi.object({
   API_BASE_URL: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .required(),
+  API_TIMEOUT_MS: Joi.number().integer().min(100).max(120_000).default(10_000),
+  API_BREAKER_FAILURE_THRESHOLD: Joi.number()
+    .integer()
+    .min(1)
+    .max(20)
+    .default(3),
+  API_BREAKER_OPEN_MS: Joi.number()
+    .integer()
+    .min(1_000)
+    .max(3_600_000)
+    .default(30_000),
+  API_RETRY_ATTEMPTS: Joi.number().integer().min(0).max(5).default(2),
+  API_RETRY_BASE_DELAY_MS: Joi.number()
+    .integer()
+    .min(0)
+    .max(60_000)
+    .default(250),
   INGESTION_SYSTEM_TOKEN: Joi.string().trim().min(16).required(),
   INGESTION_CRON: Joi.string()
     .trim()

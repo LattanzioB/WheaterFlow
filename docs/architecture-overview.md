@@ -117,6 +117,9 @@ logic: each service accesses only the collections it owns for its use cases.
   protected API REST adapter.
 - Derive deterministic idempotency keys from OWM observations and propagate the
   cycle identifier through HTTP and RabbitMQ.
+- Protect the ingestion-to-API write boundary with configurable timeout,
+  bulkhead, circuit breaker, safe retries, backoff with jitter and Prometheus
+  metrics.
 - Protect manual cycles and the API catalog with `INGESTION_SYSTEM_TOKEN`, and
   reject overlapping manual cycles.
 - Normalize provider payloads to explicit Celsius, percent, hPa, observation
@@ -142,6 +145,14 @@ reading and include its age in the result; manual or synchronous requests keep
 the typed failure. Successful readings are sent through the authenticated
 `MeasurementSubmitter` REST adapter to `RecordMeasurementService`; the cycle
 emits one structured summary containing the persisted measurement.
+
+The REST boundary from ingestion to API retries only transient safe failures
+(`429`, `502`, `503`, `504`, timeouts and network errors). Retries reuse the
+same idempotency key, so duplicate attempts resolve to the existing measurement
+instead of creating duplicate rows or alert messages. The opposite read
+boundary from API to ingestion is prepared for the current-temperature report
+with a shorter timeout and a maximum of one retry by default, protecting p95
+latency during synchronous user requests.
 
 Sequence source:
 `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`

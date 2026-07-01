@@ -51,7 +51,7 @@ export class ApiWeatherStationCatalogAdapter implements WeatherStationCatalog {
       typeof station.name !== 'string' ||
       typeof latitude !== 'number' ||
       typeof longitude !== 'number' ||
-      (station.status !== 'Activa' && station.status !== 'Inactiva') ||
+      (station.status !== 'ACTIVE' && station.status !== 'INACTIVE') ||
       station.provider !== 'openweather'
     ) {
       throw new Error('WeatherFlow API returned an invalid station');

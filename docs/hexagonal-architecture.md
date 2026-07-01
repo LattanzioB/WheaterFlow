@@ -58,6 +58,8 @@ Application services orchestrate use cases and depend on domain contracts.
 - `GetCurrentTemperatureReportService` resolves station metadata, enforces
   `provider=openweather`, and delegates real-time weather reads to the API-side
   ingestion client.
+- `GetTemperatureAverageReportService` resolves station existence and delegates
+  moving-period temperature aggregation to the measurement repository port.
 - Notification preference services update `UserNotificationProfile`.
 - `NotificationService` filters subscribers and resolves delivery targets after
   a RabbitMQ message is consumed.
@@ -70,7 +72,8 @@ commands.
 **Examples:**
 
 - API service: `AuthController`, `WeatherStationsController`,
-  `MeasurementsController`, `UserNotificationPreferencesController`.
+  `MeasurementsController`, `TemperatureAverageReportsController`,
+  `UserNotificationPreferencesController`.
 - Notification service: `NotificationPreferencesController`,
   `TelegramWebhookController`.
 - Ingestion service: `HealthController`, `IngestionController`,

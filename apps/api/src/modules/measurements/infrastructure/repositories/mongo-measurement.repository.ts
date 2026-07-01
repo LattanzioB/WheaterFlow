@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import {
   IMeasurementRepository,
   MeasurementFilters,
+  TemperatureAveragePeriod,
+  TemperatureAverageResult,
 } from '../../domain/ports/measurement-repository.port';
 import { Measurement } from '../../domain/entities/measurement.entity';
 import { MeasurementDocumentMapper } from '../mappers/measurement-document.mapper';
@@ -84,6 +86,44 @@ export class MongoMeasurementRepository implements IMeasurementRepository {
     return documents.map((document) =>
       MeasurementDocumentMapper.toDomain(document),
     );
+  }
+
+  async averageTemperatureForPeriod(
+    period: TemperatureAveragePeriod,
+  ): Promise<TemperatureAverageResult> {
+    const [result] = await this.measurementModel
+      .aggregate<{ average: number | null; sampleCount: number }>([
+        {
+          $match: {
+            stationId: period.stationId,
+            reportedAt: {
+              $gte: period.from,
+              $lte: period.to,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            average: {
+              $avg: '$temperature',
+            },
+            sampleCount: {
+              $sum: 1,
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            average: 1,
+            sampleCount: 1,
+          },
+        },
+      ])
+      .exec();
+
+    return result ?? { average: null, sampleCount: 0 };
   }
 
   async save(measurement: Measurement): Promise<void> {

@@ -95,7 +95,7 @@ export class RunIngestionCycleService {
     try {
       const stations = await this.stationCatalog.listOpenWeatherStations();
       const inactiveResults = stations
-        .filter((station) => station.status !== 'Activa')
+        .filter((station) => station.status !== 'ACTIVE')
         .map<IngestionStationResult>((station) => ({
           stationId: station.id,
           stationName: station.name,
@@ -103,7 +103,7 @@ export class RunIngestionCycleService {
           reason: 'inactive',
         }));
       const activeStations = stations.filter(
-        (station) => station.status === 'Activa',
+        (station) => station.status === 'ACTIVE',
       );
       const activeResults = await this.mapWithConcurrency(
         activeStations,

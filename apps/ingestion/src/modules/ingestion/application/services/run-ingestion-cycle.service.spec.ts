@@ -14,7 +14,7 @@ const activeStation = (id: string): IngestionStation => ({
   id,
   name: `Station ${id}`,
   location: { latitude: -34.6, longitude: -58.4 },
-  status: 'Activa',
+  status: 'ACTIVE',
   provider: 'openweather',
 });
 
@@ -34,7 +34,7 @@ describe('RunIngestionCycleService', () => {
     const stations: IngestionStation[] = [
       activeStation('1'),
       activeStation('2'),
-      { ...activeStation('3'), status: 'Inactiva' },
+      { ...activeStation('3'), status: 'INACTIVE' },
     ];
     const stationCatalog: WeatherStationCatalog = {
       listOpenWeatherStations: jest.fn().mockResolvedValue(stations),

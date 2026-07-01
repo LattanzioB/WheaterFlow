@@ -10,7 +10,7 @@ describe('ApiWeatherStationCatalogAdapter', () => {
             id: 'station-1',
             name: 'UNQ',
             location: { latitude: -34.7067, longitude: -58.2775 },
-            status: 'Activa',
+            status: 'ACTIVE',
             provider: 'openweather',
           },
         ],
@@ -23,7 +23,7 @@ describe('ApiWeatherStationCatalogAdapter', () => {
         id: 'station-1',
         name: 'UNQ',
         location: { latitude: -34.7067, longitude: -58.2775 },
-        status: 'Activa',
+        status: 'ACTIVE',
         provider: 'openweather',
       },
     ]);

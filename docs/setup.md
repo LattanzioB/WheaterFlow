@@ -177,6 +177,11 @@ The read boundary from API to ingestion is configured separately with
 `INGESTION_RETRY_BASE_DELAY_MS`. The default read-path policy allows at most
 one retry on `429`, `502`, `503`, `504`, timeout, or network failure so current
 temperature reports do not trade p95 latency for aggressive recovery.
+The public report is available at
+`GET http://localhost:3000/stations/:stationId/reports/temperature/current`.
+Only stations with `provider=openweather` are accepted; the API resolves the
+station, forwards coordinates to ingesta, and returns OWM's current observation
+plus the API `fetchedAt` timestamp without creating a measurement.
 
 OpenWeather resilience metrics are exposed in Prometheus text format at
 `GET /metrics`, including request outcomes, typed failure codes, breaker state

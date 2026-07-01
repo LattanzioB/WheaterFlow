@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AxiosError, type AxiosInstance, type AxiosResponse } from 'axios';
 import { HttpBoundaryMetrics } from '@shared/resilience/http-boundary.metrics';
+import type {
+  CurrentWeatherLocationQuery,
+  CurrentWeatherReadingResponse,
+} from '@contracts';
 
 export const API_TO_INGESTION_HTTP_CLIENT_TOKEN = 'ApiToIngestionHttpClient';
 export const API_TO_INGESTION_BULKHEAD_LIMIT_TOKEN =
@@ -13,28 +17,6 @@ export const API_TO_INGESTION_RETRY_ATTEMPTS_TOKEN =
   'ApiToIngestionRetryAttempts';
 export const API_TO_INGESTION_RETRY_BASE_DELAY_MS_TOKEN =
   'ApiToIngestionRetryBaseDelayMs';
-
-export type CurrentWeatherLocationQuery = {
-  latitude: number;
-  longitude: number;
-};
-
-export type CurrentWeatherReadingResponse = {
-  externalId: string;
-  temperature: {
-    value: number;
-    unit: 'celsius';
-  };
-  humidity: {
-    value: number;
-    unit: 'percent';
-  };
-  pressure: {
-    value: number;
-    unit: 'hPa';
-  };
-  observedAt: string;
-};
 
 type IngestionCurrentWeatherPayload = {
   externalId?: unknown;

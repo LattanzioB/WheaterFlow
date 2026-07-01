@@ -86,6 +86,9 @@ logic: each service accesses only the collections it owns for its use cases.
   measurements are persisted.
 - Proxy notification preference workflows to the Notification service so clients
   keep using `/users/:id/...` routes.
+- Expose `GET /stations/:stationId/reports/temperature/current` as an
+  authenticated facade that validates station provider metadata and delegates
+  real-time OWM reads to ingestion without persisting the reading.
 
 ### Notification Service
 
@@ -120,8 +123,8 @@ logic: each service accesses only the collections it owns for its use cases.
 - Protect the ingestion-to-API write boundary with configurable timeout,
   bulkhead, circuit breaker, safe retries, backoff with jitter and Prometheus
   metrics.
-- Protect manual cycles and the API catalog with `INGESTION_SYSTEM_TOKEN`, and
-  reject overlapping manual cycles.
+- Protect manual cycles, synchronous current-weather reads and the API catalog
+  with `INGESTION_SYSTEM_TOKEN`, and reject overlapping manual cycles.
 - Normalize provider payloads to explicit Celsius, percent, hPa, observation
   timestamp, and external identifier fields.
 - Classify OpenWeather client errors, server errors, timeouts, network failures,
@@ -150,9 +153,12 @@ The REST boundary from ingestion to API retries only transient safe failures
 (`429`, `502`, `503`, `504`, timeouts and network errors). Retries reuse the
 same idempotency key, so duplicate attempts resolve to the existing measurement
 instead of creating duplicate rows or alert messages. The opposite read
-boundary from API to ingestion is prepared for the current-temperature report
-with a shorter timeout and a maximum of one retry by default, protecting p95
-latency during synchronous user requests.
+boundary from API to ingestion powers the current-temperature report with a
+shorter timeout and a maximum of one retry by default, protecting p95 latency
+during synchronous user requests. In that flow, the API resolves the station
+from MongoDB only to validate existence, coordinates and `provider=openweather`;
+the weather reading itself comes from ingestion calling OWM in real time and is
+not persisted.
 
 Sequence source:
 `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`

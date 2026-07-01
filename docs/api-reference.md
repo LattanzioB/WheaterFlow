@@ -142,9 +142,9 @@ idempotency key.
 
 ### API -> ingestion current-weather boundary
 
-S-03.9 will expose the public current-temperature report on the API. Its
-internal client already targets `GET http://localhost:3002/internal/weather/current`
-with `latitude` and `longitude`, authenticated with `x-ingestion-token`.
+The public current-temperature report on the API calls ingestion through
+`GET http://localhost:3002/internal/weather/current` with `latitude` and
+`longitude`, authenticated with `x-ingestion-token`.
 The API client timeout, bulkhead, breaker and read-path retry policy are
 configured through `INGESTION_TIMEOUT_MS`, `INGESTION_CONCURRENCY_LIMIT`,
 `INGESTION_BREAKER_FAILURE_THRESHOLD`, `INGESTION_BREAKER_OPEN_MS`,
@@ -152,6 +152,36 @@ configured through `INGESTION_TIMEOUT_MS`, `INGESTION_CONCURRENCY_LIMIT`,
 read retries conservative: maximum one retry for `429`, `502`, `503`, `504`,
 timeout or network failure, mapping exhausted internal failures to clear
 `502`, `503` or `504` responses without stack traces.
+
+### `GET http://localhost:3002/internal/weather/current`
+
+Requires `x-ingestion-token`.
+
+**Query params:**
+| Param | Type | Description |
+|---|---|---|
+| `latitude` | number | Station latitude, -90 to 90 |
+| `longitude` | number | Station longitude, -180 to 180 |
+
+**Response `200`:**
+
+```json
+{
+  "externalId": "3435910",
+  "temperature": { "value": 18.42, "unit": "celsius" },
+  "humidity": { "value": 63, "unit": "percent" },
+  "pressure": { "value": 1017, "unit": "hPa" },
+  "observedAt": "2026-06-21T14:00:00.000Z"
+}
+```
+
+**Response `401`:** missing or invalid ingestion system token.
+
+**Response `502`:** OpenWeather returned an invalid or unsupported response.
+
+**Response `503`:** OpenWeather is unavailable, saturated, or circuit-open.
+
+**Response `504`:** OpenWeather timed out.
 
 ---
 
@@ -513,6 +543,39 @@ Persistence: `notifications` collection in MongoDB with `{ userId: 1, createdAt:
 ### `DELETE /weather-stations/:id`
 
 **Auth required.** Response `204`.
+
+---
+
+### `GET /stations/:stationId/reports/temperature/current`
+
+**Auth required.** Returns the current temperature for an OpenWeather-backed
+station. The API resolves the station and calls ingestion in real time; it does
+not read the latest persisted measurement and does not persist the returned
+reading.
+
+**Response `200`:**
+
+```json
+{
+  "station": {
+    "id": "station-uuid",
+    "name": "Buenos Aires"
+  },
+  "temperature": { "value": 18.42, "unit": "celsius" },
+  "observedAt": "2026-06-21T14:00:00.000Z",
+  "fetchedAt": "2026-06-21T14:00:01.250Z"
+}
+```
+
+**Response `404`:** station does not exist.
+
+**Response `422`:** station is not backed by `provider=openweather`.
+
+**Response `502`:** ingestion returned an invalid result or provider failure.
+
+**Response `503`:** ingestion is unavailable, saturated, or circuit-open.
+
+**Response `504`:** ingestion or OpenWeather timed out.
 
 ---
 

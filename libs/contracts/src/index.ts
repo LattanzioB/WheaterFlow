@@ -14,3 +14,8 @@ export type {
   NotificationProfileResponse,
   StationAlertPreference,
 } from './notifications/notification-profile';
+export type {
+  CurrentTemperatureReportResponse,
+  CurrentWeatherLocationQuery,
+  CurrentWeatherReadingResponse,
+} from './weather/current-weather';

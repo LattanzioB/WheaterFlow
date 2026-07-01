@@ -19,7 +19,7 @@ Telegram webhook        orchestration         value objects      HTTP clients, T
 | ------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | API service (`apps/api`)                    | Auth, user identity facade, stations, measurements, alert detection     | REST controllers, Swagger                                        | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client, ingestion HTTP client |
 | Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier         |
-| Ingestion service (`apps/ingestion`)        | Scheduled external weather acquisition                                  | Health endpoint, cron scheduler, protected manual trigger        | OpenWeather Current Weather adapter and API station-catalog HTTP adapter       |
+| Ingestion service (`apps/ingestion`)        | Scheduled and synchronous external weather acquisition                   | Health endpoint, cron scheduler, protected manual trigger, protected current-weather endpoint | OpenWeather Current Weather adapter and API station-catalog HTTP adapter       |
 
 The former Delivery I modular monolith is historical context. Delivery II keeps
 the same internal layer discipline, but the notification capability is now a
@@ -55,6 +55,9 @@ Application services orchestrate use cases and depend on domain contracts.
 - `RecordMeasurementService` creates a `Measurement`, saves it, and calls the
   `AlertPublisher` port when an alert exists.
 - `QueryMeasurementsService` validates and normalizes measurement filters.
+- `GetCurrentTemperatureReportService` resolves station metadata, enforces
+  `provider=openweather`, and delegates real-time weather reads to the API-side
+  ingestion client.
 - Notification preference services update `UserNotificationProfile`.
 - `NotificationService` filters subscribers and resolves delivery targets after
   a RabbitMQ message is consumed.
@@ -70,8 +73,9 @@ commands.
   `MeasurementsController`, `UserNotificationPreferencesController`.
 - Notification service: `NotificationPreferencesController`,
   `TelegramWebhookController`.
-- Ingestion service: `HealthController`, `IngestionController`, and
-  `IngestionScheduler`, without crossing into API domain code.
+- Ingestion service: `HealthController`, `IngestionController`,
+  `CurrentWeatherController`, and `IngestionScheduler`, without crossing into
+  API domain code.
 
 Controllers validate DTOs, enforce HTTP/JWT access rules where applicable, and
 return response DTOs. They do not call repositories directly.
@@ -123,8 +127,8 @@ Infrastructure adapters implement ports and communicate with external systems.
 The ingestion application exports `WeatherDataProvider` through a NestJS token.
 The port returns a provider-neutral reading with an external identifier,
 observation timestamp, and explicit units for temperature, humidity, and
-pressure. The adapter is therefore reusable by both the scheduled ingestion
-workflow and the future synchronous current-temperature endpoint.
+pressure. The adapter is reused by both the scheduled ingestion workflow and
+the synchronous current-temperature endpoint.
 
 `OpenWeatherMapAdapter` remains the raw HTTP adapter for Current Weather.
 `ResilientWeatherDataProvider` decorates it with timeout-aware typed failures,
@@ -142,8 +146,8 @@ keeps timeout, bulkhead, circuit breaker, safe retry and idempotency concerns
 inside the infrastructure adapter, so application services still depend only on
 the `MeasurementSubmitter` port.
 
-`ApiToIngestionCurrentWeatherClient` is the API-side outbound adapter prepared
-for S-03.9. It keeps synchronous read-path protection outside the public
+`ApiToIngestionCurrentWeatherClient` is the API-side outbound adapter used by
+S-03.9. It keeps synchronous read-path protection outside the public
 controller/use-case layer: timeout, bulkhead, circuit breaker, maximum-one retry
 policy and clear `502`/`503`/`504` mapping are infrastructure concerns.
 

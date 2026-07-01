@@ -5,6 +5,7 @@ import { UsersModule } from '../users/users.module';
 import { CreateStationService } from './application/services/create-station.service';
 import { DeleteStationService } from './application/services/delete-station.service';
 import { GetStationByIdService } from './application/services/get-station-by-id.service';
+import { GetCurrentTemperatureReportService } from './application/services/get-current-temperature-report.service';
 import { ListAllStationsService } from './application/services/list-all-stations.service';
 import { ListUserStationsService } from './application/services/list-user-stations.service';
 import { UpdateStationService } from './application/services/update-station.service';
@@ -15,6 +16,7 @@ import {
 } from './infrastructure/persistence/weather-station.schema';
 import { WeatherStationsController } from './interface/controllers/weather-stations.controller';
 import { InternalIngestionStationsController } from './interface/controllers/internal-ingestion-stations.controller';
+import { StationTemperatureReportsController } from './interface/controllers/station-temperature-reports.controller';
 import { IngestionSystemTokenGuard } from '../../shared/guards/ingestion-system-token.guard';
 
 @Module({
@@ -27,12 +29,17 @@ import { IngestionSystemTokenGuard } from '../../shared/guards/ingestion-system-
     ]),
     forwardRef(() => UsersModule),
   ],
-  controllers: [WeatherStationsController, InternalIngestionStationsController],
+  controllers: [
+    WeatherStationsController,
+    InternalIngestionStationsController,
+    StationTemperatureReportsController,
+  ],
   providers: [
     CreateStationService,
     ListUserStationsService,
     ListAllStationsService,
     GetStationByIdService,
+    GetCurrentTemperatureReportService,
     UpdateStationService,
     DeleteStationService,
     IngestionSystemTokenGuard,

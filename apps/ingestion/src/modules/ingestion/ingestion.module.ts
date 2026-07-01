@@ -29,6 +29,7 @@ import {
 } from './infrastructure/adapters/openweathermap.adapter';
 import { OpenWeatherMapResponseMapper } from './infrastructure/adapters/openweathermap-response.mapper';
 import { HealthController } from './infrastructure/http/health.controller';
+import { CurrentWeatherController } from './infrastructure/http/current-weather.controller';
 import { IngestionController } from './infrastructure/http/ingestion.controller';
 import { ManualIngestionTokenGuard } from './infrastructure/http/manual-ingestion-token.guard';
 import { MetricsController } from './infrastructure/http/metrics.controller';
@@ -45,7 +46,12 @@ import { IngestionScheduler } from './infrastructure/scheduling/ingestion.schedu
 
 @Module({
   imports: [ConfigModule, ScheduleModule.forRoot()],
-  controllers: [HealthController, IngestionController, MetricsController],
+  controllers: [
+    HealthController,
+    IngestionController,
+    CurrentWeatherController,
+    MetricsController,
+  ],
   providers: [
     OpenWeatherMapResponseMapper,
     OpenWeatherResilienceMetrics,

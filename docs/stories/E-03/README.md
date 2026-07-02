@@ -46,7 +46,7 @@ RabbitMQ y despacho de notificaciones.
 | S-03.10 | Reportes de promedio diario y semanal (MongoDB)       | completada |
 | S-03.11 | Agregación de logs y métricas                         | completada |
 | S-03.12 | Trazabilidad distribuida hasta la cola                | completada |
-| S-03.13 | Pruebas de carga de consultas y reportes              | pendiente  |
+| S-03.13 | Pruebas de carga de consultas y reportes              | completada |
 | S-03.14 | Panel de monitoreo y estrategia de alertas operativas | pendiente  |
 | S-03.15 | Documentación de arquitectura de la Entrega III       | pendiente  |
 

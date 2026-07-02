@@ -5,6 +5,7 @@
 - Node.js 20+
 - npm 9+
 - Docker Desktop
+- k6 CLI for S-03.13 load tests
 - MongoDB Atlas account (free tier works)
 - Telegram Bot Token (optional for local notification delivery)
 
@@ -236,6 +237,7 @@ npm run test
 npm run test:watch
 npm run test:cov
 npm run test:integration
+npm run test:load
 ```
 
 Focus unit tests on domain entities, value objects, application services, and infrastructure wiring that can be verified deterministically.
@@ -244,6 +246,35 @@ Focus unit tests on domain entities, value objects, application services, and in
 requires `.env.integration`, a disposable MongoDB database, RabbitMQ, and
 explicit cleanup consent. Use a dedicated MongoDB Atlas test database for these
 tests. See `docs/testing/integration-tests.md`.
+
+### Running Load Tests
+
+S-03.13 adds k6 load tests for measurement search, current temperature reports,
+and daily/weekly average reports:
+
+```bash
+npm run test:load
+```
+
+The script creates its own user, OpenWeather-backed station, and synthetic
+measurement dataset before running three scenarios: sustained ramp, spike, and
+long run. Search and average-report scenarios use only API + MongoDB data.
+
+For current-temperature reports, run ingestion against the local OpenWeather
+stub to avoid external rate limits and network flakiness:
+
+```powershell
+npm run test:load:owm-stub
+$env:OWM_BASE_URL = "http://host.docker.internal:4010"
+docker compose up --build api ingestion mongo rabbitmq
+npm run test:load
+```
+
+When running ingestion outside Docker, set
+`OWM_BASE_URL=http://localhost:4010`. k6 writes JSON and HTML summaries to
+`docs/load-tests/latest-summary.json` and
+`docs/load-tests/latest-report.html`. The versioned baseline lives in
+`docs/load-tests/`.
 
 ---
 

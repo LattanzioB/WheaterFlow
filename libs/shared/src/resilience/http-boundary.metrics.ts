@@ -1,3 +1,5 @@
+import { Counter, Gauge, Registry } from 'prom-client';
+
 export type HttpBoundaryDirection = 'ingestion_to_api' | 'api_to_ingestion';
 
 export type HttpBoundaryCircuitState = 'closed' | 'open' | 'half_open';
@@ -10,81 +12,73 @@ export type HttpBoundaryRequestOutcome =
   | 'bulkhead_rejected'
   | 'circuit_open';
 
+const DIRECTIONS: HttpBoundaryDirection[] = [
+  'ingestion_to_api',
+  'api_to_ingestion',
+];
+
+const OUTCOMES: HttpBoundaryRequestOutcome[] = [
+  'attempt',
+  'success',
+  'failure',
+  'retry',
+  'bulkhead_rejected',
+  'circuit_open',
+];
+
+const STATES: HttpBoundaryCircuitState[] = ['closed', 'open', 'half_open'];
+
+/**
+ * Prometheus metrics for the internal REST boundary between the API and the
+ * ingestion service. Backed by the shared prom-client registry; a private
+ * registry is created when none is supplied so unit tests stay isolated.
+ */
 export class HttpBoundaryMetrics {
-  private readonly requestCounts = new Map<string, number>();
-  private readonly breakerStates = new Map<
-    HttpBoundaryDirection,
-    HttpBoundaryCircuitState
-  >();
+  readonly registry: Registry;
+  private readonly requests: Counter<'direction' | 'outcome'>;
+  private readonly breaker: Gauge<'direction' | 'state'>;
+
+  constructor(registry: Registry = new Registry()) {
+    this.registry = registry;
+    this.requests = new Counter({
+      name: 'weatherflow_http_boundary_requests_total',
+      help: 'Internal REST boundary requests by direction and outcome.',
+      labelNames: ['direction', 'outcome'],
+      registers: [registry],
+    });
+    this.breaker = new Gauge({
+      name: 'weatherflow_http_boundary_breaker_state',
+      help: 'Internal REST boundary circuit breaker state.',
+      labelNames: ['direction', 'state'],
+      registers: [registry],
+    });
+
+    for (const direction of DIRECTIONS) {
+      for (const outcome of OUTCOMES) {
+        this.requests.inc({ direction, outcome }, 0);
+      }
+      for (const state of STATES) {
+        this.breaker.set({ direction, state }, state === 'closed' ? 1 : 0);
+      }
+    }
+  }
 
   recordRequest(
     direction: HttpBoundaryDirection,
     outcome: HttpBoundaryRequestOutcome,
   ): void {
-    const key = this.requestKey(direction, outcome);
-    this.requestCounts.set(key, (this.requestCounts.get(key) ?? 0) + 1);
+    this.requests.inc({ direction, outcome });
   }
 
   setBreakerState(
     direction: HttpBoundaryDirection,
     state: HttpBoundaryCircuitState,
   ): void {
-    this.breakerStates.set(direction, state);
-  }
-
-  renderPrometheus(): string {
-    const directions: HttpBoundaryDirection[] = [
-      'ingestion_to_api',
-      'api_to_ingestion',
-    ];
-    const outcomes: HttpBoundaryRequestOutcome[] = [
-      'attempt',
-      'success',
-      'failure',
-      'retry',
-      'bulkhead_rejected',
-      'circuit_open',
-    ];
-    const states: HttpBoundaryCircuitState[] = ['closed', 'open', 'half_open'];
-
-    return [
-      '# HELP weatherflow_http_boundary_requests_total Internal REST boundary requests by direction and outcome.',
-      '# TYPE weatherflow_http_boundary_requests_total counter',
-      ...directions.flatMap((direction) =>
-        outcomes.map(
-          (outcome) =>
-            `weatherflow_http_boundary_requests_total{direction="${direction}",outcome="${outcome}"} ${this.getRequestCount(direction, outcome)}`,
-        ),
-      ),
-      '# HELP weatherflow_http_boundary_breaker_state Internal REST boundary circuit breaker state.',
-      '# TYPE weatherflow_http_boundary_breaker_state gauge',
-      ...directions.flatMap((direction) =>
-        states.map(
-          (state) =>
-            `weatherflow_http_boundary_breaker_state{direction="${direction}",state="${state}"} ${this.getBreakerState(direction) === state ? 1 : 0}`,
-        ),
-      ),
-      '',
-    ].join('\n');
-  }
-
-  private getRequestCount(
-    direction: HttpBoundaryDirection,
-    outcome: HttpBoundaryRequestOutcome,
-  ): number {
-    return this.requestCounts.get(this.requestKey(direction, outcome)) ?? 0;
-  }
-
-  private getBreakerState(
-    direction: HttpBoundaryDirection,
-  ): HttpBoundaryCircuitState {
-    return this.breakerStates.get(direction) ?? 'closed';
-  }
-
-  private requestKey(
-    direction: HttpBoundaryDirection,
-    outcome: HttpBoundaryRequestOutcome,
-  ): string {
-    return `${direction}:${outcome}`;
+    for (const candidate of STATES) {
+      this.breaker.set(
+        { direction, state: candidate },
+        candidate === state ? 1 : 0,
+      );
+    }
   }
 }

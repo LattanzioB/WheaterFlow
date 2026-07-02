@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import { NotificationsAppModule } from './notifications-app.module';
 
 function resolveCorsOrigins(): string[] {
@@ -49,7 +50,10 @@ function corsOriginDelegate(allowedOrigins: string[]) {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(NotificationsAppModule);
+  const app = await NestFactory.create(NotificationsAppModule, {
+    bufferLogs: true,
+  });
+  app.useLogger(app.get(Logger));
   const corsOrigins = resolveCorsOrigins();
   app.enableCors({
     origin: corsOriginDelegate(corsOrigins),

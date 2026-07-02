@@ -22,6 +22,7 @@ import {
   WEATHERFLOW_API_HTTP_CLIENT_TOKEN,
 } from './infrastructure/adapters/api-weather-station-catalog.adapter';
 import { HttpBoundaryMetrics } from '@shared/resilience/http-boundary.metrics';
+import { MetricsService } from '@shared/observability';
 import {
   OPENWEATHER_HTTP_CLIENT_TOKEN,
   OPENWEATHER_TIMEOUT_MS_TOKEN,
@@ -32,7 +33,7 @@ import { HealthController } from './infrastructure/http/health.controller';
 import { CurrentWeatherController } from './infrastructure/http/current-weather.controller';
 import { IngestionController } from './infrastructure/http/ingestion.controller';
 import { ManualIngestionTokenGuard } from './infrastructure/http/manual-ingestion-token.guard';
-import { MetricsController } from './infrastructure/http/metrics.controller';
+import { IngestionMetrics } from './infrastructure/metrics/ingestion.metrics';
 import { OpenWeatherResilienceMetrics } from './infrastructure/resilience/openweather-resilience.metrics';
 import {
   OPENWEATHER_BREAKER_FAILURE_THRESHOLD_TOKEN,
@@ -46,16 +47,27 @@ import { IngestionScheduler } from './infrastructure/scheduling/ingestion.schedu
 
 @Module({
   imports: [ConfigModule, ScheduleModule.forRoot()],
-  controllers: [
-    HealthController,
-    IngestionController,
-    CurrentWeatherController,
-    MetricsController,
-  ],
+  controllers: [HealthController, IngestionController, CurrentWeatherController],
   providers: [
     OpenWeatherMapResponseMapper,
-    OpenWeatherResilienceMetrics,
-    HttpBoundaryMetrics,
+    {
+      provide: OpenWeatherResilienceMetrics,
+      inject: [{ token: MetricsService, optional: true }],
+      useFactory: (metrics?: MetricsService): OpenWeatherResilienceMetrics =>
+        new OpenWeatherResilienceMetrics(metrics?.registry),
+    },
+    {
+      provide: HttpBoundaryMetrics,
+      inject: [{ token: MetricsService, optional: true }],
+      useFactory: (metrics?: MetricsService): HttpBoundaryMetrics =>
+        new HttpBoundaryMetrics(metrics?.registry),
+    },
+    {
+      provide: IngestionMetrics,
+      inject: [{ token: MetricsService, optional: true }],
+      useFactory: (metrics?: MetricsService): IngestionMetrics =>
+        new IngestionMetrics(metrics?.registry),
+    },
     RunIngestionCycleService,
     IngestionScheduler,
     ManualIngestionTokenGuard,

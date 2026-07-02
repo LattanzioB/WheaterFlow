@@ -1,5 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { IngestionMetrics } from '../../infrastructure/metrics/ingestion.metrics';
 import { IngestionCycleAlreadyRunningError } from '../../domain/errors/ingestion-cycle.errors';
 import {
   WEATHER_DATA_PROVIDER_TOKEN,
@@ -79,6 +80,8 @@ export class RunIngestionCycleService {
     private readonly measurementSubmitter: MeasurementSubmitter,
     @Inject(OWM_CONCURRENCY_LIMIT_TOKEN)
     private readonly concurrencyLimit: number,
+    @Optional()
+    private readonly metrics?: IngestionMetrics,
   ) {}
 
   async execute(
@@ -125,6 +128,7 @@ export class RunIngestionCycleService {
         results,
       };
 
+      this.metrics?.recordCycle(summary);
       this.logger.log(JSON.stringify({ event: 'ingestion_cycle', ...summary }));
       return summary;
     } finally {

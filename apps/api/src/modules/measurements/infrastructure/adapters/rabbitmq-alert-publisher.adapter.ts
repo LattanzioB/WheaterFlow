@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Optional, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   connect,
@@ -6,7 +6,9 @@ import {
   type ConfirmChannel,
   type Options,
 } from 'amqplib';
+import type { Counter } from 'prom-client';
 import type { ClimateAlertDetectedMessage } from '@contracts/measurements/climate-alert-detected.message';
+import { MetricsService } from '@shared/observability';
 import type { AlertPublisher } from '../../application/ports/alert-publisher.port';
 
 @Injectable()
@@ -15,13 +17,24 @@ export class RabbitMqAlertPublisherAdapter
 {
   private connection?: ChannelModel;
   private channel?: ConfirmChannel;
+  private readonly published?: Counter<'result'>;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @Optional() metrics?: MetricsService,
+  ) {
+    this.published = metrics?.getOrCreateCounter<'result'>({
+      name: 'weatherflow_alerts_published_total',
+      help: 'Climate alerts published to RabbitMQ by result.',
+      labelNames: ['result'],
+    });
+    this.published?.inc({ result: 'success' }, 0);
+    this.published?.inc({ result: 'failure' }, 0);
+  }
 
   async publishClimateAlert(
     message: ClimateAlertDetectedMessage,
   ): Promise<void> {
-    const channel = await this.getChannel();
     const exchange = this.configService.getOrThrow<string>(
       'rabbitmq.alertExchange',
     );
@@ -40,9 +53,16 @@ export class RabbitMqAlertPublisherAdapter
         : {}),
     };
 
-    await channel.assertExchange(exchange, 'topic', { durable: true });
-    channel.publish(exchange, routingKey, payload, publishOptions);
-    await channel.waitForConfirms();
+    try {
+      const channel = await this.getChannel();
+      await channel.assertExchange(exchange, 'topic', { durable: true });
+      channel.publish(exchange, routingKey, payload, publishOptions);
+      await channel.waitForConfirms();
+      this.published?.inc({ result: 'success' });
+    } catch (error) {
+      this.published?.inc({ result: 'failure' });
+      throw error;
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

@@ -44,6 +44,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/weatherflow}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local API auth}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -90,6 +91,7 @@ services:
     environment:
       NODE_ENV: production
       NOTIFICATIONS_PORT: 3001
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/weatherflow}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local Notification service auth}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -128,6 +130,7 @@ services:
     environment:
       NODE_ENV: production
       INGESTION_PORT: 3002
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       OWM_API_KEY: ${OWM_API_KEY:?Set OWM_API_KEY for OpenWeather ingestion}
       OWM_BASE_URL: ${OWM_BASE_URL:-https://api.openweathermap.org}
       OWM_TIMEOUT_MS: ${OWM_TIMEOUT_MS:-10000}
@@ -174,5 +177,66 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # --- Observability stack (opt-in): docker compose --profile observability up ---
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: weatherflow-prometheus
+    profiles: ['observability']
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - weatherflow-prometheus-data:/prometheus
+    ports:
+      - '9090:9090'
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: weatherflow-loki
+    profiles: ['observability']
+    command: ['-config.file=/etc/loki/loki-config.yml']
+    volumes:
+      - ./observability/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - weatherflow-loki-data:/loki
+    ports:
+      - '3100:3100'
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: weatherflow-promtail
+    profiles: ['observability']
+    command: ['-config.file=/etc/promtail/promtail-config.yml']
+    volumes:
+      - ./observability/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: weatherflow-grafana
+    profiles: ['observability']
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - weatherflow-grafana-data:/var/lib/grafana
+    ports:
+      - '3300:3000'
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
 volumes:
   weatherflow-mongo-data:
+  weatherflow-prometheus-data:
+  weatherflow-loki-data:
+  weatherflow-grafana-data:

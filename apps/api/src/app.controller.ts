@@ -1,13 +1,9 @@
-import { Controller, Get, Header } from '@nestjs/common';
-import { HttpBoundaryMetrics } from '@shared/resilience/http-boundary.metrics';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(
-    private readonly appService: AppService,
-    private readonly httpBoundaryMetrics: HttpBoundaryMetrics,
-  ) {}
+  constructor(private readonly appService: AppService) {}
 
   @Get()
   getHello(): string {
@@ -20,11 +16,5 @@ export class AppController {
       service: 'api',
       status: 'ok',
     };
-  }
-
-  @Get('metrics')
-  @Header('Content-Type', 'text/plain; version=0.0.4')
-  getMetrics(): string {
-    return this.httpBoundaryMetrics.renderPrometheus();
   }
 }

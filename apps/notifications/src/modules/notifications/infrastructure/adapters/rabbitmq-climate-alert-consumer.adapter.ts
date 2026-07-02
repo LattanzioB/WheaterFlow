@@ -1,6 +1,7 @@
 import {
   Injectable,
   Logger,
+  Optional,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
@@ -11,21 +12,36 @@ import {
   type ChannelModel,
   type ConsumeMessage,
 } from 'amqplib';
+import type { Counter } from 'prom-client';
 import { validateClimateAlertDetectedMessage } from '@contracts';
+import { MetricsService } from '@shared/observability';
 import { NotificationService } from '../../application/services/notification.service';
 
 @Injectable()
 export class RabbitMqClimateAlertConsumerAdapter
   implements OnModuleInit, OnModuleDestroy
 {
-  private readonly logger = new Logger(RabbitMqClimateAlertConsumerAdapter.name);
+  private readonly logger = new Logger(
+    RabbitMqClimateAlertConsumerAdapter.name,
+  );
   private connection?: ChannelModel;
   private channel?: Channel;
+  private readonly consumed?: Counter<'result'>;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly notificationService: NotificationService,
-  ) {}
+    @Optional() metrics?: MetricsService,
+  ) {
+    this.consumed = metrics?.getOrCreateCounter<'result'>({
+      name: 'weatherflow_rabbitmq_messages_consumed_total',
+      help: 'Climate alert messages consumed from RabbitMQ by result.',
+      labelNames: ['result'],
+    });
+    for (const result of ['processed', 'rejected', 'error'] as const) {
+      this.consumed?.inc({ result }, 0);
+    }
+  }
 
   async onModuleInit(): Promise<void> {
     await this.start();
@@ -84,17 +100,20 @@ export class RabbitMqClimateAlertConsumerAdapter
           `Dead-lettering malformed climate alert message: ${validation.errors.join('; ')}`,
         );
         this.channel.nack(message, false, false);
+        this.consumed?.inc({ result: 'rejected' });
         return;
       }
 
       await this.notificationService.handleClimateAlert(validation.message);
       this.channel.ack(message);
+      this.consumed?.inc({ result: 'processed' });
     } catch (error) {
       this.logger.error(
         'Dead-lettering climate alert message after consumer failure',
         error instanceof Error ? error.stack : String(error),
       );
       this.channel.nack(message, false, false);
+      this.consumed?.inc({ result: 'error' });
     }
   }
 }

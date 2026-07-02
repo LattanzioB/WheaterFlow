@@ -47,7 +47,15 @@ describe('docker-compose distributed environment', () => {
   });
 
   it('should gate the observability stack behind the "observability" profile', () => {
-    for (const name of ['prometheus', 'loki', 'promtail', 'grafana']) {
+    for (const name of [
+      'prometheus',
+      'alertmanager',
+      'cadvisor',
+      'loki',
+      'promtail',
+      'grafana',
+      'jaeger',
+    ]) {
       expect(compose.services[name]).toBeDefined();
       expect(compose.services[name].profiles).toContain('observability');
     }

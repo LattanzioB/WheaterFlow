@@ -190,9 +190,40 @@ services:
       - '--storage.tsdb.retention.time=15d'
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/rules:/etc/prometheus/rules:ro
       - weatherflow-prometheus-data:/prometheus
     ports:
       - '9090:9090'
+    depends_on:
+      - alertmanager
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: weatherflow-alertmanager
+    profiles: ['observability']
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - weatherflow-alertmanager-data:/alertmanager
+    ports:
+      - '9093:9093'
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: weatherflow-cadvisor
+    profiles: ['observability']
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - '8081:8080'
     restart: unless-stopped
 
   loki:
@@ -254,5 +285,6 @@ services:
 volumes:
   weatherflow-mongo-data:
   weatherflow-prometheus-data:
+  weatherflow-alertmanager-data:
   weatherflow-loki-data:
   weatherflow-grafana-data:

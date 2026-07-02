@@ -34,7 +34,7 @@ for climate-alert delivery.
 | Messaging           | RabbitMQ topic exchange for climate alerts                         |
 | Notifications       | Log delivery for local/test runs, Telegram adapter when configured |
 | Tracing             | OpenTelemetry SDK + OTLP/HTTP exporter to Jaeger                   |
-| Local orchestration | Docker Compose for API, Notification service, and RabbitMQ         |
+| Local orchestration | Docker Compose for API, Notification service, Ingestion, RabbitMQ and observability |
 | Testing             | Jest unit tests plus cross-service integration tests               |
 
 ## Delivery II Components
@@ -93,6 +93,8 @@ logic: each service accesses only the collections it owns for its use cases.
   real-time OWM reads to ingestion without persisting the reading.
 - Expose daily and weekly temperature average reports from persisted
   measurements in MongoDB without calling ingestion or OpenWeather.
+- Expose HTTP, process and RabbitMQ publication metrics consumed by the
+  Prometheus/Grafana operational dashboard.
 
 ### Notification Service
 
@@ -104,6 +106,8 @@ logic: each service accesses only the collections it owns for its use cases.
 - Filter subscribers by `stationId` and `alertType`.
 - Resolve concrete delivery targets before invoking channel adapters.
 - Dispatch notifications through the configured notifier adapters.
+- Expose HTTP, process and RabbitMQ consumption metrics consumed by the
+  Prometheus/Grafana operational dashboard.
 
 ### Ingestion Service
 
@@ -138,6 +142,17 @@ logic: each service accesses only the collections it owns for its use cases.
   typed errors instead of returning stale data.
 - Keep application, domain, and infrastructure layers local to `apps/ingestion`.
 - Depend on remote contracts rather than importing API or Notification domain entities.
+- Expose ingestion, OpenWeather, HTTP boundary and process metrics consumed by
+  the Prometheus/Grafana operational dashboard.
+
+### Observability Stack
+
+The optional Compose `observability` profile runs Prometheus, Alertmanager,
+Grafana, Loki, Promtail, cAdvisor and Jaeger. Prometheus scrapes the three
+NestJS services plus cAdvisor, evaluates the versioned rules under
+`observability/prometheus/rules/`, and sends grouped demo notifications to
+Alertmanager. Grafana provisions Prometheus, Loki and Jaeger datasources and
+loads the versioned `WeatherFlow Operaciones` dashboard automatically.
 
 ## Key Flows
 

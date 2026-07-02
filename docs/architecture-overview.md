@@ -89,6 +89,8 @@ logic: each service accesses only the collections it owns for its use cases.
 - Expose `GET /stations/:stationId/reports/temperature/current` as an
   authenticated facade that validates station provider metadata and delegates
   real-time OWM reads to ingestion without persisting the reading.
+- Expose daily and weekly temperature average reports from persisted
+  measurements in MongoDB without calling ingestion or OpenWeather.
 
 ### Notification Service
 
@@ -162,6 +164,21 @@ not persisted.
 
 Sequence source:
 `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`
+
+### Historical Temperature Average Reports
+
+Clients call
+`GET /stations/:stationId/reports/temperature/daily-average` or
+`GET /stations/:stationId/reports/temperature/weekly-average` on the API
+service. The API first validates that the station exists, then asks the
+measurement repository for a MongoDB aggregation over the moving UTC period:
+24 hours for the daily report and 7 days for the weekly report. The aggregation
+matches by `stationId` and `reportedAt`, using the existing compound index, and
+returns the average Celsius temperature plus the sample count.
+
+Unlike the current-temperature report, these endpoints never call ingestion or
+OpenWeather. An empty period is still a successful report: the response includes
+the UTC bounds, `average.value: null`, unit `celsius`, and `sampleCount: 0`.
 
 ### Search and Filtering
 

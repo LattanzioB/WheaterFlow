@@ -579,6 +579,53 @@ reading.
 
 ---
 
+### `GET /stations/:stationId/reports/temperature/daily-average`
+
+**Auth required.** Returns the moving 24 hour average temperature for an
+existing station using only persisted measurements in MongoDB. The API does not
+call OpenWeather or the ingestion service for this report.
+
+The period is evaluated in UTC as `[now - 24h, now]`, inclusive on both bounds.
+Both manual and `openweather` measurements are included.
+
+**Response `200`:**
+
+```json
+{
+  "station": {
+    "id": "station-uuid",
+    "name": "Buenos Aires"
+  },
+  "period": {
+    "from": "2026-06-29T12:00:00.000Z",
+    "to": "2026-06-30T12:00:00.000Z"
+  },
+  "average": {
+    "value": 18.75,
+    "unit": "celsius"
+  },
+  "sampleCount": 12
+}
+```
+
+**Response `200` with empty period:** `average.value` is `null` and
+`sampleCount` is `0`; the UTC period and station metadata are still returned.
+
+**Response `404`:** station does not exist.
+
+---
+
+### `GET /stations/:stationId/reports/temperature/weekly-average`
+
+**Auth required.** Returns the moving 7 day average temperature for an existing
+station using only persisted measurements in MongoDB. The response shape and
+empty-period semantics are the same as the daily average; only the UTC period
+changes to `[now - 7d, now]`.
+
+**Response `404`:** station does not exist.
+
+---
+
 ### Station Object
 
 ```json

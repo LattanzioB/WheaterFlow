@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>WeatherFlow S-03.13 Load Test Baseline</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+        color: #1f2933;
+      }
+      table {
+        border-collapse: collapse;
+        min-width: 42rem;
+      }
+      th,
+      td {
+        border: 1px solid #ccd6dd;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+      }
+      th {
+        background: #eef3f6;
+      }
+      code {
+        background: #eef3f6;
+        padding: 0.1rem 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WeatherFlow S-03.13 Load Test Baseline</h1>
+    <p>Baseline versionado para <code>npm run test:load</code>.</p>
+    <table>
+      <tr>
+        <th>Escenario</th>
+        <th>VUs</th>
+        <th>Duracion</th>
+        <th>Dataset</th>
+      </tr>
+      <tr>
+        <td>sustained_ramp</td>
+        <td>10</td>
+        <td>1m ramp-up, 3m sostenido, 30s ramp-down</td>
+        <td>72 mediciones sinteticas</td>
+      </tr>
+      <tr>
+        <td>spike</td>
+        <td>40</td>
+        <td>20s ramp-up, 40s pico, 20s ramp-down</td>
+        <td>72 mediciones sinteticas + OWM stub</td>
+      </tr>
+      <tr>
+        <td>long_run</td>
+        <td>8</td>
+        <td>2m ramp-up, 10m sostenido, 1m ramp-down</td>
+        <td>72 mediciones sinteticas + OWM stub</td>
+      </tr>
+    </table>
+    <h2>Umbrales</h2>
+    <table>
+      <tr>
+        <th>Metrica</th>
+        <th>Objetivo</th>
+      </tr>
+      <tr>
+        <td>p95 global</td>
+        <td>&lt; 750 ms</td>
+      </tr>
+      <tr>
+        <td>p95 busqueda</td>
+        <td>&lt; 650 ms</td>
+      </tr>
+      <tr>
+        <td>p95 temperatura actual</td>
+        <td>&lt; 900 ms</td>
+      </tr>
+      <tr>
+        <td>p95 promedios</td>
+        <td>&lt; 700 ms</td>
+      </tr>
+      <tr>
+        <td>Tasa de error</td>
+        <td>&lt; 2%</td>
+      </tr>
+      <tr>
+        <td>Throughput</td>
+        <td>&gt; 15 req/s</td>
+      </tr>
+    </table>
+  </body>
+</html>

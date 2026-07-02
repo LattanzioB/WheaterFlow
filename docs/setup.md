@@ -75,6 +75,9 @@ NOTIFICATION_DELIVERY_MODE=log
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_BOT_USERNAME=
 TELEGRAM_WEBHOOK_SECRET=
+LOG_LEVEL=info
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4318/v1/traces
+OTEL_TRACING_ENABLED=true
 ```
 
 ### MongoDB Atlas URI
@@ -107,6 +110,7 @@ Local URLs:
 | Ingestion service health    | `http://localhost:3002/health`                      |
 | API metrics                 | `http://localhost:3000/metrics`                     |
 | Ingestion metrics           | `http://localhost:3002/metrics`                     |
+| Jaeger UI                   | `http://localhost:16686`                            |
 | Manual ingestion trigger    | `POST http://localhost:3002/internal/ingestion/run` |
 | RabbitMQ management UI      | `http://localhost:15672`                            |
 
@@ -189,6 +193,30 @@ and current cache entries. Internal REST boundary metrics are exposed on both
 API and ingestion services as `weatherflow_http_boundary_requests_total` and
 `weatherflow_http_boundary_breaker_state`, labeled by direction
 (`api_to_ingestion` or `ingestion_to_api`).
+
+Distributed tracing is initialized in the API, ingestion and notification
+services. The default Docker configuration exports OpenTelemetry traces through
+OTLP/HTTP to Jaeger at `http://jaeger:4318/v1/traces`; local non-Docker runs can
+override `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` with
+`http://localhost:4318/v1/traces`. HTTP, NestJS, MongoDB and RabbitMQ clients
+are auto-instrumented. The ingestion service propagates W3C `traceparent` when
+it submits measurements to the API, and the API injects the active trace context
+into AMQP headers before RabbitMQ delivers alert messages to notifications.
+Structured logs include `traceId` and `spanId` when a request is inside an
+active span.
+
+To inspect a complete ingestion-to-queue trace:
+
+```bash
+docker compose --profile observability up --build
+curl -X POST http://localhost:3002/internal/ingestion/run \
+  -H "x-ingestion-token: $INGESTION_SYSTEM_TOKEN"
+```
+
+Then open `http://localhost:16686`, select one of
+`weatherflow-ingestion`, `weatherflow-api` or `weatherflow-notifications`, and
+look for a trace containing the OWM HTTP call, ingestion HTTP submit, API
+MongoDB persistence, RabbitMQ publish and notification consumer spans.
 
 ### Production Build
 

@@ -8,7 +8,7 @@ import {
 } from 'amqplib';
 import type { Counter } from 'prom-client';
 import type { ClimateAlertDetectedMessage } from '@contracts/measurements/climate-alert-detected.message';
-import { MetricsService } from '@shared/observability';
+import { injectTraceContext, MetricsService } from '@shared/observability';
 import type { AlertPublisher } from '../../application/ports/alert-publisher.port';
 
 @Injectable()
@@ -48,6 +48,7 @@ export class RabbitMqAlertPublisherAdapter
       messageId: message.messageId,
       timestamp: Math.floor(new Date(message.occurredAt).getTime() / 1000),
       type: 'ClimateAlertDetectedMessage',
+      headers: injectTraceContext(),
       ...(message.correlationId
         ? { correlationId: message.correlationId }
         : {}),

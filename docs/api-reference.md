@@ -126,7 +126,10 @@ The ingestion adapter derives `idempotencyKey` from the station, OWM external
 identifier, and observation timestamp. Repeating the same observation returns
 the existing measurement without another MongoDB row or alert publication.
 The correlation identifier reaches the RabbitMQ message payload and AMQP
-metadata when the reading triggers an alert.
+metadata when the reading triggers an alert. When OpenTelemetry tracing is
+enabled, the HTTP `traceparent` from ingestion is continued by the API and
+injected into AMQP headers so the notification consumer appears in the same
+Jaeger trace.
 The worker protects this write path with a configurable timeout, bulkhead,
 circuit breaker and backoff with jitter. Only `429`, `502`, `503`, `504`,
 timeouts and safe network failures are retried, always with the same

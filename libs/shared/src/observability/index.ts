@@ -4,3 +4,4 @@ export * from './http-metrics.interceptor';
 export * from './logging.options';
 export * from './observability.module';
 export * from './trace-context';
+export * from './tracing';

@@ -69,6 +69,7 @@ describe('RabbitMqClimateAlertConsumerAdapter', () => {
         typeof content === 'string'
           ? Buffer.from(content)
           : Buffer.from(JSON.stringify(content)),
+      properties: { headers: {} },
     }) as ConsumeMessage;
 
   beforeEach(() => {

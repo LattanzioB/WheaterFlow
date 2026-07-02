@@ -20,6 +20,7 @@ Telegram webhook        orchestration         value objects      HTTP clients, T
 | API service (`apps/api`)                    | Auth, user identity facade, stations, measurements, alert detection     | REST controllers, Swagger                                        | Mongo repositories, RabbitMQ alert publisher, Notification service HTTP client, ingestion HTTP client |
 | Notification service (`apps/notifications`) | Notification profiles, subscriptions, delivery channels, alert dispatch | Preference REST controllers, Telegram webhook, RabbitMQ consumer | Mongo notification-profile repository, log notifier, Telegram notifier         |
 | Ingestion service (`apps/ingestion`)        | Scheduled and synchronous external weather acquisition                   | Health endpoint, cron scheduler, protected manual trigger, protected current-weather endpoint | OpenWeather Current Weather adapter and API station-catalog HTTP adapter       |
+| Shared observability (`libs/shared`)         | Structured logs, metrics and OpenTelemetry bootstrap                    | Nest global module and per-app tracing side-effect imports       | OTLP exporter to Jaeger, auto-instrumented HTTP, NestJS, MongoDB and RabbitMQ  |
 
 The former Delivery I modular monolith is historical context. Delivery II keeps
 the same internal layer discipline, but the notification capability is now a
@@ -162,9 +163,11 @@ policy and clear `502`/`503`/`504` mapping are infrastructure concerns.
 3. RecordMeasurementService loads station alert settings.
 4. Measurement.create(...) evaluates alert rules in the domain.
 5. MongoMeasurementRepository persists the measurement in MongoDB Atlas.
-6. RabbitMqAlertPublisherAdapter publishes ClimateAlertDetectedMessage.
+6. RabbitMqAlertPublisherAdapter injects the active trace context into AMQP
+   headers and publishes ClimateAlertDetectedMessage.
 7. RabbitMQ delivers the message to the Notification service queue.
-8. RabbitMqClimateAlertConsumerAdapter validates the payload.
+8. RabbitMqClimateAlertConsumerAdapter extracts the trace context and validates
+   the payload.
 9. NotificationService loads notification profiles by stationId.
 10. NotificationService filters by station and alert type.
 11. NotificationService resolves log/Telegram delivery targets.

@@ -14,7 +14,10 @@ import {
 } from 'amqplib';
 import type { Counter } from 'prom-client';
 import { validateClimateAlertDetectedMessage } from '@contracts';
-import { MetricsService } from '@shared/observability';
+import {
+  MetricsService,
+  runWithExtractedTraceContext,
+} from '@shared/observability';
 import { NotificationService } from '../../application/services/notification.service';
 
 @Injectable()
@@ -104,7 +107,10 @@ export class RabbitMqClimateAlertConsumerAdapter
         return;
       }
 
-      await this.notificationService.handleClimateAlert(validation.message);
+      const validMessage = validation.message;
+      await runWithExtractedTraceContext(message.properties.headers, () =>
+        this.notificationService.handleClimateAlert(validMessage),
+      );
       this.channel.ack(message);
       this.consumed?.inc({ result: 'processed' });
     } catch (error) {

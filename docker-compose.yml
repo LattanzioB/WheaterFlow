@@ -45,6 +45,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/weatherflow}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local API auth}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -92,6 +93,7 @@ services:
       NODE_ENV: production
       NOTIFICATIONS_PORT: 3001
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/weatherflow}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET for local Notification service auth}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -131,6 +133,7 @@ services:
       NODE_ENV: production
       INGESTION_PORT: 3002
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://jaeger:4318/v1/traces}
       OWM_API_KEY: ${OWM_API_KEY:?Set OWM_API_KEY for OpenWeather ingestion}
       OWM_BASE_URL: ${OWM_BASE_URL:-https://api.openweathermap.org}
       OWM_TIMEOUT_MS: ${OWM_TIMEOUT_MS:-10000}
@@ -233,6 +236,19 @@ services:
     depends_on:
       - prometheus
       - loki
+      - jaeger
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    container_name: weatherflow-jaeger
+    profiles: ['observability']
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    ports:
+      - '16686:16686'
+      - '4317:4317'
+      - '4318:4318'
     restart: unless-stopped
 
 volumes:

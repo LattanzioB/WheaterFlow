@@ -83,6 +83,7 @@ describe('RabbitMqAlertPublisherAdapter', () => {
         messageId: 'message-1',
         timestamp: Math.floor(new Date(message.occurredAt).getTime() / 1000),
         type: 'ClimateAlertDetectedMessage',
+        headers: {},
         correlationId: 'cycle-1',
       },
     );

@@ -14,7 +14,8 @@ independently runnable NestJS backend applications:
   configuration, schedules bounded-concurrency acquisition cycles, and contains
   a reusable Current Weather adapter, protects the OpenWeather boundary with
   timeout, circuit breaker, bulkhead and request cache, and submits normalized
-  observations to the API domain pipeline with idempotency and correlation.
+  observations to the API domain pipeline with idempotency, correlation and
+  distributed trace propagation.
 
 The services keep the Delivery I hexagonal and DDD structure inside each
 component. They communicate through explicit remote boundaries instead of in
@@ -32,6 +33,7 @@ for climate-alert delivery.
 | Database            | MongoDB Atlas through Mongoose ODM                                 |
 | Messaging           | RabbitMQ topic exchange for climate alerts                         |
 | Notifications       | Log delivery for local/test runs, Telegram adapter when configured |
+| Tracing             | OpenTelemetry SDK + OTLP/HTTP exporter to Jaeger                   |
 | Local orchestration | Docker Compose for API, Notification service, and RabbitMQ         |
 | Testing             | Jest unit tests plus cross-service integration tests               |
 
@@ -121,7 +123,7 @@ logic: each service accesses only the collections it owns for its use cases.
 - Submit normalized observations through the `MeasurementSubmitter` port and
   protected API REST adapter.
 - Derive deterministic idempotency keys from OWM observations and propagate the
-  cycle identifier through HTTP and RabbitMQ.
+  cycle identifier plus W3C trace context through HTTP and RabbitMQ.
 - Protect the ingestion-to-API write boundary with configurable timeout,
   bulkhead, circuit breaker, safe retries, backoff with jitter and Prometheus
   metrics.
@@ -150,6 +152,13 @@ reading and include its age in the result; manual or synchronous requests keep
 the typed failure. Successful readings are sent through the authenticated
 `MeasurementSubmitter` REST adapter to `RecordMeasurementService`; the cycle
 emits one structured summary containing the persisted measurement.
+
+OpenTelemetry auto-instrumentation creates the cross-process trace for HTTP,
+NestJS, MongoDB and RabbitMQ work. Ingestion sends `traceparent` to the API over
+HTTP. The API injects the active trace context into AMQP headers when it
+publishes `ClimateAlertDetectedMessage`, and the Notification service extracts
+those headers before invoking the alert handling use case. Logs emitted inside
+that path include the active `traceId` and `spanId`.
 
 The REST boundary from ingestion to API retries only transient safe failures
 (`429`, `502`, `503`, `504`, timeouts and network errors). Retries reuse the

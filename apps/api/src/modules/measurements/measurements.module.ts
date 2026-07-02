@@ -5,6 +5,7 @@ import {
   MEASUREMENT_REPOSITORY_TOKEN,
 } from '@shared/tokens/injection-tokens';
 import { StationsModule } from '../stations/stations.module';
+import { GetTemperatureAverageReportService } from './application/services/get-temperature-average-report.service';
 import { QueryMeasurementsService } from './application/services/query-measurements.service';
 import { RecordMeasurementService } from './application/services/record-measurement.service';
 import { RabbitMqAlertPublisherAdapter } from './infrastructure/adapters/rabbitmq-alert-publisher.adapter';
@@ -15,6 +16,7 @@ import {
 } from './infrastructure/persistence/measurement.schema';
 import { MeasurementsController } from './interface/controllers/measurements.controller';
 import { InternalIngestionMeasurementsController } from './interface/controllers/internal-ingestion-measurements.controller';
+import { TemperatureAverageReportsController } from './interface/controllers/temperature-average-reports.controller';
 import { IngestionSystemTokenGuard } from '../../shared/guards/ingestion-system-token.guard';
 import {
   WeatherStationPersistenceModel,
@@ -38,10 +40,12 @@ import {
   controllers: [
     MeasurementsController,
     InternalIngestionMeasurementsController,
+    TemperatureAverageReportsController,
   ],
   providers: [
     RecordMeasurementService,
     QueryMeasurementsService,
+    GetTemperatureAverageReportService,
     IngestionSystemTokenGuard,
     {
       provide: MEASUREMENT_REPOSITORY_TOKEN,

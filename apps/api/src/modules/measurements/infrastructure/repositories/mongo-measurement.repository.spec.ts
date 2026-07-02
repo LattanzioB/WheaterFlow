@@ -177,6 +177,79 @@ describe('MongoMeasurementRepository', () => {
     expect(measurements[0].getStationId()).toBe('station-1');
   });
 
+  it('aggregates average temperature using station and reportedAt bounds', async () => {
+    const measurementModel = buildModel();
+    const stationModel = buildModel();
+    const aggregateQuery = {
+      exec: jest.fn().mockResolvedValue([{ average: 18.75, sampleCount: 2 }]),
+    };
+    const repository = new MongoMeasurementRepository(
+      measurementModel,
+      stationModel,
+    );
+
+    measurementModel.aggregate.mockReturnValue(aggregateQuery);
+
+    await expect(
+      repository.averageTemperatureForPeriod({
+        stationId: 'station-1',
+        from: new Date('2026-06-29T12:00:00.000Z'),
+        to: new Date('2026-06-30T12:00:00.000Z'),
+      }),
+    ).resolves.toEqual({ average: 18.75, sampleCount: 2 });
+    expect(measurementModel.aggregate).toHaveBeenCalledWith([
+      {
+        $match: {
+          stationId: 'station-1',
+          reportedAt: {
+            $gte: new Date('2026-06-29T12:00:00.000Z'),
+            $lte: new Date('2026-06-30T12:00:00.000Z'),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          average: {
+            $avg: '$temperature',
+          },
+          sampleCount: {
+            $sum: 1,
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          average: 1,
+          sampleCount: 1,
+        },
+      },
+    ]);
+  });
+
+  it('returns a null average and zero samples when the period is empty', async () => {
+    const measurementModel = buildModel();
+    const stationModel = buildModel();
+    const aggregateQuery = {
+      exec: jest.fn().mockResolvedValue([]),
+    };
+    const repository = new MongoMeasurementRepository(
+      measurementModel,
+      stationModel,
+    );
+
+    measurementModel.aggregate.mockReturnValue(aggregateQuery);
+
+    await expect(
+      repository.averageTemperatureForPeriod({
+        stationId: 'station-1',
+        from: new Date('2026-06-29T12:00:00.000Z'),
+        to: new Date('2026-06-30T12:00:00.000Z'),
+      }),
+    ).resolves.toEqual({ average: null, sampleCount: 0 });
+  });
+
   it('atomically inserts an idempotent measurement only once', async () => {
     const measurementModel = buildModel();
     const stationModel = buildModel();

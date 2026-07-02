@@ -43,7 +43,7 @@ RabbitMQ y despacho de notificaciones.
 | S-03.7  | Resiliencia en la frontera OpenWeatherMap             | completada |
 | S-03.8  | Resiliencia en fronteras API ↔ ingesta                | completada |
 | S-03.9  | Reporte de temperatura actual (OWM en tiempo real)    | completada |
-| S-03.10 | Reportes de promedio diario y semanal (MongoDB)       | pendiente  |
+| S-03.10 | Reportes de promedio diario y semanal (MongoDB)       | completada |
 | S-03.11 | Agregación de logs y métricas                         | pendiente  |
 | S-03.12 | Trazabilidad distribuida hasta la cola                | pendiente  |
 | S-03.13 | Pruebas de carga de consultas y reportes              | pendiente  |

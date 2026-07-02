@@ -64,7 +64,7 @@ describe('ApiToIngestionCurrentWeatherClient', () => {
     await expect(client.getCurrentWeather(query)).resolves.toEqual(reading);
 
     expect(httpClient.get).toHaveBeenCalledTimes(2);
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_http_boundary_requests_total{direction="api_to_ingestion",outcome="retry"} 1',
     );
   });
@@ -105,7 +105,7 @@ describe('ApiToIngestionCurrentWeatherClient', () => {
     );
     releaseRequest();
     await firstRequest;
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_http_boundary_requests_total{direction="api_to_ingestion",outcome="bulkhead_rejected"} 1',
     );
   });
@@ -129,7 +129,7 @@ describe('ApiToIngestionCurrentWeatherClient', () => {
     await expect(client.getCurrentWeather(query)).rejects.toBeInstanceOf(
       ApiToIngestionCircuitOpenError,
     );
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_http_boundary_breaker_state{direction="api_to_ingestion",state="open"} 1',
     );
   });

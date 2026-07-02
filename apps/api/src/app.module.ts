@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ObservabilityModule } from '@shared/observability';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -34,6 +35,7 @@ import { ApiIngestionModule } from './shared/ingestion/api-ingestion.module';
       }),
     }),
     EventEmitterModule.forRoot(),
+    ObservabilityModule.forRoot('api'),
     AuthModule,
     UsersModule,
     StationsModule,

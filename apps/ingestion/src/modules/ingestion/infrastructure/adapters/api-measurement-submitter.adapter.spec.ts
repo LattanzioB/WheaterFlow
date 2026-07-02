@@ -132,7 +132,7 @@ describe('ApiMeasurementSubmitterAdapter', () => {
       }),
       expect.any(Object),
     );
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_http_boundary_requests_total{direction="ingestion_to_api",outcome="retry"} 1',
     );
   });
@@ -180,7 +180,7 @@ describe('ApiMeasurementSubmitterAdapter', () => {
     );
     releaseRequest();
     await firstRequest;
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_http_boundary_requests_total{direction="ingestion_to_api",outcome="bulkhead_rejected"} 1',
     );
   });
@@ -204,7 +204,7 @@ describe('ApiMeasurementSubmitterAdapter', () => {
     await expect(adapter.submitMeasurement(command)).rejects.toBeInstanceOf(
       WeatherFlowApiCircuitOpenError,
     );
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_http_boundary_breaker_state{direction="ingestion_to_api",state="open"} 1',
     );
   });

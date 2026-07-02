@@ -12,6 +12,7 @@ type ComposeService = {
   healthcheck?: unknown;
   image?: string;
   ports?: string[];
+  profiles?: string[];
 };
 
 type ComposeFile = {
@@ -30,7 +31,11 @@ describe('docker-compose distributed environment', () => {
   const compose = readCompose();
 
   it('should define API, notifications, ingestion, web, RabbitMQ, and local MongoDB', () => {
-    expect(Object.keys(compose.services).sort()).toEqual([
+    const coreServices = Object.entries(compose.services)
+      .filter(([, service]) => !service.profiles?.includes('observability'))
+      .map(([name]) => name)
+      .sort();
+    expect(coreServices).toEqual([
       'api',
       'ingestion',
       'mongo',
@@ -39,6 +44,13 @@ describe('docker-compose distributed environment', () => {
       'web',
     ]);
     expect(compose.services.mongo.image).toBe('mongo:7');
+  });
+
+  it('should gate the observability stack behind the "observability" profile', () => {
+    for (const name of ['prometheus', 'loki', 'promtail', 'grafana']) {
+      expect(compose.services[name]).toBeDefined();
+      expect(compose.services[name].profiles).toContain('observability');
+    }
   });
 
   it('should build API, notifications, ingestion, and web from separate Dockerfiles', () => {

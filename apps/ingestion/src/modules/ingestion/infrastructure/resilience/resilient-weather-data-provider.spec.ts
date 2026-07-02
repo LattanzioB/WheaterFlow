@@ -41,7 +41,7 @@ describe('ResilientWeatherDataProvider', () => {
       ageMs: 5_000,
       ttlMs: 300_000,
     });
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_owm_requests_total{outcome="cache_hit"} 1',
     );
 
@@ -53,7 +53,10 @@ describe('ResilientWeatherDataProvider', () => {
     delegate.getCurrentWeather.mockRejectedValue(
       new WeatherDataProviderTimeoutError(5_000),
     );
-    const provider = buildProvider({ failureThreshold: 2, breakerOpenMs: 30_000 });
+    const provider = buildProvider({
+      failureThreshold: 2,
+      breakerOpenMs: 30_000,
+    });
 
     await expect(provider.getCurrentWeather(location)).rejects.toBeInstanceOf(
       WeatherDataProviderTimeoutError,
@@ -65,7 +68,7 @@ describe('ResilientWeatherDataProvider', () => {
       WeatherDataProviderCircuitOpenError,
     );
     expect(delegate.getCurrentWeather).toHaveBeenCalledTimes(2);
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_owm_breaker_state{state="open"} 1',
     );
 
@@ -73,7 +76,7 @@ describe('ResilientWeatherDataProvider', () => {
     delegate.getCurrentWeather.mockResolvedValueOnce(reading);
 
     await expect(provider.getCurrentWeather(location)).resolves.toBe(reading);
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_owm_breaker_state{state="closed"} 1',
     );
 
@@ -96,7 +99,7 @@ describe('ResilientWeatherDataProvider', () => {
     );
     release();
     await expect(firstRequest).resolves.toBe(reading);
-    expect(metrics.renderPrometheus()).toContain(
+    expect(await metrics.registry.metrics()).toContain(
       'weatherflow_owm_requests_total{outcome="bulkhead_rejected"} 1',
     );
   });

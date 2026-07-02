@@ -4,6 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from '@shared/config/configuration';
 import { notificationsEnvValidationSchema } from '@shared/config/env-validation';
+import { ObservabilityModule } from '@shared/observability';
 import { HealthController } from './health.controller';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
@@ -27,6 +28,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
       }),
     }),
     EventEmitterModule.forRoot(),
+    ObservabilityModule.forRoot('notifications'),
     NotificationsModule,
   ],
   controllers: [HealthController],

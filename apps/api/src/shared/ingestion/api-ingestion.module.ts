@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { HttpBoundaryMetrics } from '@shared/resilience/http-boundary.metrics';
+import { MetricsService } from '@shared/observability';
 import {
   API_TO_INGESTION_BREAKER_FAILURE_THRESHOLD_TOKEN,
   API_TO_INGESTION_BREAKER_OPEN_MS_TOKEN,
@@ -15,7 +16,12 @@ import {
 @Global()
 @Module({
   providers: [
-    HttpBoundaryMetrics,
+    {
+      provide: HttpBoundaryMetrics,
+      inject: [{ token: MetricsService, optional: true }],
+      useFactory: (metrics?: MetricsService): HttpBoundaryMetrics =>
+        new HttpBoundaryMetrics(metrics?.registry),
+    },
     ApiToIngestionCurrentWeatherClient,
     {
       provide: API_TO_INGESTION_HTTP_CLIENT_TOKEN,

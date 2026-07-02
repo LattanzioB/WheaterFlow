@@ -61,6 +61,7 @@ Docker Compose starts RabbitMQ plus separate API, Notification, Ingestion, and W
 - Notification service health: `http://localhost:3001/health`
 - Ingestion service health: `http://localhost:3002/health`
 - Manual ingestion trigger: `POST http://localhost:3002/internal/ingestion/run`
+- Prometheus metrics: `http://localhost:3000/metrics`, `http://localhost:3001/metrics`, `http://localhost:3002/metrics`
 - RabbitMQ management UI: `http://localhost:15672`
 
 API startup idempotently creates a non-interactive system owner plus default
@@ -174,6 +175,80 @@ curl http://localhost:3002/health
 ```
 
 Open `http://localhost:15672` and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` from `.env`.
+
+## Observability (S-03.11)
+
+The three services emit structured JSON logs and Prometheus metrics. Logs and
+metrics are aggregated by an opt-in observability stack (Prometheus, Loki,
+Promtail, Grafana) started with a Compose profile so the day-to-day workflow
+stays lightweight.
+
+### Start the stack
+
+```bash
+docker compose --profile observability up --build
+```
+
+| Tool       | URL                     | Notes                                              |
+| ---------- | ----------------------- | -------------------------------------------------- |
+| Grafana    | `http://localhost:3300` | Login `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` (`admin`/`admin` by default). Prometheus + Loki datasources and the "WeatherFlow Overview" dashboard are provisioned automatically. |
+| Prometheus | `http://localhost:9090` | Scrapes `/metrics` from api, notifications and ingestion every 15s. |
+| Loki       | `http://localhost:3100` | Log store queried from Grafana Explore.            |
+
+### Structured logs
+
+Every service logs one JSON object per line (via `nestjs-pino`) including
+`service`, `correlationId`, `level`, and `traceId`/`spanId` once distributed
+tracing is wired (S-03.12). The `x-correlation-id` request header is honored and
+echoed back on the response so a request can be traced across service hops.
+Promtail tails the Docker container logs and ships them to Loki with a `service`
+label.
+
+Example LogQL queries in Grafana Explore:
+
+```logql
+{service="ingestion"} | json | level="error"
+{service="api"} | json | correlationId="<id>"
+```
+
+### Metrics endpoints
+
+Each service exposes Prometheus metrics at `GET /metrics`. Node.js
+process/hardware metrics (`process_*`, `nodejs_*`) are included alongside the
+custom WeatherFlow metrics below.
+
+| Metric                                              | Type      | Labels                        | Meaning                                              |
+| --------------------------------------------------- | --------- | ----------------------------- | ---------------------------------------------------- |
+| `weatherflow_http_server_requests_total`            | counter   | `method`, `route`, `status_code` | Inbound HTTP requests (route = matched pattern).  |
+| `weatherflow_http_server_request_duration_seconds`  | histogram | `method`, `route`, `status_code` | Inbound HTTP request latency.                     |
+| `weatherflow_owm_requests_total`                    | counter   | `outcome`                     | OpenWeather boundary requests by outcome.            |
+| `weatherflow_owm_failures_total`                    | counter   | `code`                        | OpenWeather failures by typed error code.            |
+| `weatherflow_owm_breaker_state`                     | gauge     | `state`                       | OpenWeather circuit breaker state (1 = active).      |
+| `weatherflow_owm_cache_entries`                     | gauge     | –                             | Valid cached OpenWeather readings.                   |
+| `weatherflow_http_boundary_requests_total`          | counter   | `direction`, `outcome`        | Internal API ↔ ingestion REST requests.              |
+| `weatherflow_http_boundary_breaker_state`           | gauge     | `direction`, `state`          | Internal REST circuit breaker state.                 |
+| `weatherflow_ingestion_cycles_total`                | counter   | `trigger`, `result`           | Ingestion cycles by trigger and overall result.      |
+| `weatherflow_ingestion_stations_total`              | counter   | `trigger`, `status`           | Stations processed per cycle by outcome.             |
+| `weatherflow_ingestion_cycle_duration_seconds`      | histogram | `trigger`                     | Ingestion cycle duration.                            |
+| `weatherflow_measurements_ingested_total`           | counter   | `source`, `status`            | Measurements submitted to the domain pipeline.       |
+| `weatherflow_alerts_published_total`                | counter   | `result`                      | Climate alerts published to RabbitMQ (api).          |
+| `weatherflow_rabbitmq_messages_consumed_total`      | counter   | `result`                      | Climate alert messages consumed (notifications).     |
+
+Example PromQL queries:
+
+```promql
+sum by (service) (rate(weatherflow_http_server_requests_total[5m]))
+histogram_quantile(0.95, sum by (service, le) (rate(weatherflow_http_server_request_duration_seconds_bucket[5m])))
+sum by (result) (rate(weatherflow_alerts_published_total[15m]))
+```
+
+### Cardinality control
+
+Labels are intentionally bounded to keep time-series cardinality low: HTTP
+metrics use the matched **route pattern** (e.g. `/stations/:id`) instead of raw
+URLs, and business metrics use small enumerations (`outcome`, `status`,
+`result`, `trigger`, `direction`, `state`). The per-service `service` label is
+applied globally as a default label rather than on each metric.
 
 ## Testing
 

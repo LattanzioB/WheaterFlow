@@ -1,0 +1,91 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "schemaVersion": 39,
+  "title": "WeatherFlow Overview",
+  "tags": ["weatherflow"],
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP request rate by service",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(weatherflow_http_server_requests_total[5m]))",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP p95 latency (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (service, le) (rate(weatherflow_http_server_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "OpenWeather requests by outcome",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(weatherflow_owm_requests_total[5m]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Breaker state (1 = active)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "weatherflow_owm_breaker_state",
+          "legendFormat": "owm {{state}}"
+        },
+        {
+          "expr": "weatherflow_http_boundary_breaker_state",
+          "legendFormat": "{{direction}} {{state}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Measurements ingested / Alerts published",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(weatherflow_measurements_ingested_total[15m]))",
+          "legendFormat": "ingested {{status}}"
+        },
+        {
+          "expr": "sum by (result) (rate(weatherflow_alerts_published_total[15m]))",
+          "legendFormat": "alerts {{result}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Process resident memory by service",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    }
+  ]
+}

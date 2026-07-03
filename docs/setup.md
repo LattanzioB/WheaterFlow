@@ -111,6 +111,10 @@ Local URLs:
 | Ingestion service health    | `http://localhost:3002/health`                      |
 | API metrics                 | `http://localhost:3000/metrics`                     |
 | Ingestion metrics           | `http://localhost:3002/metrics`                     |
+| Grafana                     | `http://localhost:3300`                             |
+| Prometheus                  | `http://localhost:9090`                             |
+| Alertmanager                | `http://localhost:9093`                             |
+| cAdvisor                    | `http://localhost:8081`                             |
 | Jaeger UI                   | `http://localhost:16686`                            |
 | Manual ingestion trigger    | `POST http://localhost:3002/internal/ingestion/run` |
 | RabbitMQ management UI      | `http://localhost:15672`                            |
@@ -218,6 +222,13 @@ Then open `http://localhost:16686`, select one of
 `weatherflow-ingestion`, `weatherflow-api` or `weatherflow-notifications`, and
 look for a trace containing the OWM HTTP call, ingestion HTTP submit, API
 MongoDB persistence, RabbitMQ publish and notification consumer spans.
+
+The observability profile also provisions Grafana with Prometheus and Loki,
+scrapes container metrics through cAdvisor, loads
+`observability/grafana/provisioning/dashboards/weatherflow-overview.json`, and
+routes Prometheus alerts to Alertmanager. The operational runbook in
+`observability/README.md` explains each panel, the alert thresholds, the demo
+webhook route, grouping/silence behavior, and reproducible alert tests.
 
 ### Production Build
 

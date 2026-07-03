@@ -1,91 +1,201 @@
 {
   "annotations": { "list": [] },
   "editable": true,
+  "refresh": "15s",
   "schemaVersion": 39,
-  "title": "WeatherFlow Overview",
-  "tags": ["weatherflow"],
+  "title": "WeatherFlow Operaciones",
+  "tags": ["weatherflow", "operaciones", "e-03"],
   "time": { "from": "now-1h", "to": "now" },
   "templating": { "list": [] },
+  "timezone": "browser",
   "panels": [
     {
-      "type": "timeseries",
-      "title": "HTTP request rate by service",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "type": "stat",
+      "title": "Servicios scrapeados",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum by (service) (rate(weatherflow_http_server_requests_total[5m]))",
-          "legendFormat": "{{service}}"
+          "expr": "up{job=~\"weatherflow-api|weatherflow-notifications|weatherflow-ingestion\"}",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN" }, "1": { "text": "UP" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU por contenedor",
+      "gridPos": { "h": 7, "w": 9, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"weatherflow-.*\", image!=\"\"}[5m]))",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "cores" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Memoria por contenedor",
+      "gridPos": { "h": 7, "w": 9, "x": 15, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "container_memory_working_set_bytes{name=~\"weatherflow-.*\", image!=\"\"}",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Reinicios aproximados por contenedor",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "changes(container_start_time_seconds{name=~\"weatherflow-.*\", image!=\"\"}[1h])",
+          "legendFormat": "{{name}}"
         }
       ]
     },
     {
       "type": "timeseries",
-      "title": "HTTP p95 latency (s)",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "title": "Requests por endpoint",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (service, le) (rate(weatherflow_http_server_request_duration_seconds_bucket[5m])))",
-          "legendFormat": "{{service}}"
+          "expr": "sum by (job, method, route) (rate(weatherflow_http_server_requests_total[5m]))",
+          "legendFormat": "{{job}} {{method}} {{route}}"
         }
-      ]
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
     },
     {
       "type": "timeseries",
-      "title": "OpenWeather requests by outcome",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "title": "Errores por endpoint",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum by (outcome) (rate(weatherflow_owm_requests_total[5m]))",
-          "legendFormat": "{{outcome}}"
+          "expr": "sum by (job, method, route, status_code) (rate(weatherflow_http_server_requests_total{status_code=~\"5..\"}[5m]))",
+          "legendFormat": "{{job}} {{method}} {{route}} {{status_code}}"
         }
-      ]
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "p95 por endpoint",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (job, method, route, le) (rate(weatherflow_http_server_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{job}} {{method}} {{route}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Mediciones OWM por minuto",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(weatherflow_measurements_ingested_total{source=\"openweather\"}[5m]) * 60)",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "opm" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Errores OWM",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (code) (rate(weatherflow_owm_failures_total[5m]))",
+          "legendFormat": "{{code}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] }
     },
     {
       "type": "stat",
-      "title": "Breaker state (1 = active)",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "title": "Breakers activos",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "weatherflow_owm_breaker_state",
+          "expr": "weatherflow_owm_breaker_state{state!=\"closed\"}",
           "legendFormat": "owm {{state}}"
         },
         {
-          "expr": "weatherflow_http_boundary_breaker_state",
+          "expr": "weatherflow_http_boundary_breaker_state{state!=\"closed\"}",
           "legendFormat": "{{direction}} {{state}}"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }] }
+        },
+        "overrides": []
+      }
     },
     {
       "type": "timeseries",
-      "title": "Measurements ingested / Alerts published",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "title": "RabbitMQ alertas publicadas y consumidas",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum by (status) (rate(weatherflow_measurements_ingested_total[15m]))",
-          "legendFormat": "ingested {{status}}"
+          "expr": "sum by (result) (rate(weatherflow_alerts_published_total[5m]))",
+          "legendFormat": "published {{result}}"
         },
         {
-          "expr": "sum by (result) (rate(weatherflow_alerts_published_total[15m]))",
-          "legendFormat": "alerts {{result}}"
+          "expr": "sum by (result) (rate(weatherflow_rabbitmq_messages_consumed_total[5m]))",
+          "legendFormat": "consumed {{result}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Alertas Prometheus activas",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 31 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (alertname, severity) (ALERTS{alertstate=\"firing\", team=\"weatherflow\"})",
+          "legendFormat": "{{severity}} {{alertname}}"
         }
       ]
     },
     {
-      "type": "timeseries",
-      "title": "Process resident memory by service",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "type": "logs",
+      "title": "Logs operativos WeatherFlow",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 31 },
+      "datasource": { "type": "loki", "uid": "loki" },
       "targets": [
         {
-          "expr": "process_resident_memory_bytes",
-          "legendFormat": "{{service}}"
+          "expr": "{service=~\"weatherflow-api|weatherflow-ingestion|weatherflow-notifications\"}",
+          "refId": "A"
         }
-      ]
+      ],
+      "options": { "showTime": true, "showLabels": false, "wrapLogMessage": true }
     }
   ]
 }

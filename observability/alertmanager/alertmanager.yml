@@ -1,0 +1,26 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: demo-log
+  group_by: ['alertname', 'service', 'job', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 2h
+  routes:
+    - receiver: demo-log
+      matchers:
+        - team="weatherflow"
+
+receivers:
+  - name: demo-log
+    webhook_configs:
+      - url: http://host.docker.internal:9099/alerts
+        send_resolved: true
+
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ['alertname', 'job']

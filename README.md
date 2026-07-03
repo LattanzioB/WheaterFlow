@@ -61,7 +61,13 @@ Docker Compose starts RabbitMQ plus separate API, Notification, Ingestion, and W
 - Notification service health: `http://localhost:3001/health`
 - Ingestion service health: `http://localhost:3002/health`
 - Manual ingestion trigger: `POST http://localhost:3002/internal/ingestion/run`
+- Current temperature report: `GET http://localhost:3000/stations/:stationId/reports/temperature/current`
+- Daily/weekly reports: `GET http://localhost:3000/stations/:stationId/reports/temperature/daily-average` and `/weekly-average`
 - Prometheus metrics: `http://localhost:3000/metrics`, `http://localhost:3001/metrics`, `http://localhost:3002/metrics`
+- Grafana: `http://localhost:3300`
+- Prometheus: `http://localhost:9090`
+- Alertmanager: `http://localhost:9093`
+- Jaeger: `http://localhost:16686`
 - RabbitMQ management UI: `http://localhost:15672`
 
 API startup idempotently creates a non-interactive system owner plus default
@@ -72,6 +78,10 @@ Scheduled and manual ingestion cycles submit each normalized OWM observation to
 the protected API measurement endpoint. The API reuses the normal measurement
 domain pipeline, deduplicates retries, and propagates the cycle correlation ID
 to RabbitMQ when an alert is detected.
+
+For the full Delivery III review path, including C4 diagrams, sequence
+diagrams, resiliency boundaries, observability artifacts, load-test evidence and
+demo script, see [`docs/delivery-iii-demo.md`](docs/delivery-iii-demo.md).
 
 ## Available Scripts
 
@@ -93,6 +103,8 @@ to RabbitMQ when an alert is detected.
 | `npm run test:int:notifications`   | Run the in-app notification fanout integration test                                        |
 | `npm run test:cov`                 | Run tests with coverage                                                                    |
 | `npm run format`                   | Format source and test files with Prettier                                                 |
+| `npm run test:load`                | Run k6 load scenarios for search and reports                                               |
+| `npm run test:load:owm-stub`       | Start the local OpenWeather stub used by current-temperature load tests                    |
 
 ## Project Structure
 
@@ -175,6 +187,26 @@ curl http://localhost:3002/health
 ```
 
 Open `http://localhost:15672` and sign in with `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` from `.env`.
+
+## Delivery III Demo
+
+Start the complete review stack:
+
+```bash
+docker compose --profile observability up --build
+```
+
+Recommended walkthrough:
+
+1. Open Swagger at `http://localhost:3000/api/docs` and authenticate.
+2. Confirm default OpenWeather stations exist: UNQ, Buenos Aires and Bariloche.
+3. Trigger ingestion manually with `POST http://localhost:3002/internal/ingestion/run` and `x-ingestion-token`.
+4. Query current temperature, daily average, weekly average and measurement search from Swagger.
+5. Open Grafana (`http://localhost:3300`), Prometheus (`http://localhost:9090`), Alertmanager (`http://localhost:9093`) and Jaeger (`http://localhost:16686`) to review metrics, alerts and traces.
+
+Load-test baselines and the one-week synthetic dataset evidence are versioned
+under `docs/load-tests/`. The detailed demo and evidence checklist is in
+[`docs/delivery-iii-demo.md`](docs/delivery-iii-demo.md).
 
 ## Observability (S-03.11)
 

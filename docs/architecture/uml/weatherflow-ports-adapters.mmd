@@ -64,6 +64,7 @@ class IMeasurementRepository["IMeasurementRepository (Port)"] {
   +findById(id)
   +findByStationId(stationId)
   +findLatestByStationIds(stationIds)
+  +averageTemperatureForPeriod(stationId, from, to)
   +save(measurement)
   +delete(id)
   +findWithFilters(filters)
@@ -113,6 +114,39 @@ class MongoMeasurementRepository["MongoMeasurementRepository (Adapter)"] {
   +findByStationId(stationId)
   +save(measurement)
   +findWithFilters(filters)
+  +averageTemperatureForPeriod(stationId, from, to)
+}
+
+class WeatherStationCatalog["WeatherStationCatalog (Port)"] {
+  +listOpenWeatherStations()
+}
+
+class MeasurementSubmitter["MeasurementSubmitter (Port)"] {
+  +submitMeasurement(command)
+}
+
+class WeatherDataProvider["WeatherDataProvider (Port)"] {
+  +getCurrentWeather(location)
+}
+
+class ApiWeatherStationCatalogAdapter["ApiWeatherStationCatalogAdapter (Adapter)"] {
+  +listOpenWeatherStations()
+}
+
+class ApiMeasurementSubmitterAdapter["ApiMeasurementSubmitterAdapter (Adapter)"] {
+  +submitMeasurement(command)
+}
+
+class ApiToIngestionCurrentWeatherClient["ApiToIngestionCurrentWeatherClient (Adapter)"] {
+  +getCurrentWeather(latitude, longitude)
+}
+
+class ResilientWeatherDataProvider["ResilientWeatherDataProvider (Decorator)"] {
+  +getCurrentWeather(location)
+}
+
+class OpenWeatherMapAdapter["OpenWeatherMapAdapter (Adapter)"] {
+  +getCurrentWeather(location)
 }
 
 class MongoNotificationRepository["MongoNotificationRepository (Adapter)"] {
@@ -194,6 +228,10 @@ INotificationServiceClient <|.. HttpNotificationServiceClient
 IStationRepository <|.. MongoWeatherStationRepository
 IMeasurementRepository <|.. MongoMeasurementRepository
 IMeasurementRepository ..> MeasurementFilters : query contract
+WeatherStationCatalog <|.. ApiWeatherStationCatalogAdapter
+MeasurementSubmitter <|.. ApiMeasurementSubmitterAdapter
+WeatherDataProvider <|.. ResilientWeatherDataProvider
+WeatherDataProvider <|.. OpenWeatherMapAdapter
 
 MongoUserRepository ..> UserDocumentMapper : maps
 MongoWeatherStationRepository ..> WeatherStationDocumentMapper : maps
@@ -204,6 +242,11 @@ WeatherStationDocumentMapper ..> WeatherStationPersistenceModel : reads and writ
 MeasurementDocumentMapper ..> MeasurementPersistenceModel : reads and writes
 NotificationDocumentMapper ..> NotificationPersistenceModel : reads and writes
 MongoMeasurementRepository ..> WeatherStationPersistenceModel : resolves station name filters
+MongoMeasurementRepository ..> MeasurementPersistenceModel : aggregates averages
+ApiToIngestionCurrentWeatherClient ..> WeatherDataProvider : remote current-weather contract
+ApiWeatherStationCatalogAdapter ..> IStationRepository : remote API-owned catalog
+ApiMeasurementSubmitterAdapter ..> IMeasurementRepository : remote API-owned persistence pipeline
+ResilientWeatherDataProvider ..> OpenWeatherMapAdapter : decorates timeout breaker bulkhead cache
 
 AlertNotifier <|.. CompositeAlertNotifierAdapter
 AlertNotifier <|.. LogAlertNotifierAdapter

@@ -5,6 +5,8 @@ Swagger UI: `http://localhost:3000/api/docs`
 Notification service local URL: `http://localhost:3001`
 Ingestion service local URL: `http://localhost:3002`
 
+Delivery III demo and evidence map: `docs/delivery-iii-demo.md`.
+
 All protected endpoints require `Authorization: Bearer <token>`.
 
 The Ingestion service does not expose weather data publicly yet. Internally it

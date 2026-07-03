@@ -1,6 +1,6 @@
 # E-03: Entrega III — Ingesta externa, resiliencia y observabilidad
 
-Estado: en progreso
+Estado: completada
 
 ## Objetivo
 
@@ -48,7 +48,7 @@ RabbitMQ y despacho de notificaciones.
 | S-03.12 | Trazabilidad distribuida hasta la cola                | completada |
 | S-03.13 | Pruebas de carga de consultas y reportes              | completada |
 | S-03.14 | Panel de monitoreo y estrategia de alertas operativas | completada |
-| S-03.15 | Documentación de arquitectura de la Entrega III       | pendiente  |
+| S-03.15 | Documentación de arquitectura de la Entrega III       | completada |
 
 ## Dependencias
 
@@ -89,3 +89,9 @@ Todas ──> S-03.15
 9. Grafana muestra métricas de hardware, endpoints y negocio.
 10. Existen tres escenarios k6 con umbrales y resultados documentados.
 11. La documentación refleja la arquitectura final y evidencia datos OWM.
+
+## Documentación de entrega
+
+La arquitectura final, los diagramas C4/secuencia, las fronteras de resiliencia,
+los artefactos de observabilidad, la evidencia de carga y el recorrido de demo
+quedan consolidados en `docs/delivery-iii-demo.md`.

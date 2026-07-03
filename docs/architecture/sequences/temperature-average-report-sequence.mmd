@@ -1,0 +1,31 @@
+sequenceDiagram
+    autonumber
+    actor Client as Cliente / Web UI
+    participant API as API service
+    participant Controller as TemperatureAverageReportsController
+    participant Service as GetTemperatureAverageReportService
+    participant StationRepo as IStationRepository / MongoWeatherStationRepository
+    participant MeasurementRepo as IMeasurementRepository / MongoMeasurementRepository
+    participant Mongo as MongoDB
+
+    Client->>API: GET /stations/:stationId/reports/temperature/daily-average<br/>or /weekly-average
+    API->>Controller: route(stationId, period)
+    Controller->>Service: execute(stationId, daily|weekly)
+    Service->>StationRepo: findById(stationId)
+    StationRepo-->>Service: station
+
+    alt Station does not exist
+        Service-->>Controller: not found
+        Controller-->>Client: 404 station not found
+    else Station exists
+        Service->>Service: resolve UTC window<br/>24h or 7d ending at now
+        Service->>MeasurementRepo: averageTemperatureForPeriod(stationId, from, to)
+        MeasurementRepo->>Mongo: aggregate measurements by stationId + reportedAt
+        Mongo-->>MeasurementRepo: average value + sample count
+        MeasurementRepo-->>Service: TemperatureAverageResult
+        Service-->>Controller: station + period + average + sampleCount
+        Controller-->>Client: 200 TemperatureAverageReport
+    end
+
+    Note over Service,Mongo: This report never calls ingestion or OpenWeather; it uses persisted manual and openweather measurements.
+    Note over Controller,Client: Empty periods return 200 with average.value=null and sampleCount=0.

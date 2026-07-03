@@ -230,6 +230,9 @@ routes Prometheus alerts to Alertmanager. The operational runbook in
 `observability/README.md` explains each panel, the alert thresholds, the demo
 webhook route, grouping/silence behavior, and reproducible alert tests.
 
+The consolidated Delivery III demo checklist, architecture links and evidence
+map live in `docs/delivery-iii-demo.md`.
+
 ### Production Build
 
 ```bash
@@ -270,6 +273,8 @@ npm run test:load
 The script creates its own user, OpenWeather-backed station, and synthetic
 measurement dataset before running three scenarios: sustained ramp, spike, and
 long run. Search and average-report scenarios use only API + MongoDB data.
+The default dataset contains 72 measurements, equivalent to one week of samples
+every four hours for the station created by the load test.
 
 For current-temperature reports, run ingestion against the local OpenWeather
 stub to avoid external rate limits and network flakiness:

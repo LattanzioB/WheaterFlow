@@ -85,6 +85,11 @@ class StationStatus["StationStatus (Enumeration)"] {
   INACTIVE
 }
 
+class WeatherProviderCode["WeatherProviderCode (Enumeration)"] {
+  NONE
+  OPENWEATHER
+}
+
 %% Measurements domain
 class Measurement["Measurement (AggregateRoot)"] {
   +create(props)
@@ -122,6 +127,11 @@ class AlertType["AlertType (Enumeration)"] {
   CRITICAL_HUMIDITY
 }
 
+class MeasurementSource["MeasurementSource (Enumeration)"] {
+  MANUAL
+  OPENWEATHER
+}
+
 class AlertEvaluator["AlertEvaluator (DomainService)"] {
   +evaluate(measurement, alertSettings)
 }
@@ -143,10 +153,12 @@ Notification --> AlertType : alert type
 WeatherStation *-- Location : location
 WeatherStation *-- StationAlertSettings : alert settings
 WeatherStation --> StationStatus : status
+WeatherStation --> WeatherProviderCode : provider
 Measurement *-- Temperature : temperature
 Measurement *-- Humidity : humidity
 Measurement *-- Pressure : pressure
 Measurement --> AlertType : alert type
+Measurement --> MeasurementSource : source
 Measurement ..> AlertEvaluator : evaluate alerts
 AlertEvaluator ..> StationAlertSettings : threshold switches
 AlertEvaluator ..> AlertType : returns

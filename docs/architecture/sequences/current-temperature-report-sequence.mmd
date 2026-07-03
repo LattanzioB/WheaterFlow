@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    actor Client as Cliente / Web UI
+    participant API as API service
+    participant Controller as StationTemperatureReportsController
+    participant Service as GetCurrentTemperatureReportService
+    participant StationRepo as IStationRepository / MongoWeatherStationRepository
+    participant IngestionClient as ApiToIngestionCurrentWeatherClient
+    participant Ingestion as Ingestion service
+    participant OWM as ResilientWeatherDataProvider / OpenWeather
+
+    Client->>API: GET /stations/:stationId/reports/temperature/current<br/>Authorization: Bearer JWT
+    API->>Controller: route(stationId, user)
+    Controller->>Service: execute(stationId)
+    Service->>StationRepo: findById(stationId)
+    StationRepo-->>Service: station
+
+    alt Station is not provider=openweather
+        Service-->>Controller: provider validation error
+        Controller-->>Client: 422 station not backed by OpenWeather
+    else Station can use OpenWeather
+        Service->>IngestionClient: getCurrentWeather(latitude, longitude)
+        loop Conservative read retry for transient failures
+            IngestionClient->>Ingestion: GET /internal/weather/current<br/>x-ingestion-token
+        end
+        Ingestion->>OWM: getCurrentWeather(location)
+        OWM-->>Ingestion: normalized reading
+        Ingestion-->>IngestionClient: current weather DTO
+        IngestionClient-->>Service: reading
+        Service-->>Controller: station + temperature + observedAt + fetchedAt
+        Controller-->>Client: 200 CurrentTemperatureReport
+    end
+
+    Note over IngestionClient,Ingestion: Timeout, bulkhead, circuit breaker and max-one retry protect this synchronous boundary.
+    Note over Ingestion,OWM: OWM typed failures map to 502/503/504; no stale cache is returned for synchronous reads.

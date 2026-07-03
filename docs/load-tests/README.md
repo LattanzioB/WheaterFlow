@@ -16,6 +16,10 @@ El `setup()` de k6 registra un usuario unico, crea una estacion propia con
 historicas. La busqueda de mediciones y los promedios quedan aislados de OWM y
 Telegram porque solo consultan la API y MongoDB.
 
+Con el valor por defecto `LOAD_DATASET_SIZE=72`, el dataset cubre una semana de
+datos historicos cada 4 horas. Esa evidencia versionada queda referenciada por
+`docs/delivery-iii-demo.md` junto con el baseline k6.
+
 ## Temperatura actual con OWM mockeado
 
 La ruta `GET /stations/:stationId/reports/temperature/current` conserva el flujo

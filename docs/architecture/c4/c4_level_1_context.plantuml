@@ -5,11 +5,13 @@ LAYOUT_LEFT_RIGHT()
 
 Person(usuario, "Usuario", "Utiliza WeatherFlow para registrarse, gestionar estaciones y mediciones, configurar suscripciones a alertas y consultar notificaciones.")
 
-System(weatherflow, "WeatherFlow", "Plataforma de servicios meteorologicos: gestion de usuarios, estaciones, mediciones, suscripciones, deteccion de alertas y notificaciones web e integradas con canales externos.")
+System(weatherflow, "WeatherFlow", "Plataforma de servicios meteorologicos: gestion de usuarios, estaciones, mediciones, suscripciones, deteccion de alertas, ingesta OpenWeather, reportes y notificaciones.")
 
+System_Ext(openweather, "OpenWeather API", "Proveedor externo de observaciones meteorologicas actuales para estaciones provider=openweather.")
 System_Ext(telegram, "Telegram Bot API", "Canal externo opcional para vincular cuentas y entregar alertas cuando el usuario lo habilita.")
 
 Rel(usuario, weatherflow, "Usa la Web UI, configura alertas y recibe notificaciones in-app", "HTTPS")
+Rel(weatherflow, openweather, "Consulta observaciones actuales para ingesta y reporte sincronico", "HTTPS")
 Rel(weatherflow, telegram, "Usa como canal opcional de vinculacion y entrega", "HTTPS")
 Rel(usuario, telegram, "Opcionalmente envia /link al bot", "HTTPS")
 

@@ -107,9 +107,13 @@ Infrastructure adapters implement ports and communicate with external systems.
 | `AuthController`                        | API          | Register and login users.                                        |
 | `WeatherStationsController`             | API          | Manage and search stations.                                      |
 | `MeasurementsController`                | API          | Record and filter measurements.                                  |
+| `StationTemperatureReportsController`   | API          | Public current-temperature report facade backed by ingestion.     |
+| `TemperatureAverageReportsController`   | API          | Daily and weekly average reports over persisted measurements.     |
 | `UserNotificationPreferencesController` | API          | Authenticated facade for notification preferences.               |
 | `NotificationPreferencesController`     | Notification | Internal/local preference API owned by the Notification service. |
 | `TelegramWebhookController`             | Notification | Receives Telegram link commands.                                 |
+| `IngestionController`                   | Ingestion    | Protected manual ingestion trigger.                              |
+| `CurrentWeatherController`              | Ingestion    | Protected synchronous current-weather boundary.                   |
 | `RabbitMqClimateAlertConsumerAdapter`   | Notification | Consumes climate-alert messages from RabbitMQ.                   |
 
 ### Driven Adapters
@@ -127,6 +131,7 @@ Infrastructure adapters implement ports and communicate with external systems.
 | `WeatherDataProvider`            | `ResilientWeatherDataProvider` + `OpenWeatherMapAdapter` | Ingestion    | Protects and normalizes OpenWeather Current Weather readings. |
 | `WeatherStationCatalog`          | `ApiWeatherStationCatalogAdapter`    | Ingestion    | Loads provider-backed stations from the API boundary.   |
 | `MeasurementSubmitter`           | `ApiMeasurementSubmitterAdapter`     | Ingestion    | Sends observations through the API domain pipeline.     |
+| `IMeasurementRepository` average query | `MongoMeasurementRepository` | API | Aggregates daily and weekly temperature reports from persisted measurements. |
 
 The ingestion application exports `WeatherDataProvider` through a NestJS token.
 The port returns a provider-neutral reading with an external identifier,

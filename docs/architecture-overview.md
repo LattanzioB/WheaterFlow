@@ -43,7 +43,7 @@ for climate-alert delivery.
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
 | API service (`apps/api`)                    | Auth, user identity, station catalog, measurement recording, measurement search, alert detection                             | Public REST API on port `3000`, Swagger at `/api/docs`                    | MongoDB Atlas, RabbitMQ, Notification service REST API |
 | Notification service (`apps/notifications`) | Notification profiles, station subscriptions, alert-type preferences, delivery channels, Telegram link codes, alert dispatch | Internal/local REST API on port `3001`, Telegram webhook, health endpoint | MongoDB Atlas, RabbitMQ, Telegram Bot API when enabled |
-| Ingestion service (`apps/ingestion`)        | External weather acquisition orchestration, OpenWeather resilience and operational configuration                             | Health, metrics and protected manual trigger on port `3002`               | OpenWeather API, API service                           |
+| Ingestion service (`apps/ingestion`)        | External weather acquisition orchestration, OpenWeather resilience and operational configuration                             | Health, metrics, protected manual trigger and protected current-weather read on port `3002` | OpenWeather API, API service                           |
 | RabbitMQ                                    | Durable alert exchange, notification queue, routing key binding                                                              | AMQP on `5672`, management UI on `15672`                                  | None inside the app boundary                           |
 | MongoDB Atlas                               | Persistent collections for users, stations, measurements, and notification profiles                                          | Managed MongoDB endpoint                                                  | External managed dependency                            |
 | Clients                                     | Users, Swagger/manual callers, station data publishers                                                                       | HTTPS/JSON requests to the API service                                    | API service                                            |
@@ -58,6 +58,8 @@ for climate-alert delivery.
 | Alert consumption and delivery                              | RabbitMQ to Notification service         | Notification processing can scale or fail separately from measurement recording.                              |
 | Telegram account linking                                    | Telegram webhook to Notification service | Chat IDs belong to the notification boundary, not the weather-data API.                                       |
 | External weather acquisition                                | Ingestion service to OpenWeather and API | Scheduling and provider failures remain isolated; the API retains ownership of stations and measurements.     |
+| Current temperature report                                  | API to Ingestion REST                 | The API remains the public facade while synchronous OWM latency and failures stay isolated in Ingestion.      |
+| Historical average reports                                  | API to MongoDB aggregation             | Daily and weekly averages are domain reports over persisted measurements, not external provider reads.       |
 
 ## Technical Split Justification
 
@@ -189,6 +191,19 @@ not persisted.
 Sequence source:
 `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`
 
+### Current Temperature Report
+
+Clients call `GET /stations/:stationId/reports/temperature/current` on the API
+service. The API validates the station and `provider=openweather`, then calls
+the protected Ingestion endpoint `GET /internal/weather/current` with the
+station coordinates. Ingestion performs the real-time OWM call through the same
+resilient provider used by scheduled acquisition and returns the normalized
+reading. The API adds the station metadata and `fetchedAt` timestamp; it does
+not persist the synchronous reading.
+
+Sequence source:
+`docs/architecture/sequences/current-temperature-report-sequence.mmd`
+
 ### Historical Temperature Average Reports
 
 Clients call
@@ -203,6 +218,9 @@ returns the average Celsius temperature plus the sample count.
 Unlike the current-temperature report, these endpoints never call ingestion or
 OpenWeather. An empty period is still a successful report: the response includes
 the UTC bounds, `average.value: null`, unit `celsius`, and `sampleCount: 0`.
+
+Sequence source:
+`docs/architecture/sequences/temperature-average-report-sequence.mmd`
 
 ### Search and Filtering
 
@@ -263,11 +281,11 @@ repeatable regression check.
 
 ## Diagrams
 
-Índice narrativo en español: [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md).
+Indice narrativo en espanol: [`docs/architecture/c4/architecture.md`](./architecture/c4/architecture.md).
 
 | Diagram                                      | Source                                                                      |
 | -------------------------------------------- | --------------------------------------------------------------------------- |
-| C4 (todos los niveles)                       | [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md) |
+| C4 (todos los niveles)                       | [`docs/architecture/c4/architecture.md`](./architecture/c4/architecture.md) |
 | C4 context                                   | `docs/architecture/c4/c4_level_1_context.plantuml`                          |
 | C4 container                                 | `docs/architecture/c4/c4_level_2_container.plantuml`                        |
 | C4 component (API)                           | `docs/architecture/c4/c4_level_3_api.plantuml`                              |
@@ -278,8 +296,10 @@ repeatable regression check.
 | Climate alert to in-app delivery sequence    | `docs/architecture/sequences/climate-alert-in-app-delivery-sequence.mmd`    |
 | Notification preference sequence             | `docs/architecture/sequences/manage-notification-preferences-sequence.mmd`  |
 | Scheduled OpenWeather ingestion sequence     | `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`              |
+| Current temperature report sequence          | `docs/architecture/sequences/current-temperature-report-sequence.mmd`       |
+| Daily/weekly average report sequence         | `docs/architecture/sequences/temperature-average-report-sequence.mmd`       |
 | MongoDB ER diagram                           | `docs/architecture/uml/weatherflow-er.mmd`                                  |
-
+| Delivery III demo and evidence               | `docs/delivery-iii-demo.md`                                                 |
 ## Delivery I Historical Material
 
 Older documents that describe WeatherFlow as a single modular monolith belong to

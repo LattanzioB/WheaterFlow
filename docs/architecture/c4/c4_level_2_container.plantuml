@@ -18,10 +18,27 @@ System_Boundary(weatherflow, "WeatherFlow") {
   Container(notifications, "Notification service", "NestJS / Node 20", "Puerto 3001. Perfiles, webhook Telegram, consumidor RabbitMQ, historial in-app y despacho de alertas.")
   Container(ingestion, "Ingestion service", "NestJS / Node 20", "Puerto 3002. Worker aislado para scheduling y adquisición de datos OpenWeather.")
   ContainerDb(rabbit, "RabbitMQ", "Broker AMQP", "Exchange weatherflow.alerts, cola weatherflow.notifications.alerts, routing key alerts.climate.detected.")
+
+  System_Boundary(observability, "Observability stack (perfil Compose 'observability')") {
+    Container(prometheus, "Prometheus", "Metrics TSDB", "Scrapea /metrics de API, Notifications, Ingestion y cAdvisor; evalua reglas de alerta.")
+    Container(grafana, "Grafana", "Dashboards", "Dashboard 'WeatherFlow Operaciones': hardware, endpoints y negocio.")
+    Container(loki, "Loki", "Agregacion de logs", "Recibe logs JSON estructurados enviados por Promtail desde todos los contenedores.")
+    Container(jaeger, "Jaeger", "Trazabilidad distribuida", "Colecciona trazas OpenTelemetry de API, Notifications e Ingestion.")
+    Container(alertmanager, "Alertmanager", "Enrutamiento de alertas", "Agrupa, deduplica y enruta alertas activas al webhook de demostracion.")
+  }
 }
 
 Rel(api, mongoAtlas, "Lee y escribe", "Mongoose / TLS")
 Rel(notifications, mongoAtlas, "Lee y escribe perfiles e historial in-app", "Mongoose / TLS")
+Rel(api, prometheus, "Expone /metrics", "HTTP")
+Rel(notifications, prometheus, "Expone /metrics", "HTTP")
+Rel(ingestion, prometheus, "Expone /metrics", "HTTP")
+Rel(prometheus, alertmanager, "Envia alertas activas", "HTTP")
+Rel(grafana, prometheus, "Consulta metricas", "PromQL")
+Rel(grafana, loki, "Consulta logs", "LogQL")
+Rel(api, jaeger, "Exporta spans", "OTLP/HTTP", $tags="async")
+Rel(notifications, jaeger, "Exporta spans", "OTLP/HTTP", $tags="async")
+Rel(ingestion, jaeger, "Exporta spans", "OTLP/HTTP", $tags="async")
 
 Rel(usuario, usuarioTelegram, "Vincula su cuenta en Telegram", "")
 Rel(usuario, web, "Utiliza", "HTTPS")

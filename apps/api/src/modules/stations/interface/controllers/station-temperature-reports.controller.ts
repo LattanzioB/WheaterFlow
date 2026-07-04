@@ -15,7 +15,9 @@ import {
   ApiGatewayTimeoutResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiServiceUnavailableResponse,
+  ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import {
@@ -29,6 +31,7 @@ import {
 } from '../../application/services/get-current-temperature-report.service';
 import { CurrentTemperatureReportDto } from '../dtos/current-temperature-report.dto';
 
+@ApiTags('Reports')
 @ApiBearerAuth('bearer')
 @Controller('stations/:stationId/reports/temperature')
 @UseGuards(JwtAuthGuard)
@@ -38,6 +41,10 @@ export class StationTemperatureReportsController {
   ) {}
 
   @Get('current')
+  @ApiOperation({
+    summary:
+      'Get the real-time current temperature for an openweather-provider station via ingestion.',
+  })
   @ApiOkResponse({ type: CurrentTemperatureReportDto })
   @ApiNotFoundResponse({ description: 'Station does not exist.' })
   @ApiUnprocessableEntityResponse({

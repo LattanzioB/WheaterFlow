@@ -1,0 +1,45 @@
+@startuml c4_level_3_ingestion
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_TOP_DOWN()
+
+System_Ext(openweather, "OpenWeather API", "External provider of current weather observations by coordinate.")
+Container(api, "API service", "NestJS", "Owns the stations/measurements domain; exposes the internal ingestion boundary and consumes the current-weather boundary.")
+
+Container_Boundary(ingestion, "Ingestion service (apps/ingestion)") {
+  Component(healthController, "HealthController", "NestJS", "GET /health.")
+  Component(ingestionController, "IngestionController", "NestJS", "POST /internal/ingestion/run: manual cycle trigger.")
+  Component(currentWeatherController, "CurrentWeatherController", "NestJS", "GET /internal/weather/current: synchronous read for the current-temperature report.")
+  Component(manualGuard, "ManualIngestionTokenGuard", "Infrastructure", "Validates x-ingestion-token with constant-time comparison.")
+  Component(scheduler, "IngestionScheduler", "NestJS Schedule", "Registers the INGESTION_CRON job; skips overlapping scheduled runs.")
+  Component(cycleService, "RunIngestionCycleService", "Application", "Orchestrates one cycle: discovers stations, bounds OWM concurrency, applies scheduled-only cache fallback, emits a structured summary.")
+  Component(stationCatalogAdapter, "ApiWeatherStationCatalogAdapter", "Infrastructure", "WeatherStationCatalog port: fetches provider=openweather stations from the API.")
+  Component(resilientProvider, "ResilientWeatherDataProvider", "Infrastructure", "WeatherDataProvider port: timeout, circuit breaker, bulkhead and last-valid-reading cache around the raw OpenWeather adapter.")
+  Component(owmAdapter, "OpenWeatherMapAdapter", "Infrastructure", "Raw OpenWeather HTTP client plus response mapper; normalizes to Celsius, percent, hPa, observedAt, externalId.")
+  Component(submitterAdapter, "ApiMeasurementSubmitterAdapter", "Infrastructure", "MeasurementSubmitter port: timeout, circuit breaker, bulkhead, safe retries with backoff/jitter and a deterministic idempotency key.")
+  Component(ingestionMetrics, "IngestionMetrics", "Infrastructure", "Prometheus counters/gauges for cycle outcomes.")
+  Component(owmMetrics, "OpenWeatherResilienceMetrics", "Infrastructure", "Prometheus request outcome, typed failure, breaker state and cache-entry metrics.")
+  Component(httpBoundaryMetrics, "HttpBoundaryMetrics", "Infrastructure", "Prometheus request/breaker metrics for the ingestion-to-API REST boundary.")
+}
+
+Rel(scheduler, cycleService, "execute('scheduled')")
+Rel(ingestionController, manualGuard, "Protected by")
+Rel(ingestionController, cycleService, "execute('manual')")
+Rel(currentWeatherController, manualGuard, "Protected by")
+Rel(api, currentWeatherController, "GET /internal/weather/current?latitude&longitude", "HTTP REST")
+Rel(currentWeatherController, resilientProvider, "getCurrentWeather(location)")
+
+Rel(cycleService, stationCatalogAdapter, "listOpenWeatherStations()")
+Rel(cycleService, resilientProvider, "getCurrentWeather(location), bounded by OWM_CONCURRENCY_LIMIT")
+Rel(cycleService, submitterAdapter, "submitMeasurement(reading, correlationId)")
+Rel(cycleService, ingestionMetrics, "Records cycle summary")
+
+Rel(stationCatalogAdapter, api, "GET /internal/ingestion/stations", "HTTP REST + x-ingestion-token")
+Rel(submitterAdapter, api, "POST /internal/ingestion/measurements", "HTTP REST + x-ingestion-token + idempotency key")
+Rel(submitterAdapter, httpBoundaryMetrics, "Records outcome and breaker state (ingestion_to_api)")
+
+Rel(resilientProvider, owmAdapter, "Delegates when breaker closed and bulkhead available")
+Rel(resilientProvider, owmMetrics, "Records outcome, typed failure, breaker state and cache entries")
+Rel(owmAdapter, openweather, "GET current weather by coordinate", "HTTPS")
+
+@enduml

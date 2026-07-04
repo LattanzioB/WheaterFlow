@@ -34,6 +34,14 @@ Descompone el contenedor **Notification service**. Las preferencias llegan via p
 
 ![C4 nivel 3 - Notifications](c4_level_3_notifications.png)
 
+## Nivel 3 - Componentes (Ingestion service)
+
+Fuente: [c4_level_3_ingestion.plantuml](c4_level_3_ingestion.plantuml).
+
+Descompone el contenedor **Ingestion service** (Entrega III). `IngestionScheduler` dispara ciclos `scheduled` por `INGESTION_CRON`; `IngestionController` expone el trigger `manual`; ambos delegan en `RunIngestionCycleService`, que orquesta `ApiWeatherStationCatalogAdapter` (catalogo `provider=openweather`), `ResilientWeatherDataProvider` (timeout, circuit breaker, bulkhead y cache sobre `OpenWeatherMapAdapter`) y `ApiMeasurementSubmitterAdapter` (timeout, breaker, bulkhead, reintentos seguros con idempotencia hacia la API). `CurrentWeatherController` reutiliza el mismo `ResilientWeatherDataProvider` para el reporte de temperatura actual, sin el fallback de cache reservado a los ciclos programados. `ManualIngestionTokenGuard` protege los tres endpoints internos con `x-ingestion-token`. Ingestion no accede a MongoDB ni RabbitMQ directamente: siempre escribe a traves del limite REST interno de la API.
+
+![C4 nivel 3 - Ingestion](c4_level_3_ingestion.png)
+
 Fuente alternativa: [weatherflow-component.mmd](weatherflow-component.mmd).
 
 ![C4 componente distribuido](weatherflow-component.svg)

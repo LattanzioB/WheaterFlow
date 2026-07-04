@@ -19,6 +19,8 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
@@ -39,6 +41,7 @@ import { StationStatus } from '../../domain/value-objects/station-status.enum';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
+@ApiTags('Weather Stations')
 @ApiBearerAuth('bearer')
 @Controller('weather-stations')
 @UseGuards(JwtAuthGuard)
@@ -53,6 +56,9 @@ export class WeatherStationsController {
   ) {}
 
   @Get('available')
+  @ApiOperation({
+    summary: 'List all stations regardless of owner, including provider.',
+  })
   @ApiOkResponse({ type: StationResponseDto, isArray: true })
   async listAvailable(
     @Query() dto: QueryStationsDto,
@@ -65,6 +71,7 @@ export class WeatherStationsController {
   }
 
   @Get()
+  @ApiOperation({ summary: "List the authenticated user's own stations." })
   @ApiOkResponse({ type: StationResponseDto, isArray: true })
   async list(
     @Query() dto: QueryStationsDto,

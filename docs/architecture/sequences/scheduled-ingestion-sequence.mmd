@@ -43,7 +43,7 @@ sequenceDiagram
             Submitter-->>Cycle: measurement result + fallback metadata
         else Provider failure without cache
             OWM--xCycle: typed error
-            Note over Cycle: Failure is recorded;<br/>the batch continues
+            Note over Cycle: Failure is recorded, the batch continues
         end
     end
 

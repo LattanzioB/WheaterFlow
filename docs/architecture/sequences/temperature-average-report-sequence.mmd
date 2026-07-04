@@ -1,0 +1,40 @@
+sequenceDiagram
+autonumber
+actor Client as User / API client
+participant API as API service
+participant Controller as TemperatureAverageReportsController
+participant ReportService as GetTemperatureAverageReportService
+participant StationService as GetStationByIdService
+participant StationRepository as IStationRepository / MongoWeatherStationRepository
+participant MeasurementRepository as IMeasurementRepository / MongoMeasurementRepository
+participant Mongo as MongoDB Atlas
+
+alt daily average
+  Client->>API: GET /stations/:stationId/reports/temperature/daily-average
+else weekly average
+  Client->>API: GET /stations/:stationId/reports/temperature/weekly-average
+end
+
+API->>Controller: route with JWT user
+Controller->>ReportService: execute({ stationId, window })
+ReportService->>StationService: execute({ stationId })
+StationService->>StationRepository: findById(stationId)
+StationRepository-->>StationService: station
+
+alt station not found
+  StationService--xReportService: Error("Station not found")
+  ReportService--xController: propagate
+  Controller-->>Client: 404 Not Found
+else station found
+  StationService-->>ReportService: station
+  ReportService->>ReportService: compute moving UTC window<br/>daily 24h, weekly 7d, ending now
+  ReportService->>MeasurementRepository: averageTemperatureForPeriod({ stationId, from, to })
+  MeasurementRepository->>Mongo: aggregate measurements by stationId and reportedAt range
+  Mongo-->>MeasurementRepository: average value and sample count, or none
+  MeasurementRepository-->>ReportService: average and sampleCount
+  ReportService-->>Controller: TemperatureAverageReport
+  Controller-->>Client: 200 TemperatureAverageReportDto
+end
+
+Note over Mongo,ReportService: Averages read only persisted measurements manual and openweather<br/>no call to ingestion or OpenWeather on this path
+Note over ReportService,Controller: An empty period is still a 200 response with average.value null and sampleCount 0

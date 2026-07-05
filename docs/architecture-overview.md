@@ -74,6 +74,50 @@ Notification service focused on alert routing. MongoDB Atlas is shared as an
 external managed database dependency, but the services do not share aggregate
 logic: each service accesses only the collections it owns for its use cases.
 
+### Why Ingestion Is a Third Independent Service (Delivery III)
+
+Delivery III adds a fourth granularity breaker to justify `apps/ingestion` as
+its own deployable process instead of an adapter inside the API service.
+
+| Breaker                  | Decision                                                                                                                                                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Failure domain isolation | OpenWeather has variable latency and can fail or rate-limit independently of WeatherFlow. Running the provider client, its circuit breaker, bulkhead and cache in a separate process means an OWM outage cannot exhaust API request threads or its event loop. |
+| Change cadence           | Scheduling, provider adapters and resilience tuning (timeouts, breaker thresholds, cache TTL) change independently of the domain rules for measurements and alerts, and can be redeployed without touching the API.        |
+| Operational scaling      | The ingestion cron and its concurrency limits are sized for OpenWeather's rate limits, not for user traffic. Keeping it out of the API process lets each service scale, restart and be rate-limited on its own terms.       |
+
+Ingestion still has **no direct access to MongoDB or RabbitMQ**: it owns
+acquisition and resilience only, and always writes through the API's internal
+REST boundary (`POST /internal/ingestion/measurements`) so the API remains the
+single owner of the measurement/alert domain pipeline. This mirrors the same
+data-ownership and transaction-boundary reasoning already used for the
+Notification service above, applied to a service that produces data instead of
+one that consumes it.
+
+## Resilience Strategies
+
+Delivery III protects two boundaries where a remote dependency can be slow or
+unavailable: the outbound call to OpenWeather, and the internal REST calls
+between Ingestion and the API. Both apply the same five strategies, tuned
+differently per direction because one is a batch write path and the other is a
+synchronous read path.
+
+| Strategy       | OpenWeather boundary (Ingestion → OWM)                                                             | Ingestion → API (write measurements)                                             | API → Ingestion (read current temperature)                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Timeout        | `OWM_TIMEOUT_MS` bounds every HTTP call so a slow OWM response cannot stall a cycle.                  | `API_TIMEOUT_MS` bounds each measurement submission attempt.                        | `INGESTION_TIMEOUT_MS` bounds the synchronous read so a report request fails fast. |
+| Circuit breaker | Opens after `OWM_BREAKER_FAILURE_THRESHOLD` consecutive failures for `OWM_BREAKER_OPEN_MS`, then half-opens. | Opens on `API_BREAKER_FAILURE_THRESHOLD`/`API_BREAKER_OPEN_MS` to stop hammering a degraded API. | Opens on `INGESTION_BREAKER_FAILURE_THRESHOLD`/`INGESTION_BREAKER_OPEN_MS`, returning `503` instead of queuing requests. |
+| Bulkhead       | `OWM_CONCURRENCY_LIMIT` caps concurrent OWM calls per cycle and per synchronous request.               | `API_CONCURRENCY_LIMIT` caps concurrent measurement submissions.                    | `INGESTION_CONCURRENCY_LIMIT` caps concurrent report reads so a traffic spike cannot saturate ingestion. |
+| Fallback / cache | Last-valid-reading cache (`OWM_CACHE_TTL_MS`) is reused **only for scheduled cycles**; the cached age is reported explicitly. | Definitive failures are recorded per station without cancelling the batch.          | Synchronous reads never use the cache; a failure returns a typed error mapped to `502`/`503`/`504` instead of stale data. |
+| Retry          | Not retried at this layer; the breaker/cache already absorb transient OWM failures.                    | Retries only `429`, `502`, `503`, `504`, timeouts and safe network errors, with exponential backoff + jitter, reusing the same idempotency key. | At most one conservative retry (`INGESTION_RETRY_ATTEMPTS`, default `1`) to avoid degrading p95 latency on the read path. |
+
+The asymmetry between the two REST boundaries is deliberate: the write path
+(ingestion → API) favors durability and can afford retries because it is
+off the request/response critical path of a user, while the read path
+(API → ingestion, backing the current-temperature report) favors low, bounded
+latency and returns an honest error rather than a stale or duplicated reading.
+
+Full rationale and test coverage: [`docs/stories/E-03/S-03.7-resiliencia-frontera-openweathermap.md`](./stories/E-03/S-03.7-resiliencia-frontera-openweathermap.md) and
+[`docs/stories/E-03/S-03.8-resiliencia-frontera-ingesta-api.md`](./stories/E-03/S-03.8-resiliencia-frontera-ingesta-api.md).
+
 ## Component Responsibilities
 
 ### API Service
@@ -147,12 +191,45 @@ logic: each service accesses only the collections it owns for its use cases.
 
 ### Observability Stack
 
-The optional Compose `observability` profile runs Prometheus, Alertmanager,
-Grafana, Loki, Promtail, cAdvisor and Jaeger. Prometheus scrapes the three
-NestJS services plus cAdvisor, evaluates the versioned rules under
-`observability/prometheus/rules/`, and sends grouped demo notifications to
-Alertmanager. Grafana provisions Prometheus, Loki and Jaeger datasources and
-loads the versioned `WeatherFlow Operaciones` dashboard automatically.
+The optional Compose `observability` profile (`docker compose --profile
+observability up --build`) runs Prometheus, Alertmanager, Grafana, Loki,
+Promtail, cAdvisor and Jaeger side by side with the three application
+services, covering all four observability pillars required for Delivery III:
+
+| Pillar              | Implementation                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Log aggregation      | Pino structured JSON logs from every service are shipped by Promtail into Loki and queried from Grafana.          |
+| Metrics aggregation  | Prometheus scrapes `/metrics` on API, Notifications and Ingestion plus cAdvisor container metrics every 15s.      |
+| Distributed tracing  | OpenTelemetry auto-instrumentation exports spans over OTLP/HTTP to Jaeger, correlating a request across services. |
+| Alerting             | Prometheus evaluates versioned rules and forwards firing alerts to Alertmanager, which groups and routes them.    |
+
+Prometheus evaluates the rules versioned in
+`observability/prometheus/rules/weatherflow-alerts.yml`:
+
+| Alert                              | Condition                                                       | Severity |
+| ----------------------------------- | ---------------------------------------------------------------- | -------- |
+| `WeatherFlowServiceDown`            | API, Notifications or Ingestion not scrapeable for 1 minute       | critical |
+| `WeatherFlowIngestionStopped`       | No scheduled ingestion cycle observed in the last 15 minutes      | warning  |
+| `WeatherFlowOpenWeatherErrorsHigh`  | More than 25% of OWM boundary attempts failing/rejected over 5m   | warning  |
+| `WeatherFlowHttpP95High`            | p95 HTTP latency above 1 second for 5 minutes, per job and route  | warning  |
+
+Alertmanager (`observability/alertmanager/alertmanager.yml`) groups firing
+alerts by `alertname`, `service`/`job` and `severity`, waits 30s before the
+first notification, re-groups every 5 minutes, repeats every 2 hours, and
+inhibits `warning` alerts once an equivalent `critical` alert is already firing
+for the same `job`. The demo route forwards to a local webhook receiver so the
+routing strategy can be inspected without a real paging integration. Grafana
+provisions Prometheus, Loki and Jaeger datasources with stable UIDs and loads
+the versioned `WeatherFlow Operaciones` dashboard
+(`observability/grafana/provisioning/dashboards/weatherflow-overview.json`)
+automatically; it shows hardware metrics per container (CPU, memory,
+approximate restarts), HTTP metrics per endpoint (requests, 5xx errors, p95),
+and business metrics (OpenWeather measurements ingested per minute, OpenWeather
+failures by typed code, breaker state, and alerts published/consumed over
+RabbitMQ).
+
+Full runbook, panel-by-panel interpretation and reproducible alert-testing
+scenarios: [`observability/README.md`](../observability/README.md).
 
 ## Key Flows
 
@@ -189,6 +266,29 @@ not persisted.
 Sequence source:
 `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`
 
+The same `RecordMeasurementService` pipeline evaluates alerts for
+OpenWeather-sourced measurements as it does for manual ones: once the API
+persists the measurement, an alerting reading publishes the same
+`ClimateAlertDetectedMessage` consumed by the Notification service. There is no
+separate alert path for external data; see "Measurement Recording and Alert
+Delivery" below for the shared downstream sequence from that point onward.
+
+### Current Temperature Report
+
+Clients call `GET /stations/:stationId/reports/temperature/current` on the API
+service. The API loads the station, rejects it with `422` unless
+`provider=openweather`, and otherwise delegates to the API-to-ingestion current
+weather boundary. Ingestion serves the request from the same
+`WeatherDataProvider` port used by scheduled cycles, so the same timeout,
+circuit breaker, bulkhead and typed-error mapping apply, but **without** the
+scheduled-cycle cache fallback: a failure always propagates a typed error that
+the API maps to `502`/`503`/`504`. Nothing on this path touches MongoDB or
+OpenWeather from the API process, and the reading returned to the client is
+never persisted.
+
+Sequence source:
+`docs/architecture/sequences/current-temperature-report-sequence.mmd`
+
 ### Historical Temperature Average Reports
 
 Clients call
@@ -203,6 +303,9 @@ returns the average Celsius temperature plus the sample count.
 Unlike the current-temperature report, these endpoints never call ingestion or
 OpenWeather. An empty period is still a successful report: the response includes
 the UTC bounds, `average.value: null`, unit `celsius`, and `sampleCount: 0`.
+
+Sequence source:
+`docs/architecture/sequences/temperature-average-report-sequence.mmd`
 
 ### Search and Filtering
 
@@ -261,23 +364,55 @@ adapter behavior. Postman and manual Swagger calls are useful smoke tests, but
 they are not considered integration tests because they do not create a
 repeatable regression check.
 
+## Load Test Evidence
+
+Three versioned k6 scenarios in `scripts/load-tests/weatherflow-load.js`
+exercise the query/report endpoints (`npm run test:load`):
+
+| Scenario         | Shape            | Endpoints covered                                                |
+| ----------------- | ---------------- | -------------------------------------------------------------------- |
+| `sustained_ramp`  | Sustained ramp   | Measurement search, daily average                                    |
+| `spike`           | Traffic spike    | Measurement search, current temperature, weekly average              |
+| `long_run`        | Prolonged load   | Measurement search, both averages, periodic current-temperature reads |
+
+Search and average scenarios run against MongoDB-only data seeded in the k6
+`setup()` step, so they never depend on OpenWeather or Telegram. The current
+temperature scenario runs ingestion against a local OWM stub
+(`npm run test:load:owm-stub`) to stay deterministic and avoid OpenWeather rate
+limits. Thresholds cover global and per-endpoint p95, error rate and
+throughput; the versioned baseline run is committed at
+[`docs/load-tests/baseline-summary.json`](./load-tests/baseline-summary.json) and
+[`docs/load-tests/baseline-report.html`](./load-tests/baseline-report.html).
+Full scenario/dataset/threshold documentation:
+[`docs/load-tests/README.md`](./load-tests/README.md).
+
+> **Pending for final delivery:** the grading criteria also require at least
+> one week of measurements ingested from real OpenWeatherMap data for at least
+> one station. That evidence depends on the shared continuous-ingestion
+> deployment against the team's MongoDB Atlas cluster and is tracked
+> separately in [`docs/stories/E-03/S-03.15-documentacion-arquitectura-entrega-iii.md`](./stories/E-03/S-03.15-documentacion-arquitectura-entrega-iii.md);
+> it is not yet captured in this document.
+
 ## Diagrams
 
-Índice narrativo en español: [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md).
+Índice narrativo en español: [`docs/architecture/c4/architecture.md`](./architecture/c4/architecture.md).
 
 | Diagram                                      | Source                                                                      |
 | -------------------------------------------- | --------------------------------------------------------------------------- |
-| C4 (todos los niveles)                       | [`docs/architecture/c4/arquitectura.md`](./architecture/c4/arquitectura.md) |
+| C4 (todos los niveles)                       | [`docs/architecture/c4/architecture.md`](./architecture/c4/architecture.md) |
 | C4 context                                   | `docs/architecture/c4/c4_level_1_context.plantuml`                          |
 | C4 container                                 | `docs/architecture/c4/c4_level_2_container.plantuml`                        |
 | C4 component (API)                           | `docs/architecture/c4/c4_level_3_api.plantuml`                              |
 | C4 component (Notifications)                 | `docs/architecture/c4/c4_level_3_notifications.plantuml`                    |
+| C4 component (Ingestion)                     | `docs/architecture/c4/c4_level_3_ingestion.plantuml`                        |
 | C4 component (distributed notification flow) | `docs/architecture/c4/weatherflow-component.mmd`                            |
 | Measurement search/filter sequence           | `docs/architecture/sequences/query-measurements-sequence.mmd`               |
 | Alert publication and consumption sequence   | `docs/architecture/sequences/record-measurement-alert-sequence.mmd`         |
 | Climate alert to in-app delivery sequence    | `docs/architecture/sequences/climate-alert-in-app-delivery-sequence.mmd`    |
 | Notification preference sequence             | `docs/architecture/sequences/manage-notification-preferences-sequence.mmd`  |
 | Scheduled OpenWeather ingestion sequence     | `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`              |
+| Current temperature report sequence          | `docs/architecture/sequences/current-temperature-report-sequence.mmd`       |
+| Temperature average report sequence          | `docs/architecture/sequences/temperature-average-report-sequence.mmd`       |
 | MongoDB ER diagram                           | `docs/architecture/uml/weatherflow-er.mmd`                                  |
 
 ## Delivery I Historical Material

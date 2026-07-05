@@ -1,56 +1,56 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-describe('S-02.8 distributed C4 architecture documentation', () => {
+describe('S-03.15 distributed C4 architecture documentation', () => {
   const projectRoot = process.cwd();
   const c4Dir = join(projectRoot, 'docs', 'architecture', 'c4');
 
   const read = (fileName: string) =>
     readFileSync(join(c4Dir, fileName), 'utf8').replace(/\r\n/g, '\n');
 
-  it('stores Mermaid source and SVG export for the system context diagram', () => {
-    expect(existsSync(join(c4Dir, 'weatherflow-context.mmd'))).toBe(true);
-    expect(existsSync(join(c4Dir, 'weatherflow-context.svg'))).toBe(true);
+  it('stores PlantUML source and PNG export for the system context diagram', () => {
+    expect(existsSync(join(c4Dir, 'c4_level_1_context.plantuml'))).toBe(true);
+    expect(existsSync(join(c4Dir, 'c4_level_1_context.png'))).toBe(true);
   });
 
-  it('documents the required actors and external boundaries in the context diagram source', () => {
-    const source = read('weatherflow-context.mmd');
+  it('documents the required actor and system boundary in the context diagram source', () => {
+    const source = read('c4_level_1_context.plantuml');
 
-    expect(source).toContain('User and API clients');
-    expect(source).toContain('WeatherFlow System Boundary');
-    expect(source).toContain('API service');
-    expect(source).toContain('Notification service');
-    expect(source).toContain('RabbitMQ');
-    expect(source).toContain('Telegram Bot API');
-    expect(source).toContain('MongoDB Atlas');
-  });
-
-  it('stores Mermaid source and SVG export for the container diagram', () => {
-    expect(existsSync(join(c4Dir, 'weatherflow-container.mmd'))).toBe(true);
-    expect(existsSync(join(c4Dir, 'weatherflow-container.svg'))).toBe(true);
-  });
-
-  it('documents the distributed services, broker, and managed database in the container diagram source', () => {
-    const source = read('weatherflow-container.mmd');
-
-    expect(source).toContain('API service');
-    expect(source).toContain('Notification service');
-    expect(source).toContain('RabbitMQ');
-    expect(source).toContain('ClimateAlertDetectedMessage');
-    expect(source).toContain('MongoDB Atlas');
+    expect(source).toContain('Person(usuario, "Usuario"');
+    expect(source).toContain('System(weatherflow, "WeatherFlow"');
     expect(source).toContain('Telegram Bot API');
   });
 
-  it('exports SVG files that embed the rendered WeatherFlow labels', () => {
-    const contextSvg = read('weatherflow-context.svg');
-    const containerSvg = read('weatherflow-container.svg');
+  it('stores PlantUML source and PNG export for the container diagram', () => {
+    expect(existsSync(join(c4Dir, 'c4_level_2_container.plantuml'))).toBe(
+      true,
+    );
+    expect(existsSync(join(c4Dir, 'c4_level_2_container.png'))).toBe(true);
+  });
 
-    expect(contextSvg).toContain('WeatherFlow');
-    expect(contextSvg).toContain('API service');
-    expect(contextSvg).toContain('Notification service');
-    expect(contextSvg).toContain('Telegram Bot API');
-    expect(containerSvg).toContain('RabbitMQ');
-    expect(containerSvg).toContain('Notification service');
-    expect(containerSvg).toContain('MongoDB Atlas');
+  it('documents the distributed services and external providers in the container diagram source', () => {
+    const source = read('c4_level_2_container.plantuml');
+
+    expect(source).toContain('Container(web, "Web UI"');
+    expect(source).toContain('Container(api, "API service"');
+    expect(source).toContain('Container(notifications, "Notification service"');
+    expect(source).toContain('Container(ingestion, "Ingestion service"');
+    expect(source).toContain('ContainerDb(rabbit, "RabbitMQ"');
+    expect(source).toContain('ContainerDb_Ext(mongoAtlas, "MongoDB Atlas"');
+    expect(source).toContain('System_Ext(openweather, "OpenWeather API"');
+    expect(source).toContain('System_Ext(telegram, "Telegram Bot API"');
+  });
+
+  it('documents the observability stack introduced in Delivery III in the container diagram source', () => {
+    const source = read('c4_level_2_container.plantuml');
+
+    expect(source).toContain('Container(prometheus, "Prometheus"');
+    expect(source).toContain('Container(grafana, "Grafana"');
+    expect(source).toContain('Container(loki, "Loki"');
+    expect(source).toContain('Container(jaeger, "Jaeger"');
+    expect(source).toContain('Container(alertmanager, "Alertmanager"');
+    expect(source).toContain('Rel(prometheus, alertmanager,');
+    expect(source).toContain('Rel(grafana, prometheus,');
+    expect(source).toContain('Rel(grafana, loki,');
   });
 });

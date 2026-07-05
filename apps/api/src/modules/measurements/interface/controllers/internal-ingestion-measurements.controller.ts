@@ -9,7 +9,13 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiSecurity, ApiHeader } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiSecurity,
+  ApiHeader,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IngestionSystemTokenGuard } from '../../../../shared/guards/ingestion-system-token.guard';
 import { RecordMeasurementService } from '../../application/services/record-measurement.service';
 import { MeasurementSource } from '../../domain/value-objects/measurement-source.enum';
@@ -18,6 +24,7 @@ import { InternalIngestionMeasurementDto } from '../dtos/internal-ingestion-meas
 
 export const CORRELATION_ID_HEADER = 'x-correlation-id';
 
+@ApiTags('Internal Ingestion')
 @ApiSecurity('ingestion-system-token')
 @Controller('internal/ingestion/measurements')
 @UseGuards(IngestionSystemTokenGuard)
@@ -28,6 +35,10 @@ export class InternalIngestionMeasurementsController {
 
   @Post()
   @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Record an openweather-sourced measurement submitted by ingestion (idempotent).',
+  })
   @ApiHeader({
     name: CORRELATION_ID_HEADER,
     required: true,

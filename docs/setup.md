@@ -223,12 +223,26 @@ Then open `http://localhost:16686`, select one of
 look for a trace containing the OWM HTTP call, ingestion HTTP submit, API
 MongoDB persistence, RabbitMQ publish and notification consumer spans.
 
-The observability profile also provisions Grafana with Prometheus and Loki,
-scrapes container metrics through cAdvisor, loads
-`observability/grafana/provisioning/dashboards/weatherflow-overview.json`, and
-routes Prometheus alerts to Alertmanager. The operational runbook in
-`observability/README.md` explains each panel, the alert thresholds, the demo
-webhook route, grouping/silence behavior, and reproducible alert tests.
+### Observability Profile
+
+The observability stack (Prometheus, Alertmanager, Grafana, Loki, Promtail,
+cAdvisor and Jaeger) is gated behind the optional `observability` Compose
+profile so a plain `docker compose up` stays lightweight:
+
+```bash
+docker compose --profile observability up --build
+```
+
+This provisions Grafana with Prometheus and Loki datasources, scrapes
+container metrics through cAdvisor, loads the versioned dashboard
+`observability/grafana/provisioning/dashboards/weatherflow-overview.json`
+(`WeatherFlow Operaciones`, Grafana at `http://localhost:3300`, user/password
+from `GRAFANA_ADMIN_USER`/`GRAFANA_ADMIN_PASSWORD`, default `admin`/`admin`),
+and routes firing Prometheus alerts (`observability/prometheus/rules/weatherflow-alerts.yml`)
+to Alertmanager at `http://localhost:9093`. The operational runbook in
+[`observability/README.md`](../observability/README.md) explains each panel,
+the alert thresholds, the demo webhook route, grouping/silence behavior, and
+reproducible scenarios to make each alert fire on purpose.
 
 ### Production Build
 
@@ -240,6 +254,45 @@ npm run start:ingestion:prod
 ```
 
 ---
+
+## Demo Walkthrough
+
+A suggested path to show the full Delivery III solution working end to end,
+from external ingestion to alerting and observability:
+
+1. **Start everything, including observability**:
+   `docker compose --profile observability up --build`.
+2. **Show the OpenWeather ingestion cycle running live**: trigger it manually
+   (`POST /internal/ingestion/run` with `x-ingestion-token`) and show the
+   structured JSON summary with the three default stations
+   (Universidad Nacional de Quilmes, Buenos Aires, Bariloche) succeeding.
+3. **Show the three reports in Swagger** (`http://localhost:3000/api/docs`,
+   tag `Reports`): current temperature (`GET
+   /stations/:stationId/reports/temperature/current`, delegates to ingestion
+   and OpenWeather in real time), and the daily/weekly averages (persisted
+   MongoDB data only).
+4. **Trigger an alert from external data**: pick a station and threshold where
+   the current OWM reading crosses an alert rule, or lower a station's alert
+   threshold, then re-run the ingestion cycle and show the resulting
+   notification (log delivery, Telegram, or in-app, depending on
+   `NOTIFICATION_DELIVERY_MODE`).
+5. **Show the distributed trace for that same request** in Jaeger
+   (`http://localhost:16686`): pick the `weatherflow-ingestion` service and
+   find the trace spanning the OWM call, the ingestion-to-API submission, the
+   MongoDB write, and the RabbitMQ publish/consume.
+6. **Show the Grafana dashboard** (`http://localhost:3300`, `WeatherFlow
+   Operaciones`): point out the business panels (OWM measurements per minute,
+   OWM errors, breaker state, alerts published/consumed) updating from the
+   run just performed.
+7. **Fire an operational alert on purpose**: `docker compose stop ingestion`,
+   wait about a minute, and show `WeatherFlowServiceDown` go from `pending` to
+   `firing` in Prometheus (`http://localhost:9090/alerts`) and then `active` in
+   Alertmanager (`http://localhost:9093`). Restart ingestion
+   (`docker compose start ingestion`) to resolve it.
+8. **Show a load test run**: `npm run test:load` (with the OWM stub for the
+   current-temperature scenario, see below) and open
+   `docs/load-tests/baseline-report.html` to walk through thresholds and
+   results.
 
 ## Running Tests
 

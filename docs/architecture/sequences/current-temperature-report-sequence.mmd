@@ -1,0 +1,48 @@
+sequenceDiagram
+autonumber
+actor Client as User / API client
+participant API as API service
+participant Controller as StationTemperatureReportsController
+participant ReportService as GetCurrentTemperatureReportService
+participant StationRepository as IStationRepository / MongoWeatherStationRepository
+participant IngestionClient as ApiToIngestionCurrentWeatherClient
+participant Ingestion as Ingestion service
+participant WeatherController as CurrentWeatherController
+participant Provider as ResilientWeatherDataProvider
+participant OWM as OpenWeatherMapAdapter / OpenWeather API
+
+Client->>API: GET /stations/:stationId/reports/temperature/current
+API->>Controller: route with JWT user
+Controller->>ReportService: execute({ stationId })
+ReportService->>StationRepository: findById(stationId)
+StationRepository-->>ReportService: station
+
+alt station.provider is not openweather
+  ReportService--xController: UnsupportedCurrentTemperatureProviderError
+  Controller-->>Client: 422 Unprocessable Entity
+else station.provider is openweather
+  ReportService->>IngestionClient: getCurrentWeather({ latitude, longitude })
+  IngestionClient->>Ingestion: GET /internal/weather/current?latitude&longitude<br/>x-ingestion-token
+  Ingestion->>WeatherController: route with ManualIngestionTokenGuard
+  WeatherController->>Provider: getCurrentWeather(location)
+  alt Provider success
+    Provider->>OWM: fetch current weather (timeout, breaker, bulkhead applied)
+    OWM-->>Provider: normalized reading
+    Provider-->>WeatherController: reading
+    WeatherController-->>Ingestion: 200 CurrentWeatherReadingResponse
+    Ingestion-->>IngestionClient: reading
+    IngestionClient-->>ReportService: reading
+    ReportService-->>Controller: CurrentTemperatureReportResponse
+    Controller-->>Client: 200 CurrentTemperatureReportDto
+  else Provider failure (timeout, breaker open, bulkhead rejected or invalid payload)
+    Provider--xWeatherController: typed WeatherDataProviderError
+    WeatherController-->>Ingestion: 502/503/504 mapped error
+    Ingestion-->>IngestionClient: HTTP error response
+    IngestionClient--xReportService: ApiToIngestionBoundaryError
+    ReportService--xController: propagate typed error
+    Controller-->>Client: 502/503/504 mapped error, no stack trace exposed
+  end
+end
+
+Note over Provider,OWM: Synchronous reads never use the scheduled-cycle cache<br/>a failure always returns a typed error, never stale data
+Note over API,Ingestion: The reading is never persisted to MongoDB from this flow

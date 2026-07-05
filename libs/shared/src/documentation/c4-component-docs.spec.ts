@@ -16,12 +16,15 @@ describe('S-02.8 distributed C4 component documentation', () => {
   it('documents API and Notification service component boundaries', () => {
     const source = read('weatherflow-component.mmd');
 
+    // The API service is intentionally collapsed to a single box here: its
+    // internal controllers (AuthController, WeatherStationsController,
+    // MeasurementsController, ...) are detailed in c4_level_3_api.plantuml.
+    // This diagram's scope is the distributed notification flow instead.
     expect(source).toContain('API service - apps/api');
     expect(source).toContain('Notification service - apps/notifications');
-    expect(source).toContain('AuthController');
-    expect(source).toContain('WeatherStationsController');
-    expect(source).toContain('MeasurementsController');
     expect(source).toContain('NotificationPreferencesController');
+    expect(source).toContain('NotificationsController');
+    expect(source).toContain('NotificationStreamController');
   });
 
   it('captures ports and adapters across the distributed notification flow', () => {

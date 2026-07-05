@@ -15,6 +15,8 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../../../auth/infrastructure/strategies/jwt.strategy';
@@ -31,6 +33,7 @@ import { AlertType } from '../../domain/value-objects/alert-type.enum';
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
 
+@ApiTags('Measurements')
 @ApiBearerAuth('bearer')
 @Controller('measurements')
 @UseGuards(JwtAuthGuard)
@@ -42,6 +45,10 @@ export class MeasurementsController {
   ) {}
 
   @Post()
+  @ApiOperation({
+    summary:
+      'Record a measurement for an owned station (manual or openweather source).',
+  })
   @ApiCreatedResponse({ type: MeasurementResponseDto })
   async create(
     @Body() dto: CreateMeasurementDto,
@@ -73,6 +80,10 @@ export class MeasurementsController {
   }
 
   @Get()
+  @ApiOperation({
+    summary:
+      'Search measurements by station name, climate ranges, dates and alert state.',
+  })
   @ApiOkResponse({ type: MeasurementResponseDto, isArray: true })
   async query(
     @Query() dto: QueryMeasurementsDto,

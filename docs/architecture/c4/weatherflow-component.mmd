@@ -25,7 +25,7 @@ flowchart LR
   web -->|"HTTP history/read state"| history
   web -->|"SSE notification events"| stream
   api -->|"publishClimateAlert"| rabbit
-  api -->|"preference proxy REST"| prefs
+  api -->|"HttpNotificationServiceClient (REST proxy)"| prefs
   rabbit --> consumer
   consumer --> service
   service --> profileRepo

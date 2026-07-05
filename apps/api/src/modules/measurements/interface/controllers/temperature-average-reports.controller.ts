@@ -10,6 +10,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
 import {
   GetTemperatureAverageReportService,
@@ -18,6 +19,7 @@ import {
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { TemperatureAverageReportDto } from '../dtos/temperature-average-report.dto';
 
+@ApiTags('Reports')
 @ApiBearerAuth('bearer')
 @Controller('stations/:stationId/reports/temperature')
 @UseGuards(JwtAuthGuard)

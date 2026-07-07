@@ -14,6 +14,7 @@ describe('NotificationService', () => {
       findByUserId: jest.fn(),
       findByTelegramLinkCode: jest.fn(),
       findSubscribersByStationId: jest.fn(),
+      findPage: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
     });

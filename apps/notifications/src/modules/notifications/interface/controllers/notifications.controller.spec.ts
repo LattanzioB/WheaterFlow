@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { AlertType } from '@contracts';
 import { Notification } from '../../domain/entities/notification.entity';
+import { ListAllNotificationsService } from '../../application/services/list-all-notifications.service';
 import { ListUserNotificationsService } from '../../application/services/list-user-notifications.service';
 import { MarkAllNotificationsReadService } from '../../application/services/mark-all-notifications-read.service';
 import { MarkNotificationReadService } from '../../application/services/mark-notification-read.service';
@@ -29,6 +30,9 @@ describe('NotificationsController', () => {
   });
 
   const buildController = () => {
+    const listAllNotificationsService = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<ListAllNotificationsService>;
     const listUserNotificationsService = {
       execute: jest.fn(),
     } as unknown as jest.Mocked<ListUserNotificationsService>;
@@ -39,6 +43,7 @@ describe('NotificationsController', () => {
       execute: jest.fn(),
     } as unknown as jest.Mocked<MarkAllNotificationsReadService>;
     const controller = new NotificationsController(
+      listAllNotificationsService,
       listUserNotificationsService,
       markNotificationReadService,
       markAllNotificationsReadService,
@@ -46,6 +51,7 @@ describe('NotificationsController', () => {
 
     return {
       controller,
+      listAllNotificationsService,
       listUserNotificationsService,
       markNotificationReadService,
       markAllNotificationsReadService,
@@ -81,6 +87,35 @@ describe('NotificationsController', () => {
       unreadOnly: true,
       limit: 10,
       cursor: undefined,
+    });
+  });
+
+  it('returns the notifications collection page with totals', async () => {
+    const { controller, listAllNotificationsService } = buildController();
+
+    listAllNotificationsService.execute.mockResolvedValue({
+      notifications: [notification],
+      total: 12,
+      limit: 5,
+      offset: 10,
+    });
+
+    await expect(controller.listAll({ limit: 5, offset: 10 })).resolves.toEqual(
+      {
+        items: [
+          expect.objectContaining({
+            id: '4d9784cb-c6a1-4a5d-9c58-fd824f9dbf25',
+            userId: 'user-1',
+          }),
+        ],
+        total: 12,
+        limit: 5,
+        offset: 10,
+      },
+    );
+    expect(listAllNotificationsService.execute).toHaveBeenCalledWith({
+      limit: 5,
+      offset: 10,
     });
   });
 
@@ -142,6 +177,10 @@ describe('NotificationsController', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [NotificationsController],
       providers: [
+        {
+          provide: ListAllNotificationsService,
+          useValue: { execute: jest.fn() },
+        },
         {
           provide: ListUserNotificationsService,
           useValue: listUserNotificationsService,

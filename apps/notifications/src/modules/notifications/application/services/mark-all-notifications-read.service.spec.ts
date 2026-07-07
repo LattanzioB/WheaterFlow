@@ -6,6 +6,7 @@ describe('MarkAllNotificationsReadService', () => {
     save: jest.fn(),
     findById: jest.fn(),
     findByUserId: jest.fn(),
+    findAllPage: jest.fn(),
     countUnread: jest.fn(),
     markRead: jest.fn(),
     markAllRead: jest.fn(),

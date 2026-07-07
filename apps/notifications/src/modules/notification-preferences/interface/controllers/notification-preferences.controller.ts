@@ -8,16 +8,21 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  ApiBearerAuth,
   ApiExcludeEndpoint,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { NotificationJwtAuthGuard } from '../../../notifications/interface/guards/notification-jwt-auth.guard';
 import { CreateTelegramLinkCodeService } from '../../application/services/create-telegram-link-code.service';
 import { GetNotificationProfileService } from '../../application/services/get-notification-profile.service';
+import { ListAllNotificationProfilesService } from '../../application/services/list-all-notification-profiles.service';
 import { ListNotificationPreferencesService } from '../../application/services/list-notification-preferences.service';
 import { SubscribeToStationAlertsService } from '../../application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from '../../application/services/unsubscribe-from-station-alerts.service';
@@ -25,6 +30,8 @@ import { UpdateDeliveryChannelsService } from '../../application/services/update
 import { UpdateStationAlertPreferencesService } from '../../application/services/update-station-alert-preferences.service';
 import {
   NotificationProfileResponseDto,
+  NotificationProfilesPageDto,
+  QueryNotificationProfilesDto,
   SubscribeToStationAlertsDto,
   TelegramLinkCodeResponseDto,
   UpdateDeliveryChannelsDto,
@@ -38,6 +45,7 @@ export class NotificationPreferencesController {
   constructor(
     private readonly configService: ConfigService,
     private readonly getNotificationProfileService: GetNotificationProfileService,
+    private readonly listAllNotificationProfilesService: ListAllNotificationProfilesService,
     private readonly listNotificationPreferencesService: ListNotificationPreferencesService,
     private readonly subscribeToStationAlertsService: SubscribeToStationAlertsService,
     private readonly unsubscribeFromStationAlertsService: UnsubscribeFromStationAlertsService,
@@ -45,6 +53,35 @@ export class NotificationPreferencesController {
     private readonly updateDeliveryChannelsService: UpdateDeliveryChannelsService,
     private readonly createTelegramLinkCodeService: CreateTelegramLinkCodeService,
   ) {}
+
+  @Get()
+  @UseGuards(NotificationJwtAuthGuard)
+  @ApiBearerAuth('bearer')
+  @ApiOperation({
+    summary: 'List the notification profiles collection (read-only, paginated)',
+  })
+  @ApiOkResponse({ type: NotificationProfilesPageDto })
+  async listProfiles(
+    @Query() query: QueryNotificationProfilesDto,
+  ): Promise<NotificationProfilesPageDto> {
+    try {
+      const result = await this.listAllNotificationProfilesService.execute({
+        limit: query.limit,
+        offset: query.offset,
+      });
+
+      return {
+        items: result.profiles.map((profile) =>
+          NotificationProfileResponseMapper.toResponse(profile),
+        ),
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+      };
+    } catch (error) {
+      throw this.mapDomainError(error);
+    }
+  }
 
   @Get(':userId')
   @ApiOperation({ summary: 'Get notification profile for a user' })

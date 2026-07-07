@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification } from '../../domain/entities/notification.entity';
 import {
+  FindAllNotificationsPageQuery,
+  FindAllNotificationsPageResult,
   FindNotificationsByUserIdQuery,
   FindNotificationsByUserIdResult,
   INotificationRepository,
@@ -89,6 +91,30 @@ export class MongoNotificationRepository
         documents.length > limit && pageDocuments.length > 0
           ? this.encodeCursor(pageDocuments[pageDocuments.length - 1])
           : null,
+    };
+  }
+
+  async findAllPage(
+    query: FindAllNotificationsPageQuery,
+  ): Promise<FindAllNotificationsPageResult> {
+    const limit = Math.max(1, Math.min(query.limit, 100));
+    const offset = Math.max(0, query.offset);
+    const [documents, total] = await Promise.all([
+      this.notificationModel
+        .find()
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(offset)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.notificationModel.countDocuments().exec(),
+    ]);
+
+    return {
+      notifications: documents.map((document) =>
+        NotificationDocumentMapper.toDomain(document),
+      ),
+      total,
     };
   }
 

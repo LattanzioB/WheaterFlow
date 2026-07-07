@@ -10,6 +10,8 @@ const navItems = [
   { to: '/stations', label: 'Mis estaciones' },
   { to: '/stations/available', label: 'Estaciones disponibles' },
   { to: '/measurements', label: 'Mediciones' },
+  { to: '/data/series', label: 'Datos · Series' },
+  { to: '/data/colecciones', label: 'Datos · Colecciones' },
   { to: '/subscriptions', label: 'Suscripciones' },
   { to: '/notifications', label: 'Notificaciones' },
 ];

@@ -2,14 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserNotificationProfile } from '../../domain/entities/user-notification-profile.entity';
-import { INotificationProfileRepository } from '../../domain/ports/notification-profile-repository.port';
+import {
+  FindProfilesPageQuery,
+  FindProfilesPageResult,
+  INotificationProfileRepository,
+} from '../../domain/ports/notification-profile-repository.port';
 import { UserNotificationProfileMapper } from '../mappers/user-notification-profile.mapper';
 import { UserNotificationProfilePersistenceModel } from '../persistence/user-notification-profile.schema';
 
 @Injectable()
-export class MongoNotificationProfileRepository
-  implements INotificationProfileRepository
-{
+export class MongoNotificationProfileRepository implements INotificationProfileRepository {
   constructor(
     @InjectModel(UserNotificationProfilePersistenceModel.name)
     private readonly profileModel: Model<UserNotificationProfilePersistenceModel>,
@@ -44,6 +46,30 @@ export class MongoNotificationProfileRepository
     return documents.map((document) =>
       UserNotificationProfileMapper.toDomain(document),
     );
+  }
+
+  async findPage(
+    query: FindProfilesPageQuery,
+  ): Promise<FindProfilesPageResult> {
+    const limit = Math.max(1, Math.min(query.limit, 100));
+    const offset = Math.max(0, query.offset);
+    const [documents, total] = await Promise.all([
+      this.profileModel
+        .find()
+        .sort({ _id: 1 })
+        .skip(offset)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.profileModel.countDocuments().exec(),
+    ]);
+
+    return {
+      profiles: documents.map((document) =>
+        UserNotificationProfileMapper.toDomain(document),
+      ),
+      total,
+    };
   }
 
   async save(profile: UserNotificationProfile): Promise<void> {

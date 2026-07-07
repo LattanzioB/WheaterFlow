@@ -17,12 +17,15 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ListAllNotificationsService } from '../../application/services/list-all-notifications.service';
 import { ListUserNotificationsService } from '../../application/services/list-user-notifications.service';
 import { MarkAllNotificationsReadService } from '../../application/services/mark-all-notifications-read.service';
 import { MarkNotificationReadService } from '../../application/services/mark-notification-read.service';
 import {
+  ListAllNotificationsQueryDto,
   ListNotificationsQueryDto,
   NotificationIdParamDto,
+  NotificationsCollectionPageDto,
   NotificationsPageDto,
 } from '../dtos/notification.dto';
 import { NotificationJwtAuthGuard } from '../guards/notification-jwt-auth.guard';
@@ -35,10 +38,40 @@ import { NotificationResponseMapper } from '../mappers/notification-response.map
 @UseGuards(NotificationJwtAuthGuard)
 export class NotificationsController {
   constructor(
+    private readonly listAllNotificationsService: ListAllNotificationsService,
     private readonly listUserNotificationsService: ListUserNotificationsService,
     private readonly markNotificationReadService: MarkNotificationReadService,
     private readonly markAllNotificationsReadService: MarkAllNotificationsReadService,
   ) {}
+
+  @Get('all')
+  @ApiOperation({
+    summary:
+      'List the notifications collection across all users (read-only, paginated)',
+  })
+  @ApiResponse({ status: 200, type: NotificationsCollectionPageDto })
+  @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
+  async listAll(
+    @Query() query: ListAllNotificationsQueryDto,
+  ): Promise<NotificationsCollectionPageDto> {
+    try {
+      const result = await this.listAllNotificationsService.execute({
+        limit: query.limit,
+        offset: query.offset,
+      });
+
+      return {
+        items: result.notifications.map((notification) =>
+          NotificationResponseMapper.toResponse(notification),
+        ),
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+      };
+    } catch (error) {
+      throw this.mapError(error);
+    }
+  }
 
   @Get()
   @ApiOperation({ summary: 'List authenticated user notifications' })

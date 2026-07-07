@@ -244,11 +244,13 @@ Notification preferences are owned by the Notification service (`http://localhos
 | `PATCH /users/:id/delivery-channels`                   | API proxy → Notification service                    |
 | `POST /users/:id/delivery-channels/telegram/link-code` | API proxy → Notification service                    |
 | `GET /users/me`                                        | API (identity) + Notification service (preferences) |
+| `GET /users`                                           | API (read-only directory of the `users` collection) |
 
 Direct Notification service routes (no JWT on the service boundary; intended for internal or local use):
 
 | Method   | Route                                                                          |
 | -------- | ------------------------------------------------------------------------------ |
+| `GET`    | `/notification-preferences/users` (JWT required, paginated)                    |
 | `GET`    | `/notification-preferences/users/:userId`                                      |
 | `GET`    | `/notification-preferences/users/:userId/subscriptions`                        |
 | `POST`   | `/notification-preferences/users/:userId/subscriptions/:stationId`             |
@@ -259,10 +261,43 @@ Direct Notification service routes (no JWT on the service boundary; intended for
 | `GET`    | `/notifications`                                                               |
 | `PATCH`  | `/notifications/:id/read`                                                      |
 | `PATCH`  | `/notifications/read-all`                                                      |
+| `GET`    | `/notifications/all` (JWT required, paginated)                                 |
 | `GET`    | `/notifications/stream`                                                        |
 | `POST`   | `/notifications/telegram/webhook`                                              |
 
 Persistence: `user_notification_profiles` and `notifications` collections in MongoDB (Notification service).
+
+---
+
+### `GET /users`
+
+**Auth required.** Read-only directory of the `users` collection, added for the web "Datos" section (S-03.17). Any authenticated user may call it. The password hash is never included in the response.
+
+**Query params (optional):**
+| Param | Type | Description |
+|---|---|---|
+| `limit` | number | Page size, 1 to 100. Default: 20 |
+| `offset` | number | Items to skip before the first result. Default: 0 |
+
+**Response `200`:**
+
+```json
+{
+  "items": [
+    {
+      "id": "user-uuid",
+      "name": "Bruno",
+      "lastName": "Lattanzio",
+      "email": "bruno@example.com",
+      "role": "USER",
+      "createdAt": "2026-04-25T12:00:00.000Z"
+    }
+  ],
+  "total": 2,
+  "limit": 20,
+  "offset": 0
+}
+```
 
 ---
 
@@ -449,6 +484,30 @@ These endpoints live on the Notification service and require the same JWT issued
 ```
 
 Response DTO: `NotificationsPageDto` with `items: NotificationResponseDto[]`, `nextCursor: string | null`, and `unreadCount: number`. `NotificationResponseDto` contains `id`, `userId`, `stationId`, `stationName`, `alertType`, `temperature`, `humidity`, `pressure`, `reportedAt`, `createdAt`, `readAt`, and `messageId`.
+
+### `GET /notifications/all`
+
+**Auth required.** Read-only listing of the whole `notifications` collection (all users), newest first. Added for the web "Datos" section (S-03.17).
+
+**Query params (optional):**
+| Param | Type | Description |
+|---|---|---|
+| `limit` | number | Page size, 1 to 100. Default: 20 |
+| `offset` | number | Items to skip before the first result. Default: 0 |
+
+**Response `200`:** `{ "items": NotificationResponseDto[], "total": number, "limit": number, "offset": number }`.
+
+### `GET /notification-preferences/users`
+
+**Auth required.** Read-only listing of the `user_notification_profiles` collection, paginated. Added for the web "Datos" section (S-03.17). Unlike the per-user `/notification-preferences/users/:userId` routes (internal, unauthenticated), this collection-level route requires the JWT.
+
+**Query params (optional):**
+| Param | Type | Description |
+|---|---|---|
+| `limit` | number | Page size, 1 to 100. Default: 20 |
+| `offset` | number | Items to skip before the first result. Default: 0 |
+
+**Response `200`:** `{ "items": NotificationProfileResponseDto[], "total": number, "limit": number, "offset": number }`. Each item contains `userId`, `notificationPreferences` and `deliveryChannels`; Telegram linking codes are never included.
 
 ### `PATCH /notifications/:id/read`
 

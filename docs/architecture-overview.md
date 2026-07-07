@@ -413,7 +413,7 @@ Full scenario/dataset/threshold documentation:
 | Scheduled OpenWeather ingestion sequence     | `docs/architecture/sequences/scheduled-ingestion-sequence.mmd`              |
 | Current temperature report sequence          | `docs/architecture/sequences/current-temperature-report-sequence.mmd`       |
 | Temperature average report sequence          | `docs/architecture/sequences/temperature-average-report-sequence.mmd`       |
-| MongoDB ER diagram                           | `docs/architecture/uml/weatherflow-er.mmd`                                  |
+| MongoDB document model diagram               | `docs/architecture/uml/weatherflow-document-model.mmd`                      |
 
 ## Delivery I Historical Material
 

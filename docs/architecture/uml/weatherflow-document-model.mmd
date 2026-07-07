@@ -1,0 +1,102 @@
+classDiagram
+direction LR
+
+%% MongoDB Atlas document model. Each class below is a collection (or an
+%% embedded sub-document/array element living inside one). Composition (*--)
+%% means the child is embedded in the same document as the parent and is
+%% read/written atomically with it. A dashed dependency (..>) means the field
+%% only stores an id/name that the application resolves with a separate
+%% query; MongoDB enforces no referential integrity for it.
+
+class users["users (Collection)"] {
+  +_id
+  +name
+  +lastName
+  +email «unique»
+  +passwordHash
+  +role
+  +createdAt
+}
+
+class weather_stations["weather_stations (Collection)"] {
+  +_id
+  +name
+  +location_latitude
+  +location_longitude
+  +sensorModel
+  +status
+  +ownerId
+  +alertSettings_extremeHeat
+  +alertSettings_frost
+  +alertSettings_storm
+  +alertSettings_criticalHumidity
+  +provider
+  +createdAt
+}
+
+class measurements["measurements (Collection)"] {
+  +_id
+  +stationId
+  +temperature
+  +humidity
+  +pressure
+  +reportedAt
+  +alertStatus
+  +alertType
+  +source
+  +createdAt
+}
+
+class user_notification_profiles["user_notification_profiles (Collection)"] {
+  +_id «= userId»
+  +deliveryChannels_inApp
+  +idx_notificationPreferences_stationId
+  +idx_telegramLinking_code
+}
+
+class NotificationPreferenceEntry["NotificationPreferenceEntry (EmbeddedArrayItem)"] {
+  +stationId
+  +alertTypes
+}
+
+class DeliveryChannels["DeliveryChannels (EmbeddedDocument)"] {
+  +telegram_chatId
+  +log_enabled
+}
+
+class TelegramLinking["TelegramLinking (EmbeddedDocument)"] {
+  +code
+  +expiresAt
+}
+
+class notifications["notifications (Collection)"] {
+  +_id
+  +userId
+  +stationId
+  +stationName «denormalized snapshot»
+  +alertType
+  +temperature
+  +humidity
+  +pressure
+  +reportedAt
+  +createdAt
+  +readAt «nullable»
+  +messageId
+  +idx_userId_createdAt
+  +uniqueIdx_userId_messageId «partial»
+}
+
+%% Embedded sub-documents: read/written atomically with the parent document,
+%% never as a separate collection or join.
+user_notification_profiles *-- NotificationPreferenceEntry : notificationPreferences (embedded array)
+user_notification_profiles *-- DeliveryChannels : deliveryChannels (embedded)
+user_notification_profiles *-- TelegramLinking : telegramLinking (embedded)
+
+%% Cross-collection references: plain ids resolved by the application, no
+%% database-level foreign key or join involved.
+weather_stations ..> users : ownerId, reference only
+measurements ..> weather_stations : stationId, reference only
+user_notification_profiles ..> users : userId, 1-1 reference only
+NotificationPreferenceEntry ..> weather_stations : stationId, reference only
+notifications ..> users : userId, reference only
+notifications ..> weather_stations : stationId, reference only, stationName denormalized

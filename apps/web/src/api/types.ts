@@ -54,6 +54,14 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface TelegramLinkCode {
+  code: string;
+  expiresAt: string;
+  instructions: string;
+  botUsername?: string;
+  botUrl?: string;
+}
+
 export interface WeatherStation {
   id: string;
   name: string;

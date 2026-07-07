@@ -361,9 +361,15 @@ Persistence: `user_notification_profiles` and `notifications` collections in Mon
 **Linking flow:**
 
 1. Register with `POST /auth/register`.
-2. Call `POST /users/:id/delivery-channels/telegram/link-code`.
+2. Call `POST /users/:id/delivery-channels/telegram/link-code` (the web UI
+   exposes this from *Perfil → Canales de entrega → Telegram*).
 3. Send `/link <code>` to the WeatherFlow Telegram bot.
 4. The backend receives the Telegram webhook and stores the sender chat automatically.
+
+To unlink, send `PATCH /users/:id/delivery-channels` with
+`{ "deliveryChannels": { "telegram": { "chatId": null } } }` (also available in
+the web profile page). To expose the webhook locally with a tunnel, see
+[docs/notifications/telegram-webhook-runbook.md](notifications/telegram-webhook-runbook.md).
 
 ---
 

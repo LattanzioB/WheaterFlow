@@ -6,6 +6,7 @@ import type {
   MeasurementFilters,
   NotificationsPage,
   SubscribedStationSummary,
+  TelegramLinkCode,
   UserProfile,
   WeatherProvider,
   WeatherStation,
@@ -164,6 +165,14 @@ export function updateDeliveryChannels(
   return apiRequest(`/users/${userId}/delivery-channels`, {
     method: 'PATCH',
     body: JSON.stringify({ deliveryChannels }),
+  });
+}
+
+export function createTelegramLinkCode(
+  userId: string,
+): Promise<TelegramLinkCode> {
+  return apiRequest(`/users/${userId}/delivery-channels/telegram/link-code`, {
+    method: 'POST',
   });
 }
 

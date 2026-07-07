@@ -28,6 +28,21 @@ Abrir `http://localhost:5174`.
 4. **Usuario A**: volver a registrar medición con alerta en la misma estación.
 5. Revisar logs del servicio de notificaciones (`NOTIFICATION_DELIVERY_MODE=log`).
 
+## Vinculación de Telegram
+
+Desde *Perfil → Canales de entrega → Telegram*:
+
+1. **Generar código de vinculación** muestra el código, su expiración y el
+   comando `/link CODE` a enviar al bot (`TELEGRAM_BOT_USERNAME`).
+2. Enviar el comando al bot y presionar **Ya envié el código — verificar**;
+   el panel pasa a *Vinculado* con el `chatId` del chat.
+3. **Desvincular Telegram** limpia el `chatId` vía
+   `PATCH /users/:id/delivery-channels`.
+
+Para recibir el `/link` en entorno local hace falta exponer el webhook del
+servicio de notificaciones con un túnel: ver
+[docs/notifications/telegram-webhook-runbook.md](../../docs/notifications/telegram-webhook-runbook.md).
+
 ## Docker
 
 Con `docker compose up --build`, la UI queda en `http://localhost:8080` y llama a la API en `http://localhost:3000` (navegador del host).

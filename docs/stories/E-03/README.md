@@ -49,6 +49,8 @@ RabbitMQ y despacho de notificaciones.
 | S-03.13 | Pruebas de carga de consultas y reportes              | completada |
 | S-03.14 | Panel de monitoreo y estrategia de alertas operativas | completada |
 | S-03.15 | Documentación de arquitectura de la Entrega III       | en progreso (falta evidencia de una semana de datos) |
+| S-03.16 | Vinculación Telegram en la web y prueba E2E de alertas | en progreso (falta evidencia E2E con bot real) |
+| S-03.17 | Visualización de datos de la base en la web           | pendiente  |
 
 ## Dependencias
 
@@ -63,6 +65,9 @@ S-03.3 ──> S-03.11
 S-03.6 + S-03.11 ──> S-03.12
 S-03.11 + S-03.12 ──> S-03.14
 Todas ──> S-03.15
+
+S-02.9 (apps/web) ──> S-03.16   (backend Telegram ya existente, E-02)
+S-02.9 (apps/web) ──> S-03.17   (independiente de S-03.16)
 ```
 
 ### Carriles paralelos

@@ -2,8 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ALERT_NOTIFIER_TOKEN } from '@shared/tokens/injection-tokens';
-import { NOTIFICATION_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
+import {
+  ALERT_NOTIFIER_TOKEN,
+  ALERT_NOTIFIERS_TOKEN,
+  NOTIFICATION_REPOSITORY_TOKEN,
+} from '@shared/tokens/injection-tokens';
 import { NotificationPreferencesModule } from '../notification-preferences/notification-preferences.module';
 import { ListAllNotificationsService } from './application/services/list-all-notifications.service';
 import { ListUserNotificationsService } from './application/services/list-user-notifications.service';
@@ -60,6 +63,19 @@ import { TelegramWebhookController } from './interface/controllers/telegram-webh
     {
       provide: NOTIFICATION_REPOSITORY_TOKEN,
       useClass: MongoNotificationRepository,
+    },
+    {
+      provide: ALERT_NOTIFIERS_TOKEN,
+      inject: [
+        TelegramAlertNotifierAdapter,
+        InAppAlertNotifierAdapter,
+        LogAlertNotifierAdapter,
+      ],
+      useFactory: (
+        telegramNotifier: TelegramAlertNotifierAdapter,
+        inAppNotifier: InAppAlertNotifierAdapter,
+        logNotifier: LogAlertNotifierAdapter,
+      ) => [telegramNotifier, inAppNotifier, logNotifier],
     },
     {
       provide: ALERT_NOTIFIER_TOKEN,

@@ -15,7 +15,6 @@ type EnvShape = {
   JWT_EXPIRES_IN?: string;
   JWT_SECRET: string;
   MONGODB_URI: string;
-  NOTIFICATION_DELIVERY_MODE?: string;
   NOTIFICATION_SERVICE_URL: string;
   NOTIFICATIONS_PORT?: number | string;
   PORT?: number | string;
@@ -51,7 +50,6 @@ describe('envValidationSchema', () => {
     INGESTION_RETRY_ATTEMPTS: 1,
     INGESTION_RETRY_BASE_DELAY_MS: 100,
     NOTIFICATION_SERVICE_URL: 'http://notifications:3001',
-    NOTIFICATION_DELIVERY_MODE: 'log',
     RABBITMQ_URL: 'amqp://weatherflow:weatherflow@rabbitmq:5672',
     RABBITMQ_ALERT_EXCHANGE: 'weatherflow.alerts',
     RABBITMQ_ALERT_QUEUE: 'weatherflow.notifications.alerts',
@@ -248,7 +246,6 @@ describe('notificationsEnvValidationSchema', () => {
     RABBITMQ_ALERT_EXCHANGE: 'weatherflow.alerts',
     RABBITMQ_ALERT_QUEUE: 'weatherflow.notifications.alerts',
     RABBITMQ_ALERT_ROUTING_KEY: 'alerts.climate.detected',
-    NOTIFICATION_DELIVERY_MODE: 'log',
   };
 
   const validateNotificationsEnv = (
@@ -276,14 +273,5 @@ describe('notificationsEnvValidationSchema', () => {
     expect(NOTIFICATIONS_PORT).toBe('3001');
     expect(error).toBeUndefined();
     expect(value.NOTIFICATIONS_PORT).toBe(3001);
-  });
-
-  it('should reject unsupported notification delivery modes', () => {
-    const { error } = validateNotificationsEnv({
-      ...validEnv,
-      NOTIFICATION_DELIVERY_MODE: 'smtp',
-    });
-    expect(error).toBeDefined();
-    expect(error!.message).toContain('NOTIFICATION_DELIVERY_MODE');
   });
 });

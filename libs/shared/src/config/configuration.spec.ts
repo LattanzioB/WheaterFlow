@@ -23,7 +23,6 @@ describe('configuration factory', () => {
     process.env.TELEGRAM_WEBHOOK_SECRET = 'secret-token';
     process.env.NOTIFICATIONS_PORT = '4001';
     process.env.NOTIFICATION_SERVICE_URL = 'http://notifications:3001';
-    process.env.NOTIFICATION_DELIVERY_MODE = 'log';
     process.env.RABBITMQ_URL = 'amqp://weatherflow:weatherflow@rabbitmq:5672';
     process.env.RABBITMQ_ALERT_EXCHANGE = 'weatherflow.alerts';
     process.env.RABBITMQ_ALERT_QUEUE = 'weatherflow.notifications.alerts';
@@ -101,12 +100,10 @@ describe('configuration factory', () => {
 
   it('should map notification service runtime options', () => {
     process.env.NOTIFICATION_SERVICE_URL = 'http://notifications:3001';
-    process.env.NOTIFICATION_DELIVERY_MODE = 'telegram';
 
     const config = configuration();
 
     expect(config.notifications.serviceUrl).toBe('http://notifications:3001');
-    expect(config.notifications.deliveryMode).toBe('telegram');
   });
 
   it('should map RabbitMQ alert topology', () => {
@@ -153,7 +150,6 @@ describe('configuration factory', () => {
     expect(config.telegram).toHaveProperty('botUsername');
     expect(config.telegram).toHaveProperty('webhookSecret');
     expect(config.notifications).toHaveProperty('serviceUrl');
-    expect(config.notifications).toHaveProperty('deliveryMode');
     expect(config.rabbitmq).toHaveProperty('url');
     expect(config.rabbitmq).toHaveProperty('alertExchange');
     expect(config.rabbitmq).toHaveProperty('alertQueue');

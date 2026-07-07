@@ -26,7 +26,7 @@ Abrir `http://localhost:5174`.
 2. **Usuario B**: cerrar sesión → registrarse o usar `collaborator@example.com` / `mockpass123` (si corriste el seed).
 3. **Usuario B**: *Estaciones disponibles* → copiar ID de la estación de A → *Suscripciones* → suscribirse con tipo `EXTREME_HEAT`.
 4. **Usuario A**: volver a registrar medición con alerta en la misma estación.
-5. Revisar logs del servicio de notificaciones (`NOTIFICATION_DELIVERY_MODE=log`).
+5. Revisar el canal habilitado para el Usuario B: historial in-app, Telegram vinculado o logs.
 
 ## Vinculación de Telegram
 

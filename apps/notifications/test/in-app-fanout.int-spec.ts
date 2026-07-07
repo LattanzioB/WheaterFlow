@@ -72,7 +72,6 @@ describe('Notification service in-app fanout integration', () => {
     process.env.RABBITMQ_ALERT_ROUTING_KEY = routingKey;
     process.env.JWT_SECRET =
       process.env.JWT_SECRET ?? 'integration-test-secret';
-    process.env.NOTIFICATION_DELIVERY_MODE = 'log';
 
     await cleanMongoCollections(database);
     await prepareRabbitMq();

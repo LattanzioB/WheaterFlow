@@ -161,7 +161,6 @@ Copy `.env.example` to `.env` and configure the following values:
 | `RABBITMQ_ALERT_EXCHANGE`    | Alert exchange name                                                       | `weatherflow.alerts`                           |
 | `RABBITMQ_ALERT_QUEUE`       | Notification alert queue name                                             | `weatherflow.notifications.alerts`             |
 | `RABBITMQ_ALERT_ROUTING_KEY` | Climate alert routing key                                                 | `alerts.climate.detected`                      |
-| `NOTIFICATION_DELIVERY_MODE` | Notification runtime mode for local delivery                              | `log`                                          |
 | `TELEGRAM_BOT_TOKEN`         | Telegram bot token used for alert delivery and Telegram account linking   | `your-bot-token`                               |
 | `TELEGRAM_BOT_USERNAME`      | Optional bot username shown to users when generating a Telegram link code | `weatherflow_bot`                              |
 | `TELEGRAM_WEBHOOK_SECRET`    | Optional secret validated on Telegram webhook requests                    | `your-webhook-secret`                          |

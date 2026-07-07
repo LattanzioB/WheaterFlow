@@ -16,6 +16,12 @@ export function getTelegramChannelStatus(
   return { linked: false, chatId: null };
 }
 
+export function getInAppChannelEnabled(
+  deliveryChannels: UserProfile['deliveryChannels'],
+): boolean {
+  return deliveryChannels.inApp;
+}
+
 export function isLinkCodeExpired(
   linkCode: Pick<TelegramLinkCode, 'expiresAt'>,
   now: Date,

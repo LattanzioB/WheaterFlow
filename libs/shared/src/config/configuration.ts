@@ -16,7 +16,6 @@ export default () => ({
   },
   notifications: {
     serviceUrl: process.env.NOTIFICATION_SERVICE_URL,
-    deliveryMode: process.env.NOTIFICATION_DELIVERY_MODE || 'log',
   },
   ingestion: {
     systemToken: process.env.INGESTION_SYSTEM_TOKEN,

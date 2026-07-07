@@ -55,9 +55,6 @@ export const envValidationSchema = Joi.object({
     .min(0)
     .max(60_000)
     .default(100),
-  NOTIFICATION_DELIVERY_MODE: Joi.string()
-    .valid('log', 'telegram')
-    .default('log'),
 });
 
 export const notificationsEnvValidationSchema = Joi.object({
@@ -69,7 +66,4 @@ export const notificationsEnvValidationSchema = Joi.object({
     'string.min': 'JWT_SECRET must be at least 8 characters long.',
   }),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
-  NOTIFICATION_DELIVERY_MODE: Joi.string()
-    .valid('log', 'telegram')
-    .default('log'),
 });

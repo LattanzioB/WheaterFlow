@@ -1,14 +1,15 @@
-import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { AlertType } from '@contracts';
 import { CompositeAlertNotifierAdapter } from './composite-alert-notifier.adapter';
-import { InAppAlertNotifierAdapter } from './in-app-alert-notifier.adapter';
-import { LogAlertNotifierAdapter } from './log-alert-notifier.adapter';
-import { TelegramAlertNotifierAdapter } from './telegram-alert-notifier.adapter';
+import type { AlertNotifier } from '../../domain/ports/alert-notifier.port';
 
 describe('CompositeAlertNotifierAdapter', () => {
   const notification = {
     userId: 'user-1',
-    deliveryTargets: [{ channel: 'in-app', destination: 'user-1' }],
+    deliveryTargets: [
+      { channel: 'telegram', destination: '123456789' },
+      { channel: 'in-app', destination: 'user-1' },
+    ],
     messageId: 'message-1',
     measurementId: 'measurement-1',
     stationId: 'station-1',
@@ -20,24 +21,20 @@ describe('CompositeAlertNotifierAdapter', () => {
     pressure: 970,
   };
 
-  const buildNotifier = <T extends object>() =>
+  const buildNotifier = () =>
     ({
       sendMeasurementAlert: jest.fn(),
-    }) as unknown as jest.Mocked<T & { sendMeasurementAlert: jest.Mock }>;
+    }) as jest.Mocked<AlertNotifier>;
 
-  it('runs Telegram delivery and in-app persistence in telegram mode', async () => {
-    const configService = {
-      get: jest.fn().mockReturnValue('telegram'),
-    } as unknown as jest.Mocked<ConfigService>;
-    const logNotifier = buildNotifier<LogAlertNotifierAdapter>();
-    const telegramNotifier = buildNotifier<TelegramAlertNotifierAdapter>();
-    const inAppNotifier = buildNotifier<InAppAlertNotifierAdapter>();
-    const adapter = new CompositeAlertNotifierAdapter(
-      configService,
-      logNotifier,
+  it('fans out the complete notification to every registered notifier', async () => {
+    const telegramNotifier = buildNotifier();
+    const inAppNotifier = buildNotifier();
+    const logNotifier = buildNotifier();
+    const adapter = new CompositeAlertNotifierAdapter([
       telegramNotifier,
       inAppNotifier,
-    );
+      logNotifier,
+    ]);
 
     await adapter.sendMeasurementAlert(notification);
 
@@ -47,22 +44,19 @@ describe('CompositeAlertNotifierAdapter', () => {
     expect(inAppNotifier.sendMeasurementAlert).toHaveBeenCalledWith(
       notification,
     );
-    expect(logNotifier.sendMeasurementAlert).not.toHaveBeenCalled();
+    expect(logNotifier.sendMeasurementAlert).toHaveBeenCalledWith(notification);
   });
 
   it('continues fan-out when one notifier throws', async () => {
-    const configService = {
-      get: jest.fn().mockReturnValue('telegram'),
-    } as unknown as jest.Mocked<ConfigService>;
-    const logNotifier = buildNotifier<LogAlertNotifierAdapter>();
-    const telegramNotifier = buildNotifier<TelegramAlertNotifierAdapter>();
-    const inAppNotifier = buildNotifier<InAppAlertNotifierAdapter>();
-    const adapter = new CompositeAlertNotifierAdapter(
-      configService,
-      logNotifier,
+    const loggerSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation();
+    const telegramNotifier = buildNotifier();
+    const inAppNotifier = buildNotifier();
+    const adapter = new CompositeAlertNotifierAdapter([
       telegramNotifier,
       inAppNotifier,
-    );
+    ]);
 
     telegramNotifier.sendMeasurementAlert.mockRejectedValue(
       new Error('telegram failed'),
@@ -74,5 +68,6 @@ describe('CompositeAlertNotifierAdapter', () => {
     expect(inAppNotifier.sendMeasurementAlert).toHaveBeenCalledWith(
       notification,
     );
+    loggerSpy.mockRestore();
   });
 });

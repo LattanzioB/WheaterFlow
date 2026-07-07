@@ -37,7 +37,7 @@ describe('S-03.15 distributed C4 architecture documentation', () => {
     expect(source).toContain('Container(ingestion, "Ingestion service"');
     expect(source).toContain('ContainerDb(rabbit, "RabbitMQ"');
     expect(source).toContain('ContainerDb_Ext(mongoAtlas, "MongoDB Atlas"');
-    expect(source).toContain('System_Ext(openweather, "OpenWeather API"');
+    expect(source).toContain('System_Ext(openweather, "OpenWeatherMap API"');
     expect(source).toContain('System_Ext(telegram, "Telegram Bot API"');
   });
 

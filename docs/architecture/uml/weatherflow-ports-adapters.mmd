@@ -133,6 +133,22 @@ class WeatherStationPersistenceModel["WeatherStationPersistenceModel (Persistenc
 class MeasurementPersistenceModel["MeasurementPersistenceModel (PersistenceModel)"]
 class NotificationPersistenceModel["NotificationPersistenceModel (PersistenceModel)"]
 
+%% Alert publishing port and adapter (API service -> RabbitMQ)
+class AlertPublisher["AlertPublisher (Port)"] {
+  +publishClimateAlert(message)
+}
+
+class ClimateAlertDetectedMessage["ClimateAlertDetectedMessage (Message)"] {
+  +measurementId
+  +stationId
+  +alertType
+  +reportedAt
+}
+
+class RabbitMqAlertPublisherAdapter["RabbitMqAlertPublisherAdapter (Adapter)"] {
+  +publishClimateAlert(message)
+}
+
 %% Notifications port and adapter
 class AlertNotifier["AlertNotifier (Port)"] {
   +sendMeasurementAlert(notification)
@@ -183,6 +199,46 @@ class EventEmitter2["EventEmitter2 (EventBus)"] {
   +emit(event, payload)
 }
 
+%% Ingestion ports and adapters (Entrega 3)
+class WeatherStationCatalog["WeatherStationCatalog (Port)"] {
+  +listOpenWeatherStations()
+}
+
+class WeatherDataProvider["WeatherDataProvider (Port)"] {
+  +getCurrentWeather(location)
+}
+
+class WeatherDataProviderCache["WeatherDataProviderCache (Port)"] {
+  +getCachedReading(location)
+}
+
+class MeasurementSubmitter["MeasurementSubmitter (Port)"] {
+  +submitMeasurement(command)
+}
+
+class ApiWeatherStationCatalogAdapter["ApiWeatherStationCatalogAdapter (Adapter)"] {
+  +listOpenWeatherStations()
+}
+
+class ResilientWeatherDataProvider["ResilientWeatherDataProvider (Adapter)"] {
+  +getCurrentWeather(location)
+  +getCachedReading(location)
+}
+
+class OpenWeatherMapAdapter["OpenWeatherMapAdapter (Adapter)"] {
+  +getCurrentWeather(location)
+}
+
+class ApiMeasurementSubmitterAdapter["ApiMeasurementSubmitterAdapter (Adapter)"] {
+  +submitMeasurement(command)
+}
+
+%% API-side client for the synchronous current-temperature read; GetCurrentTemperatureReportService
+%% depends on this concrete class directly, there is no port interface for this outbound call.
+class ApiToIngestionCurrentWeatherClient["ApiToIngestionCurrentWeatherClient (Adapter, no dedicated port)"] {
+  +getCurrentWeather(location)
+}
+
 PasswordHasher <|.. BcryptPasswordHasher
 TokenService <|.. JwtTokenService
 JwtTokenService ..> AuthTokenPayload : signs
@@ -220,3 +276,13 @@ InAppAlertNotifierAdapter ..> EventEmitter2 : emits notification.delivered
 MongoNotificationRepository ..> Notification : persists
 MeasurementAlertNotification *-- NotificationDeliveryTarget : delivery targets
 MeasurementAlertNotification --> AlertType : alert type
+
+AlertPublisher <|.. RabbitMqAlertPublisherAdapter
+RabbitMqAlertPublisherAdapter ..> ClimateAlertDetectedMessage : publishes
+
+WeatherStationCatalog <|.. ApiWeatherStationCatalogAdapter
+WeatherDataProvider <|.. ResilientWeatherDataProvider
+WeatherDataProviderCache <|.. ResilientWeatherDataProvider
+WeatherDataProvider <|.. OpenWeatherMapAdapter
+MeasurementSubmitter <|.. ApiMeasurementSubmitterAdapter
+ResilientWeatherDataProvider ..> OpenWeatherMapAdapter : delegates when breaker closed and bulkhead available

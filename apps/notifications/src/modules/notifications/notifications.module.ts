@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ALERT_NOTIFIER_TOKEN } from '@shared/tokens/injection-tokens';
 import { NOTIFICATION_REPOSITORY_TOKEN } from '@shared/tokens/injection-tokens';
 import { NotificationPreferencesModule } from '../notification-preferences/notification-preferences.module';
+import { ListAllNotificationsService } from './application/services/list-all-notifications.service';
 import { ListUserNotificationsService } from './application/services/list-user-notifications.service';
 import { MarkAllNotificationsReadService } from './application/services/mark-all-notifications-read.service';
 import { MarkNotificationReadService } from './application/services/mark-notification-read.service';
@@ -46,6 +47,7 @@ import { TelegramWebhookController } from './interface/controllers/telegram-webh
     NotificationStreamController,
   ],
   providers: [
+    ListAllNotificationsService,
     ListUserNotificationsService,
     MarkNotificationReadService,
     MarkAllNotificationsReadService,

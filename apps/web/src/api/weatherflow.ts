@@ -4,13 +4,21 @@ import type {
   AuthResponse,
   Measurement,
   MeasurementFilters,
+  NotificationProfilesPage,
+  NotificationsCollectionPage,
   NotificationsPage,
   SubscribedStationSummary,
   TelegramLinkCode,
   UserProfile,
+  UsersDirectoryPage,
   WeatherProvider,
   WeatherStation,
 } from './types';
+
+export interface OffsetPaginationParams {
+  limit?: number;
+  offset?: number;
+}
 
 export function registerUser(payload: {
   name: string;
@@ -174,6 +182,36 @@ export function createTelegramLinkCode(
   return apiRequest(`/users/${userId}/delivery-channels/telegram/link-code`, {
     method: 'POST',
   });
+}
+
+export function fetchUsersDirectory(
+  params: OffsetPaginationParams = {},
+): Promise<UsersDirectoryPage> {
+  return apiRequest(
+    `/users${buildQuery({ limit: params.limit, offset: params.offset })}`,
+  );
+}
+
+export function fetchNotificationProfiles(
+  params: OffsetPaginationParams = {},
+): Promise<NotificationProfilesPage> {
+  return notificationsRequest(
+    `/notification-preferences/users${buildQuery({
+      limit: params.limit,
+      offset: params.offset,
+    })}`,
+  );
+}
+
+export function fetchAllNotifications(
+  params: OffsetPaginationParams = {},
+): Promise<NotificationsCollectionPage> {
+  return notificationsRequest(
+    `/notifications/all${buildQuery({
+      limit: params.limit,
+      offset: params.offset,
+    })}`,
+  );
 }
 
 export function fetchNotifications(

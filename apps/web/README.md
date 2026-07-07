@@ -43,6 +43,25 @@ Para recibir el `/link` en entorno local hace falta exponer el webhook del
 servicio de notificaciones con un túnel: ver
 [docs/notifications/telegram-webhook-runbook.md](../../docs/notifications/telegram-webhook-runbook.md).
 
+## Sección Datos (S-03.17)
+
+Dos entradas de navegación permiten inspeccionar los datos persistidos en
+MongoDB sin Compass, mongosh ni Swagger (siempre vía REST con JWT):
+
+- **Datos · Series** (`/data/series`): gráficos de series de tiempo de las
+  mediciones (Recharts) con selector de estación, rango de fechas y métricas
+  conmutables (temperatura, humedad, presión). Cada métrica se dibuja en su
+  propio panel con eje propio, alimentado por `GET /measurements`.
+- **Datos · Colecciones** (`/data/colecciones`): tablas de solo lectura con
+  paginación para las 5 colecciones: `users` (`GET /users`, sin hash de
+  contraseña), `weather_stations` (`GET /weather-stations/available`),
+  `measurements` (`GET /measurements`), `user_notification_profiles`
+  (`GET /notification-preferences/users`, servicio de notificaciones) y
+  `notifications` (`GET /notifications/all`, servicio de notificaciones).
+
+Requiere el servicio de notificaciones en ejecución
+(`VITE_API_NOTIFICATIONS_BASE_URL`, por defecto `http://localhost:3001`).
+
 ## Docker
 
 Con `docker compose up --build`, la UI queda en `http://localhost:8080` y llama a la API en `http://localhost:3000` (navegador del host).

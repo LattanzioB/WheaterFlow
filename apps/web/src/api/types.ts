@@ -135,3 +135,48 @@ export interface NotificationsPage {
 
 export type AppNotification = Notification;
 export type NotificationsPageResult = NotificationsPage;
+
+export type UserRole = 'USER' | 'ADMIN';
+
+export interface UserDirectoryItem {
+  id: string;
+  name: string;
+  lastName: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+export interface UsersDirectoryPage {
+  items: UserDirectoryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface NotificationProfile {
+  userId: string;
+  notificationPreferences: {
+    stationId: string;
+    alertTypes: AlertType[];
+  }[];
+  deliveryChannels: {
+    telegram: { chatId: string | null };
+    log: { enabled: boolean };
+    inApp: boolean;
+  };
+}
+
+export interface NotificationProfilesPage {
+  items: NotificationProfile[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface NotificationsCollectionPage {
+  items: Notification[];
+  total: number;
+  limit: number;
+  offset: number;
+}

@@ -5,6 +5,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { NotificationsProvider } from './notifications/NotificationsContext';
 import { AvailableStationsPage } from './pages/AvailableStationsPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { DataCollectionsPage } from './pages/DataCollectionsPage';
+import { DataSeriesPage } from './pages/DataSeriesPage';
 import { LoginPage } from './pages/LoginPage';
 import { MeasurementsPage } from './pages/MeasurementsPage';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -33,6 +35,11 @@ export function App() {
                 />
                 <Route path="stations/:id" element={<StationDetailPage />} />
                 <Route path="measurements" element={<MeasurementsPage />} />
+                <Route path="data/series" element={<DataSeriesPage />} />
+                <Route
+                  path="data/colecciones"
+                  element={<DataCollectionsPage />}
+                />
                 <Route path="subscriptions" element={<SubscriptionsPage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
               </Route>

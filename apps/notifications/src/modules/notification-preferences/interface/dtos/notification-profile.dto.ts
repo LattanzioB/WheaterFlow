@@ -5,9 +5,12 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
+  Min,
   NotEquals,
   ValidateNested,
 } from 'class-validator';
@@ -51,6 +54,55 @@ export class NotificationProfileResponseDto {
 
   @ApiProperty({ type: NotificationDeliveryChannelsDto })
   deliveryChannels!: NotificationDeliveryChannelsDto;
+}
+
+export class QueryNotificationProfilesDto {
+  @ApiPropertyOptional({
+    description: 'Maximum number of profiles to return.',
+    example: 20,
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+
+  @ApiPropertyOptional({
+    description: 'Number of profiles to skip before the first item.',
+    example: 0,
+    minimum: 0,
+    default: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset?: number;
+}
+
+export class NotificationProfilesPageDto {
+  @ApiProperty({
+    type: NotificationProfileResponseDto,
+    isArray: true,
+    description: 'Notification profiles in the requested page.',
+  })
+  items!: NotificationProfileResponseDto[];
+
+  @ApiProperty({
+    example: 15,
+    description: 'Total notification profiles in the collection.',
+  })
+  total!: number;
+
+  @ApiProperty({ example: 20, description: 'Page size used for the query.' })
+  limit!: number;
+
+  @ApiProperty({ example: 0, description: 'Offset used for the query.' })
+  offset!: number;
 }
 
 export class SubscribeToStationAlertsDto {

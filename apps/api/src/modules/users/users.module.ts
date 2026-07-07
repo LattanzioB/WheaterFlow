@@ -9,6 +9,7 @@ import { StationsModule } from '../stations/stations.module';
 import { CreateTelegramLinkCodeService } from './application/services/create-telegram-link-code.service';
 import { GetUserByIdService } from './application/services/get-user-by-id.service';
 import { ListSubscribedStationsService } from './application/services/list-subscribed-stations.service';
+import { ListUsersService } from './application/services/list-users.service';
 import { SubscribeToStationAlertsService } from './application/services/subscribe-to-station-alerts.service';
 import { UnsubscribeFromStationAlertsService } from './application/services/unsubscribe-from-station-alerts.service';
 import { UpdateDeliveryChannelsService } from './application/services/update-delivery-channels.service';
@@ -21,6 +22,7 @@ import {
   UserSchema,
 } from './infrastructure/persistence/user.schema';
 import { UserNotificationPreferencesController } from './interface/controllers/user-notification-preferences.controller';
+import { UsersDirectoryController } from './interface/controllers/users-directory.controller';
 
 @Module({
   imports: [
@@ -33,11 +35,15 @@ import { UserNotificationPreferencesController } from './interface/controllers/u
     forwardRef(() => StationsModule),
     MeasurementsModule,
   ],
-  controllers: [UserNotificationPreferencesController],
+  controllers: [
+    UserNotificationPreferencesController,
+    UsersDirectoryController,
+  ],
   providers: [
     CreateTelegramLinkCodeService,
     GetUserByIdService,
     ListSubscribedStationsService,
+    ListUsersService,
     SubscribeToStationAlertsService,
     UnsubscribeFromStationAlertsService,
     UpdateStationAlertPreferencesService,

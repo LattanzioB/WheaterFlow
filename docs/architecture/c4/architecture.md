@@ -22,7 +22,7 @@ El **Usuario** accede solo a **Web UI**; la Web UI consume la API y el Notificat
 
 Fuente: [c4_level_3_api.plantuml](c4_level_3_api.plantuml).
 
-Descompone el contenedor **API service**: el **Usuario** interactua con los controladores a traves de **Web UI** (contenedor hermano). El API publica `ClimateAlertDetectedMessage` en RabbitMQ cuando una medicion dispara una alerta.
+Descompone el contenedor **API service**: el **Usuario** interactua con los controladores a traves de **Web UI** (contenedor hermano). El API publica `ClimateAlertDetectedMessage` en RabbitMQ cuando una medicion dispara una alerta. Incluye los dos controllers internos que recibe desde **Ingestion service** (`InternalIngestionStationsController` para el catalogo `provider=openweather`, `InternalIngestionMeasurementsController` para el alta idempotente de mediciones) y el camino de salida hacia Ingestion: `StationTemperatureReportsController` delega en `GetCurrentTemperatureReportService`, que usa `ApiToIngestionCurrentWeatherClient` para resolver el reporte de temperatura actual en tiempo real. `TemperatureAverageReportsController` resuelve los promedios diario/semanal solo contra MongoDB, sin tocar Ingestion. `MetricsController` (compartido desde `libs/shared`) expone `/metrics` a Prometheus y la instrumentacion de OpenTelemetry exporta spans a Jaeger, igual que en Notifications e Ingestion.
 
 ![C4 nivel 3 - API](c4_level_3_api.png)
 
@@ -30,7 +30,7 @@ Descompone el contenedor **API service**: el **Usuario** interactua con los cont
 
 Fuente: [c4_level_3_notifications.plantuml](c4_level_3_notifications.plantuml).
 
-Descompone el contenedor **Notification service**. Las preferencias llegan via proxy desde **API service**; el **Web UI** consume `GET /notifications`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all` y el stream SSE `GET /notifications/stream`. Incluye la coleccion `notifications`, el adaptador **InAppAlertNotifierAdapter**, el evento `notification.delivered` y el consumidor Web.
+Descompone el contenedor **Notification service**. Las preferencias llegan via proxy desde **API service**; el **Web UI** consume `GET /notifications`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all` y el stream SSE `GET /notifications/stream`. Incluye la coleccion `notifications`, el adaptador **InAppAlertNotifierAdapter**, el evento `notification.delivered` y el consumidor Web. Al igual que en API e Ingestion, `MetricsController` expone `/metrics` a Prometheus y la instrumentacion de OpenTelemetry exporta spans a Jaeger.
 
 ![C4 nivel 3 - Notifications](c4_level_3_notifications.png)
 
@@ -38,7 +38,7 @@ Descompone el contenedor **Notification service**. Las preferencias llegan via p
 
 Fuente: [c4_level_3_ingestion.plantuml](c4_level_3_ingestion.plantuml).
 
-Descompone el contenedor **Ingestion service** (Entrega III). `IngestionScheduler` dispara ciclos `scheduled` por `INGESTION_CRON`; `IngestionController` expone el trigger `manual`; ambos delegan en `RunIngestionCycleService`, que orquesta `ApiWeatherStationCatalogAdapter` (catalogo `provider=openweather`), `ResilientWeatherDataProvider` (timeout, circuit breaker, bulkhead y cache sobre `OpenWeatherMapAdapter`) y `ApiMeasurementSubmitterAdapter` (timeout, breaker, bulkhead, reintentos seguros con idempotencia hacia la API). `CurrentWeatherController` reutiliza el mismo `ResilientWeatherDataProvider` para el reporte de temperatura actual, sin el fallback de cache reservado a los ciclos programados. `ManualIngestionTokenGuard` protege los tres endpoints internos con `x-ingestion-token`. Ingestion no accede a MongoDB ni RabbitMQ directamente: siempre escribe a traves del limite REST interno de la API.
+Descompone el contenedor **Ingestion service** (Entrega III). `IngestionScheduler` dispara ciclos `scheduled` por `INGESTION_CRON`; `IngestionController` expone el trigger `manual`; ambos delegan en `RunIngestionCycleService`, que orquesta `ApiWeatherStationCatalogAdapter` (catalogo `provider=openweather`), `ResilientWeatherDataProvider` (timeout, circuit breaker, bulkhead y cache sobre `OpenWeatherMapAdapter`) y `ApiMeasurementSubmitterAdapter` (timeout, breaker, bulkhead, reintentos seguros con idempotencia hacia la API). `CurrentWeatherController` reutiliza el mismo `ResilientWeatherDataProvider` para el reporte de temperatura actual, sin el fallback de cache reservado a los ciclos programados. `ManualIngestionTokenGuard` protege los tres endpoints internos con `x-ingestion-token`. Ingestion no accede a MongoDB ni RabbitMQ directamente: siempre escribe a traves del limite REST interno de la API. `IngestionMetrics`, `OpenWeatherResilienceMetrics` y `HttpBoundaryMetrics` se registran en `MetricsController`, expuesto a Prometheus en `/metrics`; la instrumentacion de OpenTelemetry exporta spans a Jaeger.
 
 ![C4 nivel 3 - Ingestion](c4_level_3_ingestion.png)
 

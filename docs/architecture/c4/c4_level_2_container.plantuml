@@ -9,7 +9,7 @@ Person(usuario, "Usuario", "Utiliza la Web UI para registrarse, gestionar estaci
 Person(usuarioTelegram, "Usuario de Telegram", "Vincula su cuenta al sistema y recibe alertas climáticas a través del bot.")
 
 System_Ext(telegram, "Telegram Bot API", "Canal externo para vincular cuentas y entregar alertas al usuario.")
-System_Ext(openweather, "OpenWeather API", "Proveedor externo de observaciones meteorológicas.")
+System_Ext(openweather, "OpenWeatherMap API", "Proveedor externo de observaciones meteorológicas.")
 ContainerDb_Ext(mongoAtlas, "MongoDB Atlas", "MongoDB", "Colecciones: users, weather_stations, measurements, user_notification_profiles, notifications.")
 
 System_Boundary(weatherflow, "WeatherFlow") {
@@ -45,7 +45,7 @@ Rel(usuario, web, "Utiliza", "HTTPS")
 Rel(web, api, "Consume API REST", "HTTPS / JSON + JWT")
 Rel(web, notifications, "Consulta historial y abre stream de notificaciones", "HTTP REST / SSE")
 Rel(api, notifications, "Proxy de preferencias", "HTTP REST")
-Rel(ingestion, openweather, "Consulta observaciones meteorológicas", "HTTPS / JSON")
+Rel(ingestion, openweather, "Consulta observaciones meteorológicas actuales", "HTTPS / JSON")
 Rel(ingestion, api, "Consulta estaciones y registra lecturas por el pipeline de dominio", "HTTP REST")
 Rel(api, rabbit, "Publica ClimateAlertDetectedMessage", "AMQP", $tags="async")
 Rel(rabbit, notifications, "Consume alertas climáticas", "AMQP", $tags="async")

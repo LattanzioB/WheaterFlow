@@ -47,7 +47,6 @@ describeIntegration('in-app notification fan-out integration', () => {
     process.env.RABBITMQ_ALERT_EXCHANGE = exchange;
     process.env.RABBITMQ_ALERT_QUEUE = queue;
     process.env.RABBITMQ_ALERT_ROUTING_KEY = routingKey;
-    process.env.NOTIFICATION_DELIVERY_MODE = 'log';
 
     await cleanMongoCollections(environment.mongodbUri);
     await prepareRabbitMq();

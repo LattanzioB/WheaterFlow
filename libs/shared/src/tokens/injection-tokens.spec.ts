@@ -1,5 +1,6 @@
 import {
   ALERT_NOTIFIER_TOKEN,
+  ALERT_NOTIFIERS_TOKEN,
   ALERT_PUBLISHER_TOKEN,
   MEASUREMENT_REPOSITORY_TOKEN,
   PASSWORD_HASHER_TOKEN,
@@ -18,6 +19,7 @@ describe('injection tokens', () => {
     expect(PASSWORD_HASHER_TOKEN).toBe('PasswordHasher');
     expect(TOKEN_SERVICE_TOKEN).toBe('TokenService');
     expect(ALERT_NOTIFIER_TOKEN).toBe('AlertNotifier');
+    expect(ALERT_NOTIFIERS_TOKEN).toBe('AlertNotifiers');
     expect(NOTIFICATION_REPOSITORY_TOKEN).toBe('INotificationRepository');
   });
 });

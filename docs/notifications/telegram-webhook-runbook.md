@@ -16,7 +16,6 @@ must simply be able to reach `POST /notifications/telegram/webhook` over HTTPS.
   TELEGRAM_BOT_TOKEN=123456789:AA...        # from BotFather
   TELEGRAM_BOT_USERNAME=weatherflow_bot     # without the leading @
   TELEGRAM_WEBHOOK_SECRET=<random-string>   # e.g. openssl rand -hex 16
-  NOTIFICATION_DELIVERY_MODE=telegram       # or a mode that includes telegram
   ```
 
 - The stack running: `docker compose up --build` (or `npm run start:api:dev` +

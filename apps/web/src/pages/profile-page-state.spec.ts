@@ -2,6 +2,7 @@ import type { TelegramLinkCode, UserProfile } from '../api/types';
 import {
   buildLinkCommand,
   describeBotDestination,
+  getInAppChannelEnabled,
   getTelegramChannelStatus,
   isLinkCodeExpired,
 } from './profile-page-state';
@@ -17,9 +18,7 @@ function deliveryChannels(
   };
 }
 
-function linkCode(
-  overrides: Partial<TelegramLinkCode> = {},
-): TelegramLinkCode {
+function linkCode(overrides: Partial<TelegramLinkCode> = {}): TelegramLinkCode {
   return {
     code: 'WF-A1B2C3D4',
     expiresAt: '2026-07-06T12:10:00.000Z',
@@ -45,12 +44,24 @@ describe('profile page state', () => {
     expect(status).toEqual({ linked: false, chatId: null });
   });
 
+  it('reads the in-app channel as enabled from delivery channel state', () => {
+    expect(getInAppChannelEnabled(deliveryChannels({ inApp: true }))).toBe(
+      true,
+    );
+  });
+
+  it('reads the in-app channel as disabled from delivery channel state', () => {
+    expect(getInAppChannelEnabled(deliveryChannels({ inApp: false }))).toBe(
+      false,
+    );
+  });
+
   it('detects expired link codes, including the exact expiration instant', () => {
     const code = linkCode({ expiresAt: '2026-07-06T12:10:00.000Z' });
 
-    expect(
-      isLinkCodeExpired(code, new Date('2026-07-06T12:09:59.999Z')),
-    ).toBe(false);
+    expect(isLinkCodeExpired(code, new Date('2026-07-06T12:09:59.999Z'))).toBe(
+      false,
+    );
     expect(isLinkCodeExpired(code, new Date('2026-07-06T12:10:00.000Z'))).toBe(
       true,
     );

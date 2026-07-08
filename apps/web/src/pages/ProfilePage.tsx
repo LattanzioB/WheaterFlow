@@ -8,6 +8,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import {
   buildLinkCommand,
   describeBotDestination,
+  getInAppChannelEnabled,
   getTelegramChannelStatus,
   isLinkCodeExpired,
 } from './profile-page-state';
@@ -16,7 +17,7 @@ import { useEffect, useState } from 'react';
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
   const [inAppEnabled, setInAppEnabled] = useState(
-    user?.deliveryChannels.inApp ?? true,
+    user ? getInAppChannelEnabled(user.deliveryChannels) : true,
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setInAppEnabled(user.deliveryChannels.inApp);
+      setInAppEnabled(getInAppChannelEnabled(user.deliveryChannels));
     }
   }, [user]);
 
@@ -183,7 +184,10 @@ export function ProfilePage() {
                 <p>
                   Código: <code>{linkCode.code}</code>
                   {linkCodeExpired ? (
-                    <span className="tag-alert"> Expirado — generá uno nuevo.</span>
+                    <span className="tag-alert">
+                      {' '}
+                      Expirado — generá uno nuevo.
+                    </span>
                   ) : null}
                 </p>
                 <p>
@@ -213,7 +217,9 @@ export function ProfilePage() {
                   disabled={telegramBusy}
                   onClick={() => void handleVerifyLink()}
                 >
-                  {telegramBusy ? 'Verificando…' : 'Ya envié el código — verificar'}
+                  {telegramBusy
+                    ? 'Verificando…'
+                    : 'Ya envié el código — verificar'}
                 </button>
               </div>
             ) : null}

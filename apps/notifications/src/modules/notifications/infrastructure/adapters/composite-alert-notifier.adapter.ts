@@ -1,33 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AlertNotifier } from '../../domain/ports/alert-notifier.port';
 import { MeasurementAlertNotification } from '@contracts/notifications/measurement-alert-notification';
-import { InAppAlertNotifierAdapter } from './in-app-alert-notifier.adapter';
-import { LogAlertNotifierAdapter } from './log-alert-notifier.adapter';
-import { TelegramAlertNotifierAdapter } from './telegram-alert-notifier.adapter';
+import { ALERT_NOTIFIERS_TOKEN } from '@shared/tokens/injection-tokens';
 
 @Injectable()
 export class CompositeAlertNotifierAdapter implements AlertNotifier {
   private readonly logger = new Logger(CompositeAlertNotifierAdapter.name);
 
   constructor(
-    private readonly configService: ConfigService,
-    private readonly logNotifier: LogAlertNotifierAdapter,
-    private readonly telegramNotifier: TelegramAlertNotifierAdapter,
-    private readonly inAppNotifier: InAppAlertNotifierAdapter,
+    @Inject(ALERT_NOTIFIERS_TOKEN)
+    private readonly notifiers: AlertNotifier[],
   ) {}
 
   async sendMeasurementAlert(
     notification: MeasurementAlertNotification,
   ): Promise<void> {
-    const deliveryMode =
-      this.configService.get<string>('notifications.deliveryMode') ?? 'log';
-    const notifiers =
-      deliveryMode === 'telegram'
-        ? [this.telegramNotifier, this.inAppNotifier]
-        : [this.logNotifier, this.inAppNotifier];
-
-    for (const notifier of notifiers) {
+    for (const notifier of this.notifiers) {
       try {
         await notifier.sendMeasurementAlert(notification);
       } catch (error) {

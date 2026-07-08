@@ -72,7 +72,6 @@ RABBITMQ_URL=amqp://weatherflow:weatherflow@rabbitmq:5672
 RABBITMQ_ALERT_EXCHANGE=weatherflow.alerts
 RABBITMQ_ALERT_QUEUE=weatherflow.notifications.alerts
 RABBITMQ_ALERT_ROUTING_KEY=alerts.climate.detected
-NOTIFICATION_DELIVERY_MODE=log
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_BOT_USERNAME=
 TELEGRAM_WEBHOOK_SECRET=
@@ -274,8 +273,7 @@ from external ingestion to alerting and observability:
 4. **Trigger an alert from external data**: pick a station and threshold where
    the current OWM reading crosses an alert rule, or lower a station's alert
    threshold, then re-run the ingestion cycle and show the resulting
-   notification (log delivery, Telegram, or in-app, depending on
-   `NOTIFICATION_DELIVERY_MODE`).
+   notification in every delivery channel enabled for the user's profile.
 5. **Show the distributed trace for that same request** in Jaeger
    (`http://localhost:16686`): pick the `weatherflow-ingestion` service and
    find the trace spanning the OWM call, the ingestion-to-API submission, the

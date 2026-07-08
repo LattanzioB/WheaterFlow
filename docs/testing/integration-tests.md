@@ -28,7 +28,6 @@ RABBITMQ_ALERT_EXCHANGE=weatherflow.integration.alerts
 RABBITMQ_ALERT_QUEUE=weatherflow.integration.notifications.alerts
 RABBITMQ_ALERT_ROUTING_KEY=alerts.integration.climate.detected
 JWT_SECRET=integration-test-secret
-NOTIFICATION_DELIVERY_MODE=log
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_BOT_USERNAME=
 TELEGRAM_WEBHOOK_SECRET=

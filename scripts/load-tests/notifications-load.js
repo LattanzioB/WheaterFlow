@@ -175,7 +175,9 @@ function subscribeToExtremeHeat(userId, stationId) {
   );
 
   assertResponse(response, 'subscribed user to extreme heat alerts', (res) => {
-    return res.status === 200 && Boolean(res.json('userId'));
+    return (
+      (res.status === 200 || res.status === 201) && Boolean(res.json('userId'))
+    );
   });
 }
 

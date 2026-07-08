@@ -60,3 +60,10 @@ Los umbrales versionados son p95 global menor a 750 ms, p95 por endpoint entre
 
 Los archivos `baseline-summary.json` y `baseline-report.html` documentan el
 baseline inicial versionado para comparar futuras ejecuciones.
+
+## Notificaciones con Mongo compartido vs dedicado
+
+La historia S-03.19 agrega `npm run test:load:notifications` para comparar el
+servicio de Notificaciones con la base compartida contra una base MongoDB local
+dedicada. El procedimiento, las variables y la tabla comparativa viven en
+`docs/load-tests/notifications-README.md`.

@@ -1,0 +1,391 @@
+{
+  "options": {
+    "noColor": false,
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)"
+    ],
+    "summaryTimeUnit": ""
+  },
+  "state": {
+    "isStdOutTTY": false,
+    "isStdErrTTY": false,
+    "testRunDurationMs": 270354.69
+  },
+  "metrics": {
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 0,
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0
+      }
+    },
+    "iterations": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 1511,
+        "rate": 5.588954273365851
+      }
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 2151.8264,
+        "max": 2288.6674,
+        "p(90)": 2177.9566600000003,
+        "p(95)": 2187.51235,
+        "avg": 2155.3763357804246,
+        "min": 280.2372
+      }
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "passes": 0,
+        "fails": 6048,
+        "rate": 0
+      },
+      "thresholds": {
+        "rate<0.03": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_duration{endpoint:notification_mark_read}": {
+      "thresholds": {
+        "p(95)<650": {
+          "ok": true
+        }
+      },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 0,
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0
+      }
+    },
+    "http_req_duration{endpoint:alert_measurement}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 121.60292779616147,
+        "min": 110.2008,
+        "med": 117.952,
+        "max": 255.6959,
+        "p(90)": 130.3734,
+        "p(95)": 142.90255000000002
+      },
+      "thresholds": {
+        "p(95)<800": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_duration{endpoint:notifications_list}": {
+      "values": {
+        "med": 6.1432,
+        "max": 96.3823,
+        "p(90)": 11.8732,
+        "p(95)": 13.96585,
+        "avg": 7.762337921906029,
+        "min": 2.6114
+      },
+      "thresholds": {
+        "p(95)<650": {
+          "ok": true
+        }
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "notifications_load_errors": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 6048
+      },
+      "thresholds": {
+        "rate<0.03": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 0,
+        "med": 0,
+        "max": 1.5056,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0.00643219246031746
+      }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.004231613756613756,
+        "min": 0,
+        "med": 0,
+        "max": 1.0014,
+        "p(90)": 0,
+        "p(95)": 0
+      }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 2757205,
+        "rate": 10198.47297637041
+      }
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 7.5158,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0.007172089947089945,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 35.66483321759257,
+        "min": 1.5057,
+        "med": 7.07695,
+        "max": 255.6959,
+        "p(90)": 119.05622,
+        "p(95)": 122.93894499999999
+      },
+      "thresholds": {
+        "p(95)<900": {
+          "ok": true
+        }
+      }
+    },
+    "checks": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 1,
+        "passes": 6048,
+        "fails": 0
+      }
+    },
+    "http_req_duration{endpoint:notification_profile}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 5.594269887491722,
+        "min": 1.5072,
+        "med": 4.2281,
+        "max": 46.3894,
+        "p(90)": 9.7434,
+        "p(95)": 13.0485
+      },
+      "thresholds": {
+        "p(95)<650": {
+          "ok": true
+        }
+      }
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "min": 0,
+        "max": 32,
+        "value": 1
+      }
+    },
+    "http_req_duration{endpoint:notifications_read_all}": {
+      "contains": "time",
+      "values": {
+        "avg": 7.614716015883521,
+        "min": 1.5057,
+        "med": 5.6103,
+        "max": 84.0514,
+        "p(90)": 13.5388,
+        "p(95)": 16.5917
+      },
+      "thresholds": {
+        "p(95)<650": {
+          "ok": true
+        }
+      },
+      "type": "trend"
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 6048,
+        "rate": 22.370612472082506
+      },
+      "thresholds": {
+        "rate>8": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_receiving": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.11831443452380946,
+        "min": 0,
+        "med": 0,
+        "max": 1.4172,
+        "p(90)": 0.5562600000000001,
+        "p(95)": 0.7984799999999996
+      }
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 32,
+        "min": 32,
+        "max": 32
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 2428270,
+        "rate": 8981.793509851817
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 255.6959,
+        "p(90)": 119.05622,
+        "p(95)": 122.93894499999999,
+        "avg": 35.66483321759257,
+        "min": 1.5057,
+        "med": 7.07695
+      }
+    },
+    "http_req_waiting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 35.54008659060844,
+        "min": 1.5057,
+        "med": 6.85475,
+        "max": 255.6959,
+        "p(90)": 119.01788,
+        "p(95)": 122.93894499999999
+      }
+    }
+  },
+  "setup_data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhY2Q0MzliMi1mNzJkLTQ4NjctYjk3ZS1mODUyYzU3MjkyODYiLCJlbWFpbCI6ImxvYWQtczAzLTE5LWItMTc4MzUzMzIwNDAwMC0zODUyMkB3ZWF0aGVyZmxvdy5sb2NhbCIsImlhdCI6MTc4MzUzMzIwNCwiZXhwIjoxNzg0MTM4MDA0fQ.OTTgxWqNO4WfhdZ3tqAtQzUCz5hVqIuhdEnoCwlZ-OA",
+    "userId": "acd439b2-f72d-4867-b97e-f852c5729286",
+    "apiBaseUrl": "http://localhost:3000",
+    "notificationsBaseUrl": "http://localhost:3001",
+    "stationId": "856b17e7-2841-4fa2-90ac-8f2ae1712d23"
+  },
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [
+      {
+        "name": "setup",
+        "path": "::setup",
+        "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+        "groups": [],
+        "checks": [
+            {
+              "name": "registered notifications load-test user",
+              "path": "::setup::registered notifications load-test user",
+              "id": "2523a65af2fc3797358583e660c1be9b",
+              "passes": 1,
+              "fails": 0
+            },
+            {
+              "passes": 1,
+              "fails": 0,
+              "name": "loaded current user",
+              "path": "::setup::loaded current user",
+              "id": "67b70b51ce41b9722efdacb0169d64d0"
+            },
+            {
+              "passes": 1,
+              "fails": 0,
+              "name": "created notifications load-test station",
+              "path": "::setup::created notifications load-test station",
+              "id": "634bba8ef7938fb038a4154e3be44314"
+            },
+            {
+              "name": "subscribed user to extreme heat alerts",
+              "path": "::setup::subscribed user to extreme heat alerts",
+              "id": "c02217813b8c713740bfdd6d557c050c",
+              "passes": 1,
+              "fails": 0
+            }
+          ]
+      }
+    ],
+    "checks": [
+      {
+        "fails": 0,
+        "name": "created extreme heat measurement",
+        "path": "::created extreme heat measurement",
+        "id": "785f03b507951723b10aec41e169bc96",
+        "passes": 1511
+      },
+      {
+        "id": "b03b95349d1fa88b59c210ddedbd13ae",
+        "passes": 1511,
+        "fails": 0,
+        "name": "listed user notifications",
+        "path": "::listed user notifications"
+      },
+      {
+        "name": "marked all notifications as read",
+        "path": "::marked all notifications as read",
+        "id": "86cb00993aa0759cd82405210bf09bee",
+        "passes": 1511,
+        "fails": 0
+      },
+      {
+        "name": "loaded notification profile",
+        "path": "::loaded notification profile",
+        "id": "098c231a513541660bec1ac7060f0831",
+        "passes": 1511,
+        "fails": 0
+      }
+    ]
+  }
+}

@@ -37,6 +37,7 @@
     "test:integration": "jest --config ./test/jest-integration.json --runInBand",
     "test:int:notifications": "jest --config ./test/jest-integration.json --runInBand apps/notifications/test/in-app-fanout.int-spec.ts",
     "test:load": "k6 run scripts/load-tests/weatherflow-load.js",
+    "test:load:notifications": "k6 run scripts/load-tests/notifications-load.js",
     "test:load:owm-stub": "node scripts/load-tests/owm-stub.js"
   },
   "dependencies": {

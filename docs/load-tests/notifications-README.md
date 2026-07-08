@@ -103,15 +103,18 @@ Ambas corridas deben partir de colecciones de notificaciones vacias y usar los
 mismos valores de VUs, duracion y URLs de API. Completar la tabla con los datos
 de los summaries generados por k6.
 
+La comparacion versionada de la corrida del 2026-07-08 esta en
+`docs/load-tests/notifications-comparison.md`.
+
 | Metrica | Escenario A: Atlas compartido | Escenario B: Mongo local dedicado |
 | --- | ---: | ---: |
-| p95 global HTTP | Pendiente de corrida local | Pendiente de corrida local |
-| p95 `GET /notifications` | Pendiente de corrida local | Pendiente de corrida local |
-| p95 `PATCH /notifications/:id/read` | Pendiente de corrida local | Pendiente de corrida local |
-| p95 `PATCH /notifications/read-all` | Pendiente de corrida local | Pendiente de corrida local |
-| p95 `GET /notification-preferences/users/:userId` | Pendiente de corrida local | Pendiente de corrida local |
-| tasa de error HTTP | Pendiente de corrida local | Pendiente de corrida local |
-| throughput global | Pendiente de corrida local | Pendiente de corrida local |
+| p95 global HTTP | 595.20 ms | 122.94 ms |
+| p95 `GET /notifications` | 638.45 ms | 13.97 ms |
+| p95 `PATCH /notifications/:id/read` | 168.31 ms | Sin muestras reales |
+| p95 `PATCH /notifications/read-all` | 134.46 ms | 16.59 ms |
+| p95 `GET /notification-preferences/users/:userId` | 72.07 ms | 13.05 ms |
+| tasa de error HTTP | 0.00% | 0.00% |
+| throughput global | 32.07 req/s | 22.37 req/s |
 
 ## Salidas
 

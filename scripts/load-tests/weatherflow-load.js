@@ -273,10 +273,9 @@ function reportedFromIso() {
 }
 
 function authHeaders(token) {
-  return {
-    ...jsonHeaders(),
+  return Object.assign(jsonHeaders(), {
     Authorization: `Bearer ${token}`,
-  };
+  });
 }
 
 function jsonHeaders() {
@@ -294,9 +293,9 @@ export function handleSummary(data) {
 }
 
 function textSummary(data) {
-  const checks = data.metrics.checks?.values?.rate ?? 0;
-  const p95 = data.metrics.http_req_duration?.values?.['p(95)'] ?? 0;
-  const failed = data.metrics.http_req_failed?.values?.rate ?? 0;
+  const checks = metricValue(data, 'checks', 'rate');
+  const p95 = metricValue(data, 'http_req_duration', 'p(95)');
+  const failed = metricValue(data, 'http_req_failed', 'rate');
 
   return [
     '',
@@ -309,10 +308,10 @@ function textSummary(data) {
 }
 
 function renderHtmlSummary(data) {
-  const p95 = data.metrics.http_req_duration?.values?.['p(95)'] ?? 0;
-  const failed = data.metrics.http_req_failed?.values?.rate ?? 0;
-  const throughput = data.metrics.http_reqs?.values?.rate ?? 0;
-  const checks = data.metrics.checks?.values?.rate ?? 0;
+  const p95 = metricValue(data, 'http_req_duration', 'p(95)');
+  const failed = metricValue(data, 'http_req_failed', 'rate');
+  const throughput = metricValue(data, 'http_reqs', 'rate');
+  const checks = metricValue(data, 'checks', 'rate');
 
   return `<!doctype html>
 <html lang="es">
@@ -339,4 +338,12 @@ function renderHtmlSummary(data) {
   </table>
 </body>
 </html>`;
+}
+
+function metricValue(data, metricName, valueName) {
+  const metrics = data.metrics || {};
+  const metric = metrics[metricName] || {};
+  const values = metric.values || {};
+
+  return values[valueName] || 0;
 }
